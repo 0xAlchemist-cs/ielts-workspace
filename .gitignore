@@ -39,3 +39,16 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# local sqlite data
+data/
+
+# but keep the example env documented
+!.env.local.example
+
+# audio corpus (~1GB, regenerable via scripts/db:audio + db:cambridge + c18 copy from D:\雅思\ielts-repos)
+/public/audio
+
+# local tooling artifacts
+/.mimosa/
+/.playwright-mcp/

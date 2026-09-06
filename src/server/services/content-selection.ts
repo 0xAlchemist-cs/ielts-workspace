@@ -1,0 +1,227 @@
+import { createHash } from "node:crypto";
+import { and, eq, inArray } from "drizzle-orm";
+import { db } from "@/db";
+import {
+  chunks as chunksT,
+  contentHistory,
+  contents,
+  learningProfiles,
+  retrievalItems,
+} from "@/db/schema";
+import type { Content } from "@/db/schema";
+
+/* ── Content Selection / Rotation / Fallback Engine ──────────────────────────
+ * One question it answers: "what should this learner open next?" for any
+ * skill. Guarantees:
+ *   1. NEVER returns null while a valid readable content exists — filters
+ *      relax gradually (anti-repeat window shrinks, CEFR/difficulty only
+ *      shape the score, never hard-exclude).
+ *   2. Deterministic — no randomness; the same DB state always picks the
+ *      same content (refresh-stable).
+ *   3. Rotation — never-used content outranks used; the most-recently-used
+ *      sinks; same content can't repeat while alternatives exist. */
+
+export type SelectionSkill = "reading" | "listening";
+export type CompletionStatus = "new" | "in_progress" | "completed" | "reviewable";
+
+export interface SelectedContent {
+  content: Content;
+  status: CompletionStatus;
+  score: number;
+  /** 0 = no relaxation needed; each +1 means the anti-repeat window shrank. */
+  fallbackLevel: number;
+  reason: string;
+}
+
+export interface SelectionInput {
+  userId: number;
+  skill: SelectionSkill;
+  /** Defaults to the user's profile CEFR. */
+  cefr?: string;
+  /** Hard exclusions (e.g. "not the content shown in the other slot today"). */
+  excludeContentIds?: number[];
+  /** Mission/topic hint — contents whose topic matches score higher. */
+  topics?: string[];
+  /** Test hook: restrict the pool to given ids. */
+  restrictToIds?: number[];
+}
+
+const CEFR_LEVEL: Record<string, number> = { A1: 1, A2: 2, B1: 3, B2: 4, C1: 5, C2: 6 };
+
+/** Real English prose only — CJK appendices and stubs can't anchor a session. */
+export function isReadableContent(c: Content): boolean {
+  if (c.body.length < 800) return false;
+  const latin = (c.body.match(/[A-Za-z]/g)?.length ?? 0) / c.body.length;
+  return latin >= 0.6;
+}
+
+/** Stable body hash for import dedup — normalize before hashing so whitespace
+ *  or case differences don't defeat the check. */
+export function contentFingerprint(body: string): string {
+  const normalized = body.trim().toLowerCase().replace(/\s+/g, " ").slice(0, 2000);
+  return createHash("sha256").update(normalized).digest("hex");
+}
+
+/** Record that the learner opened a content (page entry = a use). */
+export async function markContentUsed(userId: number, contentId: number): Promise<void> {
+  const [c] = await db
+    .select({ type: contents.type })
+    .from(contents)
+    .where(eq(contents.id, contentId))
+    .limit(1);
+  if (!c) return;
+  const [h] = await db
+    .select()
+    .from(contentHistory)
+    .where(and(eq(contentHistory.userId, userId), eq(contentHistory.contentId, contentId)))
+    .limit(1);
+  const now = Date.now();
+  if (h) {
+    await db
+      .update(contentHistory)
+      .set({ lastUsedAt: now, timesUsed: h.timesUsed + 1, skill: c.type })
+      .where(eq(contentHistory.id, h.id));
+  } else {
+    await db.insert(contentHistory).values({
+      userId,
+      contentId,
+      skill: c.type,
+      startedAt: now,
+      lastUsedAt: now,
+      timesUsed: 1,
+      completionStatus: "in_progress",
+    });
+  }
+}
+
+/** The learner finished the content's session (mission step done). */
+export async function markContentCompleted(userId: number, contentId: number): Promise<void> {
+  await db
+    .update(contentHistory)
+    .set({ completionStatus: "completed", completedAt: Date.now() })
+    .where(and(eq(contentHistory.userId, userId), eq(contentHistory.contentId, contentId)));
+}
+
+/**
+ * ContentScore =
+ *   30% skill match (pool is skill-filtered → constant 1; weight kept for
+ *                  cross-skill comparisons in reports)
+ * + 20% CEFR match (±1 level tolerated at reduced value)
+ * + 15% IELTS relevance
+ * + 15% novelty (never used > used once > used often)
+ * + 10% LanguageItem value (active-but-not-yet-retained items sourced here)
+ * + 10% mission/topic relevance
+ * Then cooldown penalties: used <24h ago −0.25; heavily used recently −0.15.
+ */
+export async function selectNextContent(input: SelectionInput): Promise<SelectedContent | null> {
+  const { userId, skill } = input;
+
+  const pool = (await db.select().from(contents).where(eq(contents.type, skill)))
+    .filter(isReadableContent)
+    .filter((c) => (input.restrictToIds ? input.restrictToIds.includes(c.id) : true))
+    .filter((c) => !input.excludeContentIds?.includes(c.id));
+  // Genuinely empty pool → caller must render an empty state, never a blank page.
+  if (pool.length === 0) return null;
+
+  let cefr = input.cefr;
+  if (!cefr) {
+    const [p] = await db
+      .select({ cefr: learningProfiles.cefr })
+      .from(learningProfiles)
+      .where(eq(learningProfiles.userId, userId))
+      .limit(1);
+    cefr = p?.cefr ?? "B2";
+  }
+  const myLevel = CEFR_LEVEL[cefr] ?? 4;
+
+  const historyRows = await db
+    .select()
+    .from(contentHistory)
+    .where(
+      and(
+        eq(contentHistory.userId, userId),
+        inArray(contentHistory.contentId, pool.map((c) => c.id)),
+      ),
+    );
+  const history = new Map(historyRows.map((h) => [h.contentId, h]));
+  const recent = [...historyRows].sort((a, b) => b.lastUsedAt - a.lastUsedAt).map((h) => h.contentId);
+
+  // LanguageItem value: this user's chunks sourced from pool contents whose
+  // retrieval ladder is active but not yet at retention — the §13 resurface
+  // signal (context helps weak items without a full re-read).
+  const chunkRows = await db
+    .select({ id: chunksT.id, sourceContentId: chunksT.sourceContentId })
+    .from(chunksT)
+    .where(eq(chunksT.userId, userId));
+  const itemStates = await db
+    .select({ itemId: retrievalItems.itemId, learningState: retrievalItems.learningState })
+    .from(retrievalItems)
+    .where(and(eq(retrievalItems.userId, userId), eq(retrievalItems.itemType, "chunk")));
+  const stateByChunk = new Map(itemStates.map((s) => [s.itemId, s.learningState]));
+  const weakByContent = new Map<number, number>();
+  for (const ch of chunkRows) {
+    if (ch.sourceContentId == null) continue;
+    const st = stateByChunk.get(ch.id)?.state;
+    if (!st || st === "exposure" || st === "understanding" || st === "retention") continue;
+    weakByContent.set(ch.sourceContentId, (weakByContent.get(ch.sourceContentId) ?? 0) + 1);
+  }
+
+  // Anti-repeat with graduated relaxation: exclude last-3 → last-2 → last-1 →
+  // allow repeat. A single-content pool re-uses that content (never null).
+  let candidates = pool;
+  let fallbackLevel = 3;
+  for (let n = Math.min(3, recent.length); n >= 0; n--) {
+    const blocked = new Set(recent.slice(0, n));
+    const cands = pool.filter((c) => !blocked.has(c.id));
+    if (cands.length > 0) {
+      candidates = cands;
+      fallbackLevel = 3 - n;
+      break;
+    }
+  }
+
+  const lastUsed = (id: number) => history.get(id)?.lastUsedAt ?? -1; // never-used = oldest
+  const now = Date.now();
+  const scoreOf = (c: Content): number => {
+    const skillMatch = 1;
+    const d = Math.abs((CEFR_LEVEL[c.cefr] ?? 4) - myLevel);
+    const cefrMatch = d === 0 ? 1 : d === 1 ? 0.6 : d === 2 ? 0.25 : 0.1;
+    const ielts = c.ieltsRelevance / 5;
+    const times = history.get(c.id)?.timesUsed ?? 0;
+    const novelty = times === 0 ? 1 : times === 1 ? 0.5 : 0.15;
+    const itemValue = Math.min(1, (weakByContent.get(c.id) ?? 0) / 5);
+    const missionRel = input.topics?.includes(c.topic) ? 1 : 0.3;
+    let score =
+      0.3 * skillMatch + 0.2 * cefrMatch + 0.15 * ielts + 0.15 * novelty + 0.1 * itemValue + 0.1 * missionRel;
+    const h = history.get(c.id);
+    if (h) {
+      if (now - h.lastUsedAt < 86_400_000) score -= 0.25; // < 1 day → cooldown
+      if (h.timesUsed >= 3 && now - h.lastUsedAt < 3 * 86_400_000) score -= 0.15;
+    }
+    return score;
+  };
+
+  const ranked = candidates
+    .map((c) => ({ c, score: scoreOf(c) }))
+    .sort((a, b) => b.score - a.score || lastUsed(a.c.id) - lastUsed(b.c.id) || a.c.id - b.c.id);
+  const pick = ranked[0];
+
+  const h = history.get(pick.c.id);
+  const weak = weakByContent.get(pick.c.id) ?? 0;
+  const status: CompletionStatus = !h
+    ? "new"
+    : h.completionStatus === "completed"
+      ? weak > 0
+        ? "reviewable"
+        : "completed"
+      : "in_progress";
+  const reason = !h
+    ? "fresh content"
+    : weak > 0
+      ? `resurfaced context — ${weak} active item${weak > 1 ? "s" : ""} benefit from it`
+      : h.completionStatus === "completed"
+        ? "completed, re-queued by rotation"
+        : "in progress, continuing rotation";
+
+  return { content: pick.c, status, score: Math.round(pick.score * 1000) / 1000, fallbackLevel, reason };
+}
