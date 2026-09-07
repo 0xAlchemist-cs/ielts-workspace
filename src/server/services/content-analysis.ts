@@ -1,6 +1,7 @@
 import { tokenizeWords, contentTokens, splitSentences, wordTokens } from "@/lib/text";
 import { CHUNK_DETECT } from "@/lib/chunk-detect";
 import { lookupWord, wordTiersFor } from "@/server/services/dictionary";
+import { escapeRe } from "@/server/services/retrieval";
 
 /* ── Content Analysis Engine ────────────────────────────────────────────────
  * Given any English text, extract high-value language items, score difficulty,
@@ -177,7 +178,7 @@ export async function analyzeContent(text: string): Promise<ContentAnalysis> {
         contextSentence,
         cefr: "B2",
         ieltsRelevance: lookup.entry.bnc <= 10000 ? 4 : 3,
-        frequency: (trimmed.toLowerCase().match(new RegExp(`\\b${word}\\b`, "g")) ?? []).length,
+        frequency: (trimmed.toLowerCase().match(new RegExp(`\\b${escapeRe(word)}\\b`, "g")) ?? []).length,
         whyThis: `"${word}" is an advanced word (BNC rank ${lookup.entry.bnc || "?"}) that appeared in context. High-value for IELTS Lexical Resource.`,
         sourceTopic: topic,
       });

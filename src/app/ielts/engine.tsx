@@ -6,10 +6,46 @@ import { markStepAction } from "@/app/actions";
 import { Badge, Card, MockBadge, ProgressBar, btn, inputCls } from "@/components/ui";
 import { toast } from "@/components/motion";
 import { Segmented } from "@/components/motion";
-import { T } from "@/components/i18n";
+import { T, useBilingual } from "@/components/i18n";
 
 type Mode = "learning" | "exam";
 type Stage = "select" | "task" | "result";
+
+/* ── Learner-facing translations ─────────────────────────────────────────────
+ * Persona: a Chinese IELTS candidate with weak basics. In bilingual mode the
+ * UI chrome AND engine-produced diagnostics must read fully in Chinese —
+ * raw English notes are only acceptable in immersion mode. */
+const SKILL_LABEL: Record<string, string> = {
+  overall: "Overall 综合",
+  reading: "Reading 阅读",
+  listening: "Listening 听力",
+  speaking: "Speaking 口语",
+  writing: "Writing 写作",
+};
+
+function translateNote(note: string): string {
+  let m = note.match(/^Estimated band (\d(\.\d)?)$/);
+  if (m) return `估算 ${m[1]} 分（满分 9）`;
+  m = note.match(/^Expected: "(.*)", got: "(.*)"$/);
+  if (m) return `正确答案："${m[1]}"，你答：${m[2] === "(blank)" ? "未作答" : `"${m[2]}"`}`;
+  return note;
+}
+
+function translateDiagnosis(s: string): string {
+  const canned: Record<string, string> = {
+    "Left question blank — possible time management issue":
+      "有题目空着未答 —— 可能是时间分配问题",
+    "Under word count — task response severely limited":
+      "字数不足 —— 任务回应严重受限",
+    "Answer too short — develop ideas with reasons and examples":
+      "回答太短 —— 用理由和例子展开观点",
+  };
+  if (canned[s]) return canned[s];
+  // engine composes some rows as "skill: note" — localize the skill prefix
+  const m = s.match(/^([a-z_]+): (.*)$/);
+  if (m && SKILL_LABEL[m[1]]) return `${SKILL_LABEL[m[1]]}：${translateNote(m[2])}`;
+  return s;
+}
 
 interface TaskData {
   id: number;
@@ -35,6 +71,7 @@ interface AttemptResult {
 }
 
 export function IeltsEngineView({ targetBand }: { targetBand: number }) {
+  const bilingual = useBilingual();
   const [mode, setMode] = useState<Mode>("learning");
   const [stage, setStage] = useState<Stage>("select");
   const [task, setTask] = useState<TaskData | null>(null);
@@ -300,19 +337,43 @@ export function IeltsEngineView({ targetBand }: { targetBand: number }) {
       {stage === "result" && result && task && (
         <div className="enter mx-auto max-w-3xl space-y-4">
           {/* Score */}
-          <Card title={<T en="IELTS Performance" zh="雅思表现" />} right={<MockBadge />}>
+          <Card
+            title={<T en="IELTS Performance" zh="雅思表现" />}
+            right={<MockBadge />}
+            subtitle={
+              <T
+                en="Band = estimated IELTS score (4–9). Score = raw accuracy. The higher your expressions count, the more of your bank you actually used."
+                zh="Band = 雅思估算分（4–9 分制）。Score = 客观答对率。表达迁移 = 你在任务里自主用出的目标表达数量，越多越好。"
+              />
+            }
+          >
             <div className="grid grid-cols-3 gap-3">
               <div className="rounded-xl bg-black/[0.03] py-3 text-center">
-                <div className="text-[10.5px] font-semibold uppercase text-ink-3">Band</div>
+                <div className="text-[11px] font-semibold uppercase text-ink-3">
+                  <T en="Band" zh="雅思估算分" />
+                </div>
                 <div className="font-mono text-[22px] font-semibold text-ink">{result.band?.toFixed(1) ?? "—"}</div>
+                <div className="text-[10.5px] text-ink-3">
+                  <T en="examiner estimate" zh="考官视角估分" />
+                </div>
               </div>
               <div className="rounded-xl bg-black/[0.03] py-3 text-center">
-                <div className="text-[10.5px] font-semibold uppercase text-ink-3">Score</div>
+                <div className="text-[11px] font-semibold uppercase text-ink-3">
+                  <T en="Score" zh="答对率" />
+                </div>
                 <div className="font-mono text-[22px] font-semibold text-ink">{result.score ?? "—"}%</div>
+                <div className="text-[10.5px] text-ink-3">
+                  <T en="questions correct" zh="客观题正确率" />
+                </div>
               </div>
               <div className="rounded-xl bg-[#34c759]/[0.08] py-3 text-center">
-                <div className="text-[10.5px] font-semibold uppercase text-[#1f7a37]">Items Used</div>
+                <div className="text-[11px] font-semibold uppercase text-[#1f7a37]">
+                  <T en="Expressions Used" zh="表达迁移" />
+                </div>
                 <div className="font-mono text-[22px] font-semibold text-[#1f7a37]">{result.transferResults.length}</div>
+                <div className="text-[10.5px] text-[#1f7a37]/75">
+                  <T en="your expressions produced" zh="自主用出的目标表达" />
+                </div>
               </div>
             </div>
           </Card>
@@ -336,13 +397,22 @@ export function IeltsEngineView({ targetBand }: { targetBand: number }) {
 
           {/* Sub-skill breakdown */}
           {result.subSkillResults.length > 0 && (
-            <Card title={<T en="Sub-skill breakdown" zh="子技能分解" />}>
+            <Card
+              title={<T en="Sub-skill breakdown" zh="子技能分解" />}
+              subtitle={<T en="Which abilities this task tested — ✓ met, ✗ not yet" zh="本次任务考察的能力点 —— ✓ 达标，✗ 未达" />}
+            >
               <div className="space-y-2">
                 {result.subSkillResults.map((r, i) => (
                   <div key={i} className="flex items-center gap-3 text-[13px]">
-                    <span className="w-40 shrink-0 truncate text-ink-2">{r.skill.replace(/_/g, " ")}</span>
+                    <span className="w-40 shrink-0 truncate text-ink-2">
+                      {bilingual ? (SKILL_LABEL[r.skill] ?? r.skill.replace(/_/g, " ")) : r.skill.replace(/_/g, " ")}
+                    </span>
                     <span className={r.correct ? "text-[#1f7a37]" : "text-[#d70015]"}>{r.correct ? "✓" : "✗"}</span>
-                    {r.note && <span className="truncate text-[12px] text-ink-3">{r.note}</span>}
+                    {r.note && (
+                      <span className="truncate text-[12px] text-ink-3">
+                        {bilingual ? translateNote(r.note) : r.note}
+                      </span>
+                    )}
                   </div>
                 ))}
               </div>
@@ -355,16 +425,16 @@ export function IeltsEngineView({ targetBand }: { targetBand: number }) {
               <Card title={<T en="🎯 Strategy Issues" zh="考试策略问题" />} subtitle={<T en="Not language problems — test approach" zh="不是语言问题——考试方法" />}>
                 <ul className="space-y-1.5 text-[12.5px] text-ink-2">
                   {result.strategyIssues.map((s, i) => (
-                    <li key={i}>▸ {s}</li>
+                    <li key={i}>▸ {bilingual ? translateDiagnosis(s) : s}</li>
                   ))}
                 </ul>
               </Card>
             )}
             {result.languageErrors.length > 0 && (
-              <Card title={<T en="📚 Language Errors → Error Bank" zh="语言错误 → 错误银行" />}>
+              <Card title={<T en="📚 Language Errors → Error Bank" zh="语言错误 → 错题银行" />}>
                 <ul className="space-y-1.5 text-[12.5px] text-ink-2">
                   {result.languageErrors.map((e, i) => (
-                    <li key={i}>▸ {e}</li>
+                    <li key={i}>▸ {bilingual ? translateDiagnosis(e) : e}</li>
                   ))}
                 </ul>
               </Card>

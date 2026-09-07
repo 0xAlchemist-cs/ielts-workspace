@@ -152,7 +152,7 @@ function Conversation({
       {/* Prompt */}
       <div className="rounded-2xl bg-white p-5 shadow-[0_0_0_0.5px_rgba(0,0,0,0.06),0_2px_8px_rgba(0,0,0,0.04)]">
         <div className="mb-2 flex items-center gap-2">
-          {isMission && <Badge tone="accent">Today's Mission · step ⑤</Badge>}
+          {isMission && <Badge tone="accent"><T en="Today's Mission · step ⑤" zh="今日任务 · 第⑤步" /></Badge>}
           <span className="text-[12px] text-ink-3">Round {round}</span>
         </div>
         <div className="flex items-start justify-between gap-3">
@@ -166,7 +166,7 @@ function Conversation({
         </div>
         {requiredChunks.length > 0 && (
           <div className="mt-3 flex flex-wrap items-center gap-2 rounded-xl bg-[#0071e3]/[0.05] px-3.5 py-2.5">
-            <span className="text-[12px] font-semibold text-[#0068d0]">Must try to use:</span>
+            <span className="text-[12px] font-semibold text-[#0068d0]"><T en="Must try to use:" zh="必须尝试用上：" /></span>
             {requiredChunks.map((c) => (
               <span key={c.id} className="rounded-md bg-white px-2 py-0.5 text-[12px] font-semibold text-ink shadow-[0_0_0_0.5px_rgba(0,0,0,0.08)]" title={c.meaningZh}>
                 {c.text}
@@ -195,7 +195,7 @@ function Conversation({
       {/* Input */}
       <div className="rounded-2xl bg-white p-5 shadow-[0_0_0_0.5px_rgba(0,0,0,0.06),0_2px_8px_rgba(0,0,0,0.04)]">
         <div className="mb-2 flex items-center justify-between">
-          <span className="text-[12px] font-semibold text-ink-2">Your answer — speak or type</span>
+          <span className="text-[12px] font-semibold text-ink-2"><T en="Your answer — speak or type" zh="你的回答 —— 说出或打字" /></span>
           {rec.supported ? (
             <button
               onClick={() => (rec.state === "listening" ? rec.stop() : rec.start())}
@@ -211,7 +211,7 @@ function Conversation({
               {rec.state === "listening" ? "● recording… stop" : "🎤 Speak"}
             </button>
           ) : (
-            <span className="text-[12px] text-ink-3">Mic unavailable in this browser — type below</span>
+            <span className="text-[12px] text-ink-3"><T en="Mic unavailable in this browser — type below" zh="此浏览器无法使用麦克风 —— 请在下方打字" /></span>
           )}
         </div>
         <textarea
@@ -233,7 +233,7 @@ function Conversation({
       {feedback && (
         <div className="enter space-y-4 rounded-2xl bg-white p-6 shadow-[0_0_0_0.5px_rgba(0,0,0,0.06),0_4px_20px_rgba(0,0,0,0.05)]">
           <div className="flex items-center justify-between">
-            <h3 className="text-[15px] font-semibold tracking-[-0.01em] text-ink">Coach feedback</h3>
+            <h3 className="text-[15px] font-semibold tracking-[-0.01em] text-ink"><T en="Coach feedback" zh="教练反馈" /></h3>
             {feedback.isMock && <MockBadge />}
           </div>
 

@@ -268,6 +268,7 @@ export async function evaluateAttempt(input: {
   // Strategy vs language error classification
   for (const r of subSkillResults) {
     if (!r.correct) {
+      if (r.skill === "overall") continue; // band estimate ≠ a language error
       if (r.skill.includes("paraphrase") || r.skill.includes("vocabulary")) {
         languageErrors.push(`${r.skill}: ${r.note}`);
       } else if (r.skill.includes("inference") || r.skill.includes("distractor")) {

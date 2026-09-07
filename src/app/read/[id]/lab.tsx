@@ -5,7 +5,7 @@ import Link from "next/link";
 import { markStepAction, logEventAction } from "@/app/actions";
 import { Badge, MockBadge, ProgressBar, btn, inputCls } from "@/components/ui";
 import { toast } from "@/components/motion";
-import { T } from "@/components/i18n";
+import { T, useBilingual } from "@/components/i18n";
 import { ChineseReveal } from "@/components/learn";
 import { ArticlePhase, AnalysisSkeleton, type AdHocTarget, type RailTarget } from "./reader";
 import { useSpeechRecognition } from "@/hooks/speech";
@@ -200,7 +200,7 @@ function StudyPhase({ targets, onDone }: { targets: LabTarget[]; onDone: () => v
   if (!t) {
     return (
       <div className="rounded-2xl bg-white p-8 text-center shadow-[0_0_0_0.5px_rgba(0,0,0,0.06)]">
-        <p className="text-sm text-ink-2">No targets selected — go back and pick a few.</p>
+        <p className="text-sm text-ink-2"><T en="No targets selected — go back and pick a few." zh="还没有选中表达 —— 回到阅读页勾选几个。" /></p>
       </div>
     );
   }
@@ -230,7 +230,20 @@ const DIMENSIONS = [
   "IELTS Writing",
 ] as const;
 
+/* Persona: weak-English reader — dimension names get a Chinese twin in 中英 mode. */
+const DIMENSION_ZH: Record<(typeof DIMENSIONS)[number], string> = {
+  Meaning: "含义",
+  Pattern: "句式",
+  Collocations: "搭配",
+  "Related & contrast": "关联与对比",
+  "Why native speakers use it": "母语者为什么这样用",
+  "Common mistakes": "常见错误",
+  "IELTS Speaking": "雅思口语",
+  "IELTS Writing": "雅思写作",
+};
+
 function StudyCard({ target, onNext, last }: { target: LabTarget; onNext: () => void; last: boolean }) {
+  const bilingual = useBilingual();
   const [revealed, setRevealed] = useState(1);
   const [analysis, setAnalysis] = useState<SentenceAnalysis | null>(null);
   const [sentence, setSentence] = useState("");
@@ -311,8 +324,8 @@ function StudyCard({ target, onNext, last }: { target: LabTarget; onNext: () => 
     ),
     "Common mistakes": (
       <ul className="space-y-1.5 text-[13px] text-ink-2">
-        <li>▸ Word-for-word translation loses the nuance — store <b className="text-ink">{target.pattern || target.text}</b> as ONE unit.</li>
-        <li>▸ Learners usually understand it passively but never produce it — that's exactly what the steps below fix.</li>
+        <li>▸ 逐字翻译会丢掉神韵 —— 把 <b className="text-ink">{target.pattern || target.text}</b> 当作一个整体来记。</li>
+        <li>▸ 多数学习者只是看懂、从未产出 —— 下面的步骤正是解决这个问题的。</li>
       </ul>
     ),
     "IELTS Speaking": analysis ? (
@@ -341,7 +354,7 @@ function StudyCard({ target, onNext, last }: { target: LabTarget; onNext: () => 
       <div className="space-y-2">
         {DIMENSIONS.slice(0, revealed).map((d) => (
           <div key={d} className="enter rounded-xl bg-black/[0.025] px-4 py-3">
-            <div className="mb-1.5 text-[12px] font-semibold uppercase tracking-[0.05em] text-ink-3">{d}</div>
+            <div className="mb-1.5 text-[12px] font-semibold uppercase tracking-[0.05em] text-ink-3">{bilingual ? `${d} ${DIMENSION_ZH[d]}` : d}</div>
             {sections[d]}
           </div>
         ))}
@@ -354,7 +367,7 @@ function StudyCard({ target, onNext, last }: { target: LabTarget; onNext: () => 
           }}
           className={`${btn.secondary} w-full`}
         >
-          ▸ Reveal next dimension ({revealed}/{DIMENSIONS.length})
+          <T en={`▸ Reveal next dimension (${revealed}/${DIMENSIONS.length})`} zh={`▸ 揭开下一层（${revealed}/${DIMENSIONS.length}）`} />
         </button>
       ) : (
         <p className="text-center text-[12px] text-ink-3">All 8 dimensions revealed — now make it yours ↓</p>
@@ -366,13 +379,16 @@ function StudyCard({ target, onNext, last }: { target: LabTarget; onNext: () => 
           Generation · 生成你自己的句子
         </div>
         <p className="mb-2.5 text-[13.5px] font-medium text-ink">
-          Write one sentence about <span className="underline decoration-[#0071e3]/40">your own life</span> using “{target.text}”.
+          <T
+            en={<>Write one sentence about <span className="underline decoration-[#0071e3]/40">your own life</span> using “{target.text}”.</>}
+            zh={<>用 <span className="underline decoration-[#0071e3]/40">你自己的生活</span> 造一个句子，用上 “{target.text}”。</>}
+          />
         </p>
         <textarea
           value={sentence}
           onChange={(e) => setSentence(e.target.value)}
           rows={2}
-          placeholder="Say it about YOUR reality — real sentences stick, textbook sentences evaporate."
+          placeholder="写你自己真实的事 —— 真实的句子才记得住（Say it about YOUR reality）"
           className={`${inputCls} resize-none bg-white/80`}
         />
         <div className="mt-2.5 flex items-center gap-2.5">
@@ -381,7 +397,7 @@ function StudyCard({ target, onNext, last }: { target: LabTarget; onNext: () => 
           </button>
           {!verdict?.pass && (
             <button onClick={onNext} className={btn.ghost}>
-              {last ? "skip to finish →" : "skip →"}
+              {last ? <T en="skip to finish →" zh="跳过，直接完成 →" /> : <T en="skip →" zh="跳过 →" />}
             </button>
           )}
         </div>
@@ -481,7 +497,7 @@ function RecallCard({ target, onNext, last }: { target: LabTarget; onNext: () =>
           />
           <div className="flex items-center gap-2.5">
             <button onClick={() => submitZh()} disabled={busy || !zhAnswer.trim()} className={btn.primary}>
-              {busy ? "Checking…" : "Submit ⏎"}
+              {busy ? <T en="Checking…" zh="检查中…" /> : <T en="Submit ⏎" zh="提交 ⏎" />}
             </button>
             <button onClick={() => submitZh(true)} disabled={busy} className={btn.ghost}>
               想不起来了（记为失败）
@@ -496,7 +512,7 @@ function RecallCard({ target, onNext, last }: { target: LabTarget; onNext: () =>
             </p>
             {zhResult.quality < 5 && (
               <p className="mt-1.5 text-[13px] text-ink">
-                <span className="text-ink-3">Target:</span> <b>{zhResult.targetAnswer}</b>
+                <span className="text-ink-3"><T en="Target:" zh="正确表达：" /></span> <b>{zhResult.targetAnswer}</b>
               </p>
             )}
           </div>
@@ -541,7 +557,7 @@ function RecallCard({ target, onNext, last }: { target: LabTarget; onNext: () =>
                 </p>
               )}
               <button onClick={onNext} className={`${btn.primary} mt-3 w-full`}>
-                {last ? "Proceed to Speaking →" : "Next expression →"}
+                {last ? <T en="Proceed to Speaking →" zh="进入口语环节 →" /> : <T en="Next expression →" zh="下一个表达 →" />}
               </button>
             </div>
           )}
@@ -674,20 +690,23 @@ function DoneSummary({ targets, minutes }: { targets: LabTarget[]; minutes: numb
         <div className="mx-auto mb-3 flex h-12 w-12 items-center justify-center rounded-full bg-[#34c759]/15 text-[22px]">✓</div>
         <h3 className="text-[19px] font-semibold tracking-[-0.02em] text-ink">Session complete · 本节完成</h3>
         <p className="mt-1.5 text-[13px] text-ink-2">
-          {minutes} min · {targets.length} expressions went through Notice → Deep Processing → Generation → Retrieval → Transfer.
+          <T
+            en={`${minutes} min · ${targets.length} expressions went through Notice → Deep Processing → Generation → Retrieval → Transfer.`}
+            zh={`${minutes} 分钟 · ${targets.length} 个表达完整走过 注意 → 深度加工 → 造句生成 → 闭卷提取 → 迁移。`}
+          />
         </p>
         <p className="mx-auto mt-3 max-w-md rounded-xl bg-[#34c759]/[0.08] px-4 py-2.5 text-[12.5px] leading-relaxed text-ink-2">
           接触 ≠ 学会。今天真正产出过的表达已计入 Active Chunks，并排入明日的闭卷回归——明早它们会在首页等你。
         </p>
         <div className="mt-5 flex flex-wrap justify-center gap-2.5">
           <Link href="/" className={btn.primary}>
-            ← Mission Control
+            <T en="← Mission Control" zh="← 回主控台" />
           </Link>
           <Link href="/review" className={btn.secondary}>
-            One more retrieval round ↺
+            <T en="One more retrieval round ↺" zh="再来一轮闭卷提取 ↺" />
           </Link>
           <Link href="/library" className={btn.secondary}>
-            Next article →
+            <T en="Next article →" zh="下一篇 →" />
           </Link>
         </div>
       </div>

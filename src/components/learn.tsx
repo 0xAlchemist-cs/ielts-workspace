@@ -4,6 +4,7 @@ import { useState, useTransition } from "react";
 import { saveCorpusChunkAction, saveCustomChunkAction } from "@/app/actions";
 import { Badge, MockBadge } from "@/components/ui";
 import { toast } from "@/components/motion";
+import { T, useBilingual } from "@/components/i18n";
 import type { SentenceAnalysis } from "@/lib/types";
 
 /** Compact chip that saves a chunk into the personal bank (idempotent). */
@@ -40,7 +41,7 @@ export function SaveChunkButton({
       }
       className={`press inline-flex items-center gap-1 rounded-lg bg-[#0071e3]/10 px-2.5 py-1 text-[12px] font-semibold text-[#0068d0] transition-colors duration-150 hover:bg-[#0071e3]/20 disabled:opacity-40 ${className ?? ""}`}
     >
-      {pending ? "Saving…" : "+ Chunk Bank"}
+      {pending ? <T en="Saving…" zh="保存中…" /> : <T en="+ Chunk Bank" zh="+ 存入语块库" />}
     </button>
   );
 }
@@ -56,16 +57,17 @@ export function SentenceAnalysisView({
   onDeepDive?: (chunkText: string) => void;
 }) {
   const a = analysis;
+  const bilingual = useBilingual();
   // Cached analyses (and live models) can repeat a chunk — the pills and the
   // worth-storing panel would each render it twice. One chunk, one row.
   const detected = [...new Set(a.detectedChunks)];
-  const sections: { title: string; body: React.ReactNode }[] = [
-    { title: "Meaning", body: <div className="space-y-1"><div>{a.meaning}</div><ChineseReveal text={a.meaningZh} /></div> },
-    { title: "Structure", body: <code className="block rounded-lg bg-black/[0.04] px-3 py-2 font-mono text-[12px] text-ink">{a.structure}</code> },
-    { title: "Why this expression?", body: <div>{a.whyThisExpression}</div> },
-    { title: "Native logic", body: <div>{a.nativeLogic}</div> },
+  const sections: { title: string; zh: string; body: React.ReactNode }[] = [
+    { title: "Meaning", zh: "含义", body: <div className="space-y-1"><div>{a.meaning}</div><ChineseReveal text={a.meaningZh} /></div> },
+    { title: "Structure", zh: "结构", body: <code className="block rounded-lg bg-black/[0.04] px-3 py-2 font-mono text-[12px] text-ink">{a.structure}</code> },
+    { title: "Why this expression?", zh: "为什么用这个表达", body: <div>{a.whyThisExpression}</div> },
+    { title: "Native logic", zh: "母语者逻辑", body: <div>{a.nativeLogic}</div> },
     {
-      title: "Alternatives & differences",
+      title: "Alternatives & differences", zh: "替代与差异",
       body: (
         <div className="space-y-2">
           <ul className="space-y-1.5">
@@ -81,7 +83,7 @@ export function SentenceAnalysisView({
       ),
     },
     {
-      title: "Collocations",
+      title: "Collocations", zh: "搭配",
       body: a.collocations.length ? (
         <div className="flex flex-wrap gap-1.5">
           {a.collocations.map((c, i) => (
@@ -95,7 +97,7 @@ export function SentenceAnalysisView({
       ),
     },
     {
-      title: "Transfer",
+      title: "Transfer", zh: "迁移",
       body: (
         <div className="space-y-2 text-[13px] leading-relaxed">
           <div><Badge tone="neutral">Daily</Badge> <span className="ml-1.5">{a.transfer.daily}</span></div>
@@ -120,7 +122,7 @@ export function SentenceAnalysisView({
       {detected.length > 0 && (
         <div className="rounded-xl bg-[#0071e3]/[0.05] px-4 py-3">
           <div className="mb-2 text-[12px] font-semibold uppercase tracking-wide text-[#0068d0]">
-            Worth storing — one click to your Chunk Bank
+            <T en="Worth storing — one click to your Chunk Bank" zh="值得存 —— 一键进你的语块库" />
           </div>
           <div className="flex flex-wrap items-center gap-2.5">
             {detected.map((c) => (
@@ -133,7 +135,7 @@ export function SentenceAnalysisView({
                 )}
                 {onDeepDive && (
                   <button onClick={() => onDeepDive(c)} className="press text-[12px] font-medium text-[#0068d0] hover:underline">
-                    deep dive →
+                    <T en="deep dive →" zh="深入 →" />
                   </button>
                 )}
               </div>
@@ -145,7 +147,9 @@ export function SentenceAnalysisView({
       <div className="space-y-4">
         {sections.map((s) => (
           <div key={s.title}>
-            <h4 className="mb-1.5 text-[12px] font-semibold uppercase tracking-[0.05em] text-ink-3">{s.title}</h4>
+            <h4 className="mb-1.5 text-[12px] font-semibold uppercase tracking-[0.05em] text-ink-3">
+              {bilingual ? `${s.title} ${s.zh}` : s.title}
+            </h4>
             <div className="text-[13.5px] leading-relaxed text-ink-2">{s.body}</div>
           </div>
         ))}
@@ -187,7 +191,7 @@ export function CustomChunkSaver({ text }: { text: string }) {
       }
       className="press rounded-lg bg-[#0071e3]/10 px-2.5 py-1 text-[12px] font-semibold text-[#0068d0] transition-colors duration-150 hover:bg-[#0071e3]/20 disabled:opacity-40"
     >
-      {pending ? "Saving…" : "+ Chunk Bank"}
+      {pending ? <T en="Saving…" zh="保存中…" /> : <T en="+ Chunk Bank" zh="+ 存入语块库" />}
     </button>
   );
 }

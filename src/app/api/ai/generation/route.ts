@@ -8,6 +8,7 @@ import { tokenizeWords } from "@/lib/text";
 import { getUserIdOrNull } from "@/server/current-user";
 import { saveUserSentence } from "@/server/services/bank";
 import { logChunkEvent, markChunkActivated } from "@/server/services/events";
+import { badRequest, readJsonBody, stringField } from "@/lib/request";
 
 export interface GenerationVerdict {
   usedChunk: boolean;
@@ -24,13 +25,14 @@ export interface GenerationVerdict {
 export async function POST(req: Request) {
   const userId = await getUserIdOrNull();
   if (!userId) return NextResponse.json({ error: "no user" }, { status: 401 });
-  const body = (await req.json()) as { chunkId?: number; sentence?: string };
-  const sentence = (body.sentence ?? "").trim();
-  if (!body.chunkId || !sentence) {
-    return NextResponse.json({ error: "chunkId and sentence required" }, { status: 400 });
+  const body = await readJsonBody<{ chunkId?: unknown; sentence?: unknown }>(req);
+  const sentence = stringField(body, "sentence", 2_000);
+  const chunkId = body?.chunkId;
+  if (!sentence || typeof chunkId !== "number" || !Number.isInteger(chunkId) || chunkId <= 0) {
+    return badRequest("chunkId and sentence required (sentence: string ≤ 2000 chars)");
   }
 
-  const [chunk] = await db.select().from(chunksT).where(eq(chunksT.id, body.chunkId)).limit(1);
+  const [chunk] = await db.select().from(chunksT).where(eq(chunksT.id, chunkId)).limit(1);
   if (!chunk || chunk.userId !== userId) {
     return NextResponse.json({ error: "chunk not found" }, { status: 404 });
   }

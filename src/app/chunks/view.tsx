@@ -274,7 +274,7 @@ function ChunkDetail({ chunk }: { chunk: MyChunk }) {
       </div>
 
       <div>
-        <h4 className="mb-2 text-[12px] font-semibold uppercase tracking-[0.05em] text-ink-3">Examples</h4>
+        <h4 className="mb-2 text-[12px] font-semibold uppercase tracking-[0.05em] text-ink-3"><T en="Examples" zh="例句" /></h4>
         <div className="space-y-2">
           {chunk.examples.map((e, i) => (
             <p key={i} className="rounded-lg bg-black/[0.03] px-3 py-2 text-[13px] text-ink-2">{e}</p>

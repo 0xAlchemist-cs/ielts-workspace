@@ -313,22 +313,25 @@ function WordQuickLook({
         {!guessed ? (
           <div className="space-y-2.5">
             <p className="text-[13.5px] font-medium text-ink">
-              What do you think <span className="font-semibold text-[#0068d0]">“{card.word}”</span> means here? Guess first.
+              <T
+                en={<>What do you think <span className="font-semibold text-[#0068d0]">“{card.word}”</span> means here? Guess first.</>}
+                zh={<>你觉得 <span className="font-semibold text-[#0068d0]">“{card.word}”</span> 在这里是什么意思？先猜一猜。</>}
+              />
             </p>
             <input
               autoFocus
               value={guess}
               onChange={(e) => setGuess(e.target.value)}
-              placeholder="your guess — English or Chinese, either is fine"
+              placeholder="用中文或英文写下你的猜测（your guess — EN or 中文）"
               className="input-base w-full px-3.5 py-2.5 text-sm"
               onKeyDown={(e) => e.key === "Enter" && guess.trim() && setGuessed(true)}
             />
             <div className="flex items-center gap-2">
               <button onClick={() => setGuessed(true)} disabled={!guess.trim()} className={`${btn.primary} px-3 py-1.5 text-[12px]`}>
-                Submit guess →
+                <T en="Submit guess →" zh="提交猜测 →" />
               </button>
               <button onClick={() => setGuessed(true)} className={btn.ghost}>
-                no idea — reveal anyway
+                <T en="no idea — reveal anyway" zh="猜不出 —— 直接揭晓" />
               </button>
             </div>
           </div>
@@ -336,31 +339,31 @@ function WordQuickLook({
           <div className="space-y-2.5">
             {guess.trim() && (
               <p className="rounded-lg bg-black/[0.03] px-3 py-2 text-[12.5px] text-ink-2">
-                <span className="text-ink-3">Your guess:</span> {guess}
+                <span className="text-ink-3"><T en="Your guess:" zh="你的猜测：" /></span> {guess}
               </p>
             )}
             <button onClick={() => setShowEn(true)} className={`${btn.primary} px-3 py-1.5 text-[12px]`}>
-              {loading ? "loading…" : "Show the English meaning"}
+              {loading ? <T en="loading…" zh="加载中…" /> : <T en="Show the English meaning" zh="显示英文释义" />}
             </button>
           </div>
         ) : (
           <div className="space-y-2.5">
             <div>
-              <div className="text-[10.5px] font-semibold uppercase tracking-wide text-ink-3">Contextual meaning</div>
+              <div className="text-[10.5px] font-semibold uppercase tracking-wide text-ink-3"><T en="Contextual meaning" zh="语境含义" /></div>
               <p className="text-[13.5px] leading-relaxed text-ink">{data?.contextualMeaning ?? "—"}</p>
             </div>
             {guess.trim() && (
               <div className="flex items-center gap-2 text-[12px]">
-                <span className="text-ink-3">Was your guess close?</span>
+                <span className="text-ink-3"><T en="Was your guess close?" zh="猜得接近吗？" /></span>
                 <button onClick={() => toast("Close guesses mean strong context skills — that's the skill", "success")} className="press rounded-md bg-[#34c759]/15 px-2 py-0.5 font-medium text-[#1e7d34]">
-                  ✓ close
+                  <T en="✓ close" zh="✓ 接近" />
                 </button>
                 <button onClick={() => toast("Noted — this word goes in with a fresh tag", "warn")} className="press rounded-md bg-[#ff9f0a]/15 px-2 py-0.5 font-medium text-[#a06400]">
-                  ✗ not really
+                  <T en="✗ not really" zh="✗ 不太对" />
                 </button>
               </div>
             )}
-            <Fold title="Example & collocations">
+            <Fold title="Example & collocations 例句与搭配">
               <p className="text-[13px] text-ink-2">{data?.example}</p>
               {data && data.collocations.length > 0 && (
                 <div className="mt-2 flex flex-wrap gap-1.5">
@@ -409,7 +412,7 @@ function WordQuickLook({
                 )
               )}
               {saved ? (
-                <span className="text-[12px] font-medium text-[#1e7d34]">✓ In your vocabulary</span>
+                <span className="text-[12px] font-medium text-[#1e7d34]">✓ 已在词汇库</span>
               ) : (
                 <button
                   disabled={pending}
@@ -422,7 +425,7 @@ function WordQuickLook({
                   }
                   className={`${btn.secondary} px-3 py-1.5 text-[12px]`}
                 >
-                  {pending ? "Saving…" : "+ Save to vocabulary"}
+                  {pending ? <T en="Saving…" zh="保存中…" /> : <T en="+ Save to vocabulary" zh="+ 存入词汇库" />}
                 </button>
               )}
             </div>
@@ -461,14 +464,16 @@ function ChunkGuessPanel({ chunk }: { chunk: RailTarget }) {
       {!revealed ? (
         <div className="space-y-2.5">
           <p className="text-[13.5px] font-medium text-ink">
-            From the sentence above — what do you think <span className="font-semibold text-[#0068d0]">“{chunk.text}”</span> means
-            and why is it used here?
+            <T
+              en={<>From the sentence above — what do you think <span className="font-semibold text-[#0068d0]">“{chunk.text}”</span> means and why is it used here?</>}
+              zh={<>结合上面的句子——你觉得 <span className="font-semibold text-[#0068d0]">“{chunk.text}”</span> 是什么意思？为什么这里用它？</>}
+            />
           </p>
           <textarea
             value={guess}
             onChange={(e) => setGuess(e.target.value)}
             rows={3}
-            placeholder="Your guess: meaning + when a native speaker would use it…"
+            placeholder="写下你的猜测：意思 + 什么场合会用到它（中文或英文）"
             className="w-full resize-none rounded-xl border-0 bg-black/[0.04] px-3.5 py-2.5 text-sm text-ink outline-none placeholder:text-ink-3 focus:bg-white focus:shadow-[0_0_0_2px_#0071e3]"
           />
           <div className="flex items-center gap-2">
@@ -479,10 +484,10 @@ function ChunkGuessPanel({ chunk }: { chunk: RailTarget }) {
               }}
               className={`${btn.primary} px-3.5 py-2 text-[12.5px]`}
             >
-              Submit guess → reveal analysis
+              <T en="Submit guess → reveal analysis" zh="提交猜测 → 揭晓分析" />
             </button>
             <button onClick={() => setRevealed(true)} className={btn.ghost}>
-              reveal without guessing
+              <T en="reveal without guessing" zh="不猜了，直接揭晓" />
             </button>
           </div>
         </div>
@@ -490,7 +495,7 @@ function ChunkGuessPanel({ chunk }: { chunk: RailTarget }) {
         <div className="space-y-4">
           {guess.trim() && (
             <div className="rounded-xl bg-black/[0.03] px-4 py-2.5 text-[12.5px] text-ink-2">
-              <span className="text-ink-3">Your guess:</span> {guess}
+              <span className="text-ink-3"><T en="Your guess:" zh="你的猜测：" /></span> {guess}
             </div>
           )}
           <div className="rounded-xl bg-[#34c759]/[0.08] px-4 py-3">
@@ -520,7 +525,7 @@ function SentencePanel({ sentence }: { sentence: { id: number; text: string } })
       .catch(() => setError(true));
   }, [sentence.id]);
 
-  if (error) return <p className="text-sm text-ink-2">Analysis failed — try again.</p>;
+  if (error) return <p className="text-sm text-ink-2">分析失败 —— 请重试。Analysis failed.</p>;
   if (!data) return <AnalysisSkeleton />;
   return (
     <div>

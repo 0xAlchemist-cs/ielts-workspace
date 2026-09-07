@@ -35,6 +35,23 @@ interface AnalysisResult {
 type Tab = "library" | "add";
 type FilterType = "all" | "reading" | "listening";
 
+/* Persona: weak-English reader — topic chips carry a Chinese twin. */
+const TOPIC_ZH: Record<string, string> = {
+  education: "教育",
+  environment: "环境",
+  technology: "科技",
+  health: "健康",
+  society: "社会",
+  "work & career": "职场",
+  "business & economy": "商业经济",
+  "science & nature": "科学自然",
+  "culture & history": "文化历史",
+  travel: "旅行",
+  "daily life": "日常生活",
+  writing: "写作素材",
+  general: "综合",
+};
+
 export function LibraryView({ contents }: { contents: Item[] }) {
   const [tab, setTab] = useState<Tab>("library");
   const [filter, setFilter] = useState<FilterType>("all");
@@ -87,7 +104,7 @@ export function LibraryView({ contents }: { contents: Item[] }) {
                 <button key={t} onClick={() => setTopic(t)}
                   className={`press rounded-lg px-2.5 py-1 text-[12px] font-medium transition-colors ${
                     topic === t ? "chip-on" : "chip"
-                  }`}>{t === "all" ? "All topics" : t}</button>
+                  }`}>{t === "all" ? "All topics 全部" : `${t}${TOPIC_ZH[t] ? ` ${TOPIC_ZH[t]}` : ""}`}</button>
               ))}
             </div>
           </div>
@@ -229,7 +246,7 @@ function AddContentPanel({ onImported }: { onImported: (id: number) => void }) {
                 </div>
               ))}
             </div>
-            <p className="text-[13px] leading-relaxed text-ink-2"><b className="text-ink">Main idea:</b> {analysis.mainIdea.slice(0, 200)}</p>
+            <p className="text-[13px] leading-relaxed text-ink-2"><b className="text-ink"><T en="Main idea:" zh="主旨：" /></b> {analysis.mainIdea.slice(0, 200)}</p>
           </div>
 
           <div className="card-specular rounded-2xl bg-white p-6">

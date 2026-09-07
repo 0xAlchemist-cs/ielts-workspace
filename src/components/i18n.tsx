@@ -24,15 +24,16 @@ export function useBilingual(): boolean {
  *  The zh span INHERITS the parent colour (white on blue banners, ink on cards)
  *  at reduced opacity — never hardcode a grey, or it clashes on tinted surfaces.
  *  `stack` renders zh as a second line instead of inline — for narrow chips
- *  where "Retrieve 提取" would otherwise truncate. */
+ *  where "Retrieve 提取" would otherwise truncate.
+ *  en/zh accept ReactNode so a highlighted word can sit inside the sentence. */
 export function T({
   en,
   zh,
   className,
   stack,
 }: {
-  en: string;
-  zh?: string;
+  en: ReactNode;
+  zh?: ReactNode;
   className?: string;
   stack?: boolean;
 }) {

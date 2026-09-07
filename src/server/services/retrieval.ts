@@ -20,7 +20,7 @@ import { logChunkEvent, markChunkActivated } from "@/server/services/events";
 
 const DAY = 86_400_000;
 
-function escapeRe(s: string): string {
+export function escapeRe(s: string): string {
   return s.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
 }
 
