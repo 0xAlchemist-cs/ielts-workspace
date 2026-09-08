@@ -107,7 +107,7 @@ export function ExternalCoachView({
                   <span className="text-[11.5px] italic text-ink-3">"{s.struggledWith.slice(0, 50)}"</span>
                 )}
                 <span className="ml-auto font-mono text-[10.5px] text-ink-3">
-                  {new Date(s.createdAt).toLocaleDateString()}
+                  {new Date(s.createdAt).toLocaleDateString("en-US")}
                 </span>
               </div>
             ))}

@@ -18,7 +18,7 @@ export const metadata: Metadata = {
 export default async function RootLayout({ children }: { children: React.ReactNode }) {
   const cu = await getCurrentUser();
   return (
-    <html lang="en" className="h-full antialiased">
+    <html lang="en" className="h-full antialiased" data-scroll-behavior="smooth">
       <body className="min-h-full">
         {/* set theme class before first paint — no flash of wrong mode */}
         <script dangerouslySetInnerHTML={{ __html: THEME_SCRIPT }} />

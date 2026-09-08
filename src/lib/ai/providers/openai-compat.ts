@@ -13,17 +13,11 @@ import {
   tutorSchema,
   wordSchema,
   writingSchema,
+  drillSchema,
+  DRILL_PROMPT,
 } from "@/lib/ai/tasks";
 import type { AIProvider } from "@/lib/ai/provider";
-import type {
-  ParaphraseFeedback,
-  RetrievalGrade,
-  SentenceAnalysis,
-  SpeakingFeedback,
-  TutorReply,
-  WordAnalysis,
-  WritingFeedback,
-} from "@/lib/types";
+import type { DrillSet, ParaphraseFeedback, RetrievalGrade, SentenceAnalysis, SpeakingFeedback, TutorReply, WordAnalysis, WritingFeedback } from "@/lib/types";
 
 type TaskName =
   | "word"
@@ -32,7 +26,8 @@ type TaskName =
   | "speaking"
   | "writing"
   | "paraphrase"
-  | "tutor";
+  | "tutor"
+  | "drills";
 
 const PROMPTS: Record<TaskName, string> = {
   word: WORD_PROMPT,
@@ -42,6 +37,7 @@ const PROMPTS: Record<TaskName, string> = {
   writing: WRITING_PROMPT,
   paraphrase: PARAPHRASE_PROMPT,
   tutor: TUTOR_PROMPT,
+  drills: DRILL_PROMPT,
 };
 
 /** Long-JSON tasks (sentence 8-dim, full essay marking) regularly exceed the
@@ -158,5 +154,10 @@ export class OpenAICompatProvider implements AIProvider {
       await this.chatJSON("tutor", { history: input.history, goal: input.goal }),
     );
     return { ...raw, isMock: false };
+  }
+
+  async drills(input: Parameters<NonNullable<AIProvider["drills"]>>[0]): Promise<DrillSet> {
+    const raw = drillSchema.parse(await this.chatJSON("drills", input));
+    return { items: raw.items, isMock: false };
   }
 }

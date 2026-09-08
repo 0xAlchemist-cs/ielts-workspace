@@ -45,7 +45,7 @@ export function LabForm({
   };
 
   return (
-    <div>
+    <div className="shell-wide">
       <AiNudge aiLive={!!aiLive} />
 
       <header className="mb-6">

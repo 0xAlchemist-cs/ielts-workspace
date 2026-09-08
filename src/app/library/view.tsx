@@ -56,15 +56,20 @@ export function LibraryView({ contents }: { contents: Item[] }) {
   const [tab, setTab] = useState<Tab>("library");
   const [filter, setFilter] = useState<FilterType>("all");
   const [topic, setTopic] = useState("all");
+  // the bank holds hundreds of items — render progressively instead of one
+  // giant list; reset whenever the visible set changes
+  const PAGE = 24;
+  const [limit, setLimit] = useState(PAGE);
   const topics = [...new Set(contents.map((c) => c.topic))];
   const router = useRouter();
 
   const rows = contents.filter(
     (c) => (filter === "all" || c.type === filter) && (topic === "all" || c.topic === topic),
   );
+  const visible = rows.slice(0, limit);
 
   return (
-    <div>
+    <div className="shell-wide">
       <header className="mb-6 flex flex-wrap items-end justify-between gap-3">
         <div>
           <h1 className="text-display">
@@ -92,7 +97,7 @@ export function LibraryView({ contents }: { contents: Item[] }) {
           <div className="mb-4 flex flex-wrap items-center gap-3">
             <Segmented<FilterType>
               value={filter}
-              onChange={setFilter}
+              onChange={(f) => { setFilter(f); setLimit(PAGE); }}
               options={[
                 { value: "all", label: "All" },
                 { value: "reading", label: "📖 Reading" },
@@ -101,18 +106,19 @@ export function LibraryView({ contents }: { contents: Item[] }) {
             />
             <div className="flex flex-wrap gap-1.5">
               {["all", ...topics].map((t) => (
-                <button key={t} onClick={() => setTopic(t)}
+                <button key={t} onClick={() => { setTopic(t); setLimit(PAGE); }}
                   className={`press rounded-lg px-2.5 py-1 text-[12px] font-medium transition-colors ${
                     topic === t ? "chip-on" : "chip"
                   }`}>{t === "all" ? "All topics 全部" : `${t}${TOPIC_ZH[t] ? ` ${TOPIC_ZH[t]}` : ""}`}</button>
               ))}
             </div>
+            <span className="ml-auto text-[12px] text-ink-3">{rows.length} items</span>
           </div>
 
           <div className="stagger grid gap-3">
-            {rows.map((c) => (
+            {visible.map((c) => (
               <Link key={c.id} href={c.type === "reading" ? `/read/${c.id}` : `/listen/${c.id}`}
-                className="press card-specular card-lift group flex items-start gap-4 rounded-2xl bg-white p-5">
+                className="press card-specular card-lift group flex items-start gap-4 rounded-2xl bg-surface p-5">
                 <div className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-xl ${
                   c.type === "reading" ? "bg-[#0071e3]/10" : "bg-[#af52de]/10"
                 }`}>
@@ -139,6 +145,18 @@ export function LibraryView({ contents }: { contents: Item[] }) {
               </Link>
             ))}
           </div>
+
+          {rows.length === 0 && (
+            <div className="card-specular rounded-2xl bg-surface px-6 py-10 text-center text-[13px] text-ink-2">
+              <T en="Nothing matches these filters — try another topic." zh="没有匹配的内容——换个主题试试。" />
+            </div>
+          )}
+
+          {visible.length < rows.length && (
+            <button onClick={() => setLimit((l) => l + PAGE)} className={`${btn.secondary} mx-auto`}>
+              <T en={`Show more (${rows.length - visible.length} left)`} zh={`显示更多（还有 ${rows.length - visible.length} 条）`} />
+            </button>
+          )}
         </>
       )}
 
@@ -197,7 +215,7 @@ function AddContentPanel({ onImported }: { onImported: (id: number) => void }) {
 
   return (
     <div className="space-y-5">
-      <div className="card-specular rounded-2xl bg-white p-6">
+      <div className="card-specular rounded-2xl bg-surface p-6">
         <h3 className="mb-1 text-[15px] font-semibold tracking-[-0.015em] text-ink">
           <T en="Paste any English text" zh="粘贴任意英文文章" />
         </h3>
@@ -230,7 +248,7 @@ function AddContentPanel({ onImported }: { onImported: (id: number) => void }) {
 
       {analysis && (
         <div className="enter space-y-4">
-          <div className="card-specular rounded-2xl bg-white p-6">
+          <div className="card-specular rounded-2xl bg-surface p-6">
             <div className="mb-4 grid grid-cols-3 gap-3 sm:grid-cols-6">
               {[
                 [analysis.cefr, "CEFR", "等级"],
@@ -249,7 +267,7 @@ function AddContentPanel({ onImported }: { onImported: (id: number) => void }) {
             <p className="text-[13px] leading-relaxed text-ink-2"><b className="text-ink"><T en="Main idea:" zh="主旨：" /></b> {analysis.mainIdea.slice(0, 200)}</p>
           </div>
 
-          <div className="card-specular rounded-2xl bg-white p-6">
+          <div className="card-specular rounded-2xl bg-surface p-6">
             <h4 className="mb-1 text-[14px] font-semibold text-ink">
               🎯 <T en="Recommended LanguageItems" zh="推荐语言项" />
             </h4>
@@ -258,7 +276,7 @@ function AddContentPanel({ onImported }: { onImported: (id: number) => void }) {
             </p>
             <div className="space-y-3">
               {analysis.recommended.map((rec, i) => (
-                <div key={i} className="rounded-xl border border-black/[0.06] bg-white px-4 py-3">
+                <div key={i} className="rounded-xl border border-black/[0.06] bg-surface px-4 py-3">
                   <div className="flex flex-wrap items-center gap-2">
                     <Badge tone={rec.type === "chunk" ? "accent" : rec.type === "sentence_pattern" ? "purple" : "neutral"}>
                       {rec.type.replace("_", " ")}
@@ -274,7 +292,7 @@ function AddContentPanel({ onImported }: { onImported: (id: number) => void }) {
             </div>
           </div>
 
-          <div className="card-specular rounded-2xl bg-white p-6">
+          <div className="card-specular rounded-2xl bg-surface p-6">
             <h4 className="mb-2 text-[14px] font-semibold text-ink">
               📝 <T en="Comprehension Check (preview)" zh="理解检验（预览）" />
             </h4>

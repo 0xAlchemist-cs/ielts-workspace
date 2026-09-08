@@ -152,6 +152,8 @@ export function buildWordAnalysis(
   return {
     word: lookup.matchedForm,
     contextualMeaning: contextual,
+    grammar: "(from ECDICT) connect a live AI provider for grammar behaviour — what structure follows, who can be the subject.",
+    registerNote: "(from ECDICT) connect a live AI provider for the register ladder (formality, near-synonyms).",
     simpleDefinition: definitionEn || glossary?.meaningEn || "—",
     example: glossary?.example ?? (definitionEn ? `e.g. usage of “${entry.word}” — connect a live AI provider for a fresh example sentence.` : "—"),
     collocations: glossary?.collocations ?? [],

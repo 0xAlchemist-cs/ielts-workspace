@@ -84,7 +84,7 @@ export function SpeakingLab({
               >
                 <span className="min-w-0 truncate text-ink-2">{h.prompt}</span>
                 <span className="shrink-0 font-mono text-[12px] text-ink-3">
-                  {new Date(h.date).toLocaleDateString()}
+                  {new Date(h.date).toLocaleDateString("en-US")}
                 </span>
               </div>
             ))}

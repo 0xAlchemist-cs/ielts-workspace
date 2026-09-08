@@ -222,7 +222,19 @@ export async function evaluateAttempt(input: {
     for (let i = 0; i < total; i++) {
       const q = task.questions[i];
       const userAnswer = String(responses[String(i)] ?? "");
-      const isCorrect = userAnswer.toLowerCase().trim() === q.answer.toLowerCase().trim();
+      // tolerant compare: case/whitespace-insensitive; completion answers may carry
+      // currency/parenthetical decoration ("(£) 115", "24(th) April", "2,020 kilometres")
+      // and accepted variants (listening bank gold pages list slash alternatives)
+      const norm = (s: string) =>
+        s
+          .toLowerCase()
+          .replace(/(\d),(\d)/g, "$1$2")
+          .replace(/[^a-z0-9 ]+/g, " ")
+          .replace(/\s+/g, " ")
+          .trim();
+      const acceptable: string[] = Array.isArray(q.acceptable) ? q.acceptable : [];
+      const isCorrect =
+        norm(userAnswer) === norm(q.answer) || acceptable.some((a) => norm(a) === norm(userAnswer));
       if (isCorrect) correct++;
       subSkillResults.push({
         skill: q.subSkill,
@@ -269,6 +281,12 @@ export async function evaluateAttempt(input: {
   for (const r of subSkillResults) {
     if (!r.correct) {
       if (r.skill === "overall") continue; // band estimate ≠ a language error
+      // A wrong objective answer is a question miss, not a language error —
+      // the review system already re-surfaces missed questions.
+      if (r.note.startsWith("Expected:")) {
+        strategyIssues.push(`${r.skill}: ${r.note}`);
+        continue;
+      }
       if (r.skill.includes("paraphrase") || r.skill.includes("vocabulary")) {
         languageErrors.push(`${r.skill}: ${r.note}`);
       } else if (r.skill.includes("inference") || r.skill.includes("distractor")) {

@@ -4,6 +4,7 @@ import type { AIProvider } from "@/lib/ai/provider";
 import { mockProvider } from "@/lib/ai/providers/mock";
 import { OpenAICompatProvider } from "@/lib/ai/providers/openai-compat";
 import type {
+  DrillSet,
   ParaphraseFeedback,
   RetrievalGrade,
   SentenceAnalysis,
@@ -12,6 +13,7 @@ import type {
   WordAnalysis,
   WritingFeedback,
 } from "@/lib/types";
+import { mockDrills } from "@/lib/ai/mock-drills";
 
 /** Live provider with automatic mock fallback: config errors, network errors
  *  and schema mismatches all degrade gracefully to offline behaviour. */
@@ -33,6 +35,9 @@ class FallbackProvider implements AIProvider {
 
   word(i: Parameters<AIProvider["word"]>[0]): Promise<WordAnalysis> {
     return this.run(() => this.live.word(i), () => mockProvider.word(i));
+  }
+  drills(i: Parameters<NonNullable<AIProvider["drills"]>>[0]): Promise<DrillSet> {
+    return this.run(() => this.live.drills!(i), () => Promise.resolve(mockDrills(i)));
   }
   sentence(i: Parameters<AIProvider["sentence"]>[0]): Promise<SentenceAnalysis> {
     return this.run(() => this.live.sentence(i), () => mockProvider.sentence(i));

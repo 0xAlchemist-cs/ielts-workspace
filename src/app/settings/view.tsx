@@ -297,6 +297,14 @@ export function SettingsView({
 
   return (
     <div className="mx-auto max-w-2xl space-y-6">
+      <header>
+        <h1 className="text-display">
+          <T en="Settings" zh="设置" />
+        </h1>
+        <p className="mt-1.5 text-[13px] text-ink-2">
+          <T en="Tune the workspace to your habits." zh="按你的习惯调整工作台。" />
+        </p>
+      </header>
       <section className="card-specular rounded-card bg-surface">
         <div className="border-b border-line px-6 py-4">
           <span className="t-overline">

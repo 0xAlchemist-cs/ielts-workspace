@@ -2,13 +2,14 @@
 
 import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
-import { ArrowRight, Check, ChevronDown, Lightbulb } from "lucide-react";
+import { ArrowRight, Check, ChevronDown, Clock, Lightbulb } from "lucide-react";
 import { markStepAction, saveCustomChunkAction } from "@/app/actions";
 import { MockBadge, btn } from "@/components/ui";
 import { ChineseReveal } from "@/components/learn";
-import { Segmented, toast } from "@/components/motion";
+import { ElapsedWait, Segmented, toast } from "@/components/motion";
 import { T, useBilingual } from "@/components/i18n";
 import { AiNudge } from "@/components/ai-nudge";
+import { CHUNK_DETECT } from "@/lib/chunk-detect";
 import type { ParaphraseFeedback, WritingFeedback } from "@/lib/types";
 
 /* ═══════════════════════════════════════════════════════════════════════════
@@ -89,6 +90,31 @@ const TYPE_GUIDE: Record<Exclude<TaskType, "paraphrase">, { en: string[]; zh: st
   },
 };
 
+/* ── Instant local first-pass (zero-latency, no AI) ─────────────────────────
+ * Real signals computed the moment the learner submits; the examiner's deep
+ * feedback lands later on top of them. */
+interface InstantCheck {
+  words: number;
+  target: number;
+  sentences: number;
+  avgLen: number;
+  used: string[];
+  unused: string[];
+  total: number;
+}
+
+function computeInstant(content: string, focusTexts: string[], target: number): InstantCheck {
+  const words = content.split(/\s+/).filter(Boolean).length;
+  const sentences = Math.max(1, (content.match(/[.!?]+/g) ?? []).length);
+  const used: string[] = [];
+  const unused: string[] = [];
+  for (const t of focusTexts) {
+    const hit = CHUNK_DETECT[t] ? CHUNK_DETECT[t].test(content) : content.toLowerCase().includes(t.toLowerCase());
+    (hit ? used : unused).push(t);
+  }
+  return { words, target, sentences, avgLen: Math.round(words / sentences), used, unused, total: focusTexts.length };
+}
+
 export function WritingLab({
   aiLive,
   tasks,
@@ -102,6 +128,13 @@ export function WritingLab({
 }) {
   const [taskType, setTaskType] = useState<TaskType>("task2");
   const [stage, setStage] = useState<Stage>("task");
+  // session timer — IELTS gives Task 2 forty minutes; awareness beats panic
+  const [seconds, setSeconds] = useState(0);
+  useEffect(() => {
+    const t = setInterval(() => setSeconds((s) => s + 1), 1000);
+    return () => clearInterval(t);
+  }, []);
+  const mmss = `${String(Math.floor(seconds / 60)).padStart(2, "0")}:${String(seconds % 60).padStart(2, "0")}`;
 
   const bilingual = useBilingual();
 
@@ -112,7 +145,7 @@ export function WritingLab({
 
   if (taskType === "paraphrase") {
     return (
-      <div>
+      <div className="shell-wide">
         <AiNudge aiLive={!!aiLive} />
         <LabHeader />
         <TypeSelector taskType={taskType} onChange={switchType} />
@@ -127,43 +160,49 @@ export function WritingLab({
       <LabHeader />
       <TypeSelector taskType={taskType} onChange={switchType} />
 
-      {/* stage journey */}
-      <div className="mt-8 flex items-center">
-        {STAGES.map((s, i) => {
-          const si = STAGES.findIndex((x) => x.key === stage);
-          const state = i < si ? "done" : i === si ? "current" : "todo";
-          return (
-            <span key={s.key} className="flex flex-1 items-center last:flex-none">
-              <button
-                type="button"
-                disabled={state === "todo"}
-                onClick={() => state !== "todo" && setStage(s.key)}
-                className={`group flex flex-col items-center gap-1.5 ${state === "todo" ? "cursor-default" : "cursor-pointer"}`}
-              >
-                <span
-                  className={`flex h-[18px] w-[18px] items-center justify-center rounded-full transition-colors duration-150 ${
-                    state === "done"
-                      ? "bg-accent"
-                      : state === "current"
-                        ? "bg-accent shadow-[0_0_0_4px_var(--accent-quiet)]"
-                        : "border border-line-strong"
-                  }`}
+      {/* sticky stage journey + session timer (same session-bar pattern as Reading) */}
+      <div className="material-header sticky top-[64px] z-20 -mx-4 mb-6 mt-6 flex items-center gap-3 overflow-x-auto border-b border-line px-4 py-2.5 sm:-mx-7 sm:px-7">
+        <div className="flex min-w-max items-center">
+          {STAGES.map((s, i) => {
+            const si = STAGES.findIndex((x) => x.key === stage);
+            const state = i < si ? "done" : i === si ? "current" : "todo";
+            return (
+              <span key={s.key} className="flex flex-1 items-center last:flex-none">
+                <button
+                  type="button"
+                  disabled={state === "todo"}
+                  onClick={() => state !== "todo" && setStage(s.key)}
+                  className={`group flex flex-col items-center gap-1.5 ${state === "todo" ? "cursor-default" : "cursor-pointer"}`}
                 >
-                  {state === "done" && <Check size={10} strokeWidth={3} className="text-white" />}
-                  {state === "current" && <span className="h-[5px] w-[5px] rounded-full bg-white" />}
-                </span>
-                <span
-                  className={`whitespace-nowrap text-[12px] sm:text-[12px] ${
-                    state === "current" ? "font-medium text-ink" : state === "done" ? "text-ink-2" : "text-ink-3/70"
-                  }`}
-                >
-                  <T en={s.en} zh={s.zh} />
-                </span>
-              </button>
-              {i < STAGES.length - 1 && <span className={`mx-1 h-px flex-1 sm:mx-2 ${state === "done" ? "bg-accent/30" : "bg-line"}`} />}
-            </span>
-          );
-        })}
+                  <span
+                    className={`flex h-[18px] w-[18px] items-center justify-center rounded-full transition-colors duration-150 ${
+                      state === "done"
+                        ? "bg-accent"
+                        : state === "current"
+                          ? "bg-accent shadow-[0_0_0_4px_var(--accent-quiet)]"
+                          : "border border-line-strong"
+                    }`}
+                  >
+                    {state === "done" && <Check size={10} strokeWidth={3} className="text-white" />}
+                    {state === "current" && <span className="h-[5px] w-[5px] rounded-full bg-white" />}
+                  </span>
+                  <span
+                    className={`whitespace-nowrap text-[12px] sm:text-[12px] ${
+                      state === "current" ? "font-medium text-ink" : state === "done" ? "text-ink-2" : "text-ink-3/70"
+                    }`}
+                  >
+                    <T en={s.en} zh={s.zh} />
+                  </span>
+                </button>
+                {i < STAGES.length - 1 && <span className={`mx-1 h-px flex-1 sm:mx-2 ${state === "done" ? "bg-accent/30" : "bg-line"}`} />}
+              </span>
+            );
+          })}
+        </div>
+        <span className="ml-auto flex shrink-0 items-center gap-1 font-mono tabular-nums text-ink-3">
+          <Clock size={11} strokeWidth={1.9} />
+          {mmss}
+        </span>
       </div>
 
       <EssayFlow
@@ -184,7 +223,7 @@ export function WritingLab({
 function LabHeader() {
   return (
     <header>
-      <h1 className="text-[28px] font-semibold tracking-[-0.022em] text-ink">
+      <h1 className="text-display">
         <T en="Writing" zh="写作" />
       </h1>
       <p className="mt-1.5 text-[13px] text-ink-2">
@@ -266,6 +305,7 @@ function EssayFlow({
   const [transferUsed, setTransferUsed] = useState<string[] | null>(null);
   const [savedExpr, setSavedExpr] = useState<Set<string>>(new Set());
   const [busy, setBusy] = useState(false);
+  const [instant, setInstant] = useState<InstantCheck | null>(null);
 
   const wordCount = (s: string) => s.trim().split(/\s+/).filter(Boolean).length;
   const targetWords = TYPE_TITLE[taskType].words;
@@ -281,6 +321,9 @@ function EssayFlow({
   const submit = async (isRewrite: boolean, overridePrompt?: string, overrideText?: string) => {
     const content = (overrideText ?? (isRewrite ? rewriteText : text)).trim();
     if (!content || busy) return;
+    // zero-latency local first-pass — real signals the learner sees the moment
+    // they submit, while the examiner reads (CHUNK_DETECT + counts, no AI)
+    setInstant(computeInstant(content, focusChunks.map((c) => c.text), targetWords));
     setBusy(true);
     try {
       const res = await fetch("/api/ai/writing", {
@@ -454,6 +497,37 @@ function EssayFlow({
           />
         </div>
 
+        {busy && instant && (
+          <div className="mt-6 rounded-xl bg-surface-2 px-5 py-4">
+            <p className="text-[12px] font-medium uppercase tracking-[0.07em] text-ink-3">
+              <T en="Instant check" zh="即时检查" />
+            </p>
+            <ul className="mt-2 space-y-1 text-[12.5px] text-ink-2">
+              <li>
+                {instant.words}/{instant.target}+ <T en="words" zh="词" />
+                {instant.words >= instant.target ? (
+                  <span className="ml-1.5 text-ok-text">✓</span>
+                ) : (
+                  <span className="ml-1.5">· <T en="below target" zh="未达标" /></span>
+                )}
+                {" · "}
+                {instant.sentences} <T en="sentences" zh="句" /> · <T en="avg" zh="平均" /> {instant.avgLen} <T en="words/sentence" zh="词/句" />
+              </li>
+              {instant.total > 0 && (
+                <li>
+                  <T en="Focus expressions used" zh="焦点表达已用上" /> {instant.used.length}/{instant.total}
+                  {instant.used.length > 0 && <span className="ml-1.5 text-ok-text">✓ {instant.used.join(" · ")}</span>}
+                  {instant.unused.length > 0 && (
+                    <span className="ml-1.5 text-ink-3">
+                      <T en="not yet" zh="未用" />: {instant.unused.join(" · ")}
+                    </span>
+                  )}
+                </li>
+              )}
+            </ul>
+          </div>
+        )}
+
         <div className="mt-6 flex items-center gap-5">
           <button onClick={() => submit(false)} disabled={busy || !text.trim()} className={btn.primary}>
             {busy ? <T en="Evaluating…" zh="评估中…" /> : <T en="Submit for evaluation" zh="提交评估" />}
@@ -462,6 +536,9 @@ function EssayFlow({
           <button onClick={() => setStage("plan")} className="text-[12.5px] font-medium text-ink-3 hover:text-ink">
             <T en="← Plan" zh="← 构思" />
           </button>
+          {busy && (
+            <ElapsedWait en="Examiner reading your essay — usually 40–180 s" zh="考官批改中 — 通常 40–180 秒" />
+          )}
         </div>
       </div>
     );
@@ -733,6 +810,20 @@ function EssayFlow({
           </section>
         )}
 
+        {busy && instant && (
+          <p className="mt-4 text-[12.5px] text-ink-2">
+            <T en="Instant check" zh="即时检查" />: {instant.words}/{instant.target}+ <T en="words" zh="词" />
+            {instant.words >= instant.target ? <span className="ml-1 text-ok-text">✓</span> : null}
+            {instant.total > 0 && (
+              <>
+                {" · "}
+                <T en="focus" zh="焦点表达" /> {instant.used.length}/{instant.total}
+                {instant.used.length > 0 && <span className="ml-1 text-ok-text">✓</span>}
+              </>
+            )}
+          </p>
+        )}
+
         <div className="mt-10 flex items-center gap-5">
           <button onClick={() => submit(true)} disabled={busy || !rewriteText.trim()} className={btn.primary}>
             {busy ? <T en="Re-evaluating…" zh="重新评估中…" /> : <T en="Re-evaluate rewrite" zh="重新评估" />}
@@ -740,6 +831,9 @@ function EssayFlow({
           <button onClick={() => setStage("feedback")} className="text-[12.5px] font-medium text-ink-3 hover:text-ink">
             <T en="← Feedback" zh="← 反馈" />
           </button>
+          {busy && (
+            <ElapsedWait en="Comparing versions — usually 40–180 s" zh="对比两版中 — 通常 40–180 秒" />
+          )}
         </div>
       </div>
     );

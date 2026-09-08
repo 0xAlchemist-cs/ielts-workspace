@@ -4,9 +4,9 @@ import { useEffect, useState, useTransition } from "react";
 import Link from "next/link";
 import { addWordTargetAction, markStepAction, recordExposureAction, saveVocabAction, logEventAction } from "@/app/actions";
 import { Badge, MockBadge, btn } from "@/components/ui";
-import { Drawer, Fold, toast } from "@/components/motion";
-import { ChineseReveal, SaveChunkButton, SentenceAnalysisView } from "@/components/learn";
-import { useImmersion, T } from "@/components/i18n";
+import { Drawer, ElapsedWait, Fold, toast } from "@/components/motion";
+import { ChineseReveal, SentenceAnalysisView } from "@/components/learn";
+import { T } from "@/components/i18n";
 import { AskTutor } from "@/components/ask-tutor";
 import type { SentenceAnalysis, WordAnalysis } from "@/lib/types";
 
@@ -41,113 +41,116 @@ export interface AdHocTarget {
   ieltsQuestion: string;
 }
 
+/** Target expressions to mark inside the article text (id = chunkId). */
+export interface HighlightTarget {
+  id: number;
+  text: string;
+  selected: boolean;
+}
+
+/** Map part-index → hit info for one sentence (first occurrence per target). */
+function targetHitsFor(parts: string[], targets: HighlightTarget[]) {
+  // split(/(\s+)/) interleaves words with whitespace parts — build a
+  // consecutive word subsequence and slide over that, mapping hits back.
+  const partOfWord: number[] = [];
+  const wordSeq: string[] = [];
+  parts.forEach((p, i) => {
+    const w = p.trim() ? p.replace(/[^A-Za-z'’-]/g, "").toLowerCase() : "";
+    if (w) {
+      partOfWord.push(i);
+      wordSeq.push(w);
+    }
+  });
+  const byPart = new Map<number, { hit: { id: number; selected: boolean }; isFirst: boolean }>();
+  for (const t of targets) {
+    let seq = t.text.toLowerCase().replace(/[^a-z'’\s-]/g, " ").split(/\s+/).filter(Boolean);
+    // try the full phrase first; articles often phrase the tail differently
+    // ("keep up with" vs "keep up") so fall back to shorter prefixes (min 2)
+    while (seq.length >= 2) {
+      let hit = false;
+      for (let i = 0; i + seq.length <= wordSeq.length; i++) {
+        if (seq.every((w, k) => wordSeq[i + k] === w)) {
+          const start = partOfWord[i];
+          const end = partOfWord[i + seq.length - 1];
+          for (let p = start; p <= end; p++) {
+            byPart.set(p, { hit: { id: t.id, selected: t.selected }, isFirst: p === start });
+          }
+          hit = true;
+          break;
+        }
+      }
+      if (hit) break;
+      seq = seq.slice(0, -1);
+    }
+  }
+  return byPart;
+}
+
 export function ArticlePhase({
   contentId,
   paragraphs,
   tiers,
   savedVocab,
-  railTargets,
-  selectedIds,
-  onToggleTarget,
   onAddTarget,
+  interactive = true,
+  chunkToOpen,
+  highlightTargets = [],
   children,
 }: {
   contentId: number;
   paragraphs: { id: number; text: string }[][];
   tiers: Record<string, string>;
   savedVocab: string[];
-  railTargets: RailTarget[];
-  selectedIds: Set<number>;
-  onToggleTarget: (id: number) => void;
   onAddTarget?: (t: AdHocTarget) => void;
+  /** read phase = full word interaction; study+ keeps the article visible but quiet */
+  interactive?: boolean;
+  /** rail (lab-level panel) asks to open a chunk's guess drawer */
+  chunkToOpen?: RailTarget | null;
+  /** session targets marked in-text: selected ones get the accent underline */
+  highlightTargets?: HighlightTarget[];
   children?: React.ReactNode; // slot after the article (CTA etc.)
 }) {
-  const immersion = useImmersion();
   const [savedWords, setSavedWords] = useState<Set<string>>(new Set(savedVocab));
-  const [wordCard, setWordCard] = useState<{ word: string; sentence: string } | null>(null);
+  const [wordCard, setWordCard] = useState<{ word: string; sentence: string; rect: DOMRect } | null>(null);
   const [drawerSentence, setDrawerSentence] = useState<{ id: number; text: string } | null>(null);
   const [drawerChunk, setDrawerChunk] = useState<RailTarget | null>(null);
   const [tutorOpen, setTutorOpen] = useState(false);
   const [tutorQuestion, setTutorQuestion] = useState("");
+
+  // the rail lives in the lab-level panel and requests this drawer via prop.
+  // Consumed during render, identity-guarded — the lab passes a fresh object
+  // per rail click, so the same chunk can be re-opened later.
+  const [syncedChunk, setSyncedChunk] = useState<RailTarget | null>(null);
+  if (chunkToOpen && chunkToOpen !== syncedChunk) {
+    setSyncedChunk(chunkToOpen);
+    setDrawerChunk(chunkToOpen);
+  }
 
   useEffect(() => {
     recordExposureAction(contentId);
   }, [contentId]);
 
   return (
-    <div className="flex gap-8">
-      <article className="reader-text min-w-0 max-w-[42rem] flex-1">
+    <div>
+      <article className="reader-text min-w-0 max-w-[42rem]">
         {paragraphs.map((para, pi) => (
           <p key={pi} className="mb-5">
             {para.map((s) => (
-              <SentenceSpan
-                key={s.id}
-                sentence={s}
-                tiers={tiers}
-                savedWords={savedWords}
-                onWordClick={(word) => setWordCard({ word, sentence: s.text })}
-                onAnalyze={() => setDrawerSentence(s)}
-              />
+            <SentenceSpan
+              key={s.id}
+              sentence={s}
+              tiers={tiers}
+              savedWords={savedWords}
+              interactive={interactive}
+              highlightTargets={highlightTargets}
+              onWordClick={(word, rect) => setWordCard({ word, sentence: s.text, rect })}
+              onAnalyze={() => setDrawerSentence(s)}
+            />
             ))}
           </p>
         ))}
         {children}
       </article>
-
-      <aside className="hidden w-[276px] shrink-0 lg:block">
-        <div className="sticky top-[108px] rounded-2xl bg-white p-4 shadow-[0_0_0_0.5px_rgba(0,0,0,0.06),0_2px_8px_rgba(0,0,0,0.04)]">
-          <div className="mb-1 text-[12px] font-semibold uppercase tracking-[0.05em] text-ink-2">
-            Today's targets · 今日靶表达
-          </div>
-          <p className="mb-3 text-[12px] leading-relaxed text-ink-3">
-            {immersion <= 1
-              ? "勾选 3–5 个进入精研环节。阅读时它们会高亮显示。"
-              : "Select 3–5 for the study session. They highlight while you read."}
-          </p>
-          <div className="space-y-2.5">
-            {railTargets.length === 0 && (
-              <div className="rounded-xl bg-surface-2 px-3 py-3 text-[12px] leading-relaxed text-ink-2">
-                <T
-                  en="No pre-set targets for this article. Tap any word → guess its meaning → “Add to today's targets”."
-                  zh="这篇文章没有预置靶表达。点击文中任意单词 → 猜词义 → 「加入今日靶表达」。"
-                />
-              </div>
-            )}
-            {railTargets.map((c) => {
-              const selected = selectedIds.has(c.chunkId);
-              return (
-                <div
-                  key={c.chunkId}
-                  className={`rounded-xl px-3 py-2.5 transition-colors duration-150 ${
-                    selected ? "bg-[#0071e3]/[0.07]" : "bg-black/[0.03]"
-                  }`}
-                >
-                  <label className="flex cursor-pointer items-start gap-2.5">
-                    <input
-                      type="checkbox"
-                      checked={selected}
-                      onChange={() => onToggleTarget(c.chunkId)}
-                      className="mt-0.5 h-4 w-4 shrink-0 accent-[#0071e3]"
-                    />
-                    <button
-                      onClick={() => setDrawerChunk(c)}
-                      className="press text-left text-[13px] font-semibold text-ink hover:text-[#0068d0]"
-                    >
-                      {c.text}
-                    </button>
-                  </label>
-                  <p className="mt-1 line-clamp-2 pl-6.5 text-[12px] leading-relaxed text-ink-2" style={{ paddingLeft: 26 }}>
-                    {c.meaningEn}
-                  </p>
-                  <div className="mt-1.5 pl-6.5" style={{ paddingLeft: 26 }}>
-                    <SaveChunkButton chunkId={c.corpusId ?? c.chunkId} label={c.text} alreadySaved={c.saved} />
-                  </div>
-                </div>
-              );
-            })}
-          </div>
-        </div>
-      </aside>
 
       <WordQuickLook
         key={wordCard?.word}
@@ -203,16 +206,21 @@ function SentenceSpan({
   sentence,
   tiers,
   savedWords,
+  interactive,
+  highlightTargets,
   onWordClick,
   onAnalyze,
 }: {
   sentence: { id: number; text: string };
   tiers: Record<string, string>;
   savedWords: Set<string>;
-  onWordClick: (word: string) => void;
+  interactive: boolean;
+  highlightTargets: HighlightTarget[];
+  onWordClick: (word: string, rect: DOMRect) => void;
   onAnalyze: () => void;
 }) {
   const parts = sentence.text.split(/(\s+)/);
+  const hits = targetHitsFor(parts, highlightTargets);
   return (
     <span className="sentence group/s relative inline">
       {parts.map((part, i) => {
@@ -222,15 +230,30 @@ function SentenceSpan({
         const key = word.toLowerCase();
         const tier = tiers[key] ?? "core";
         const saved = savedWords.has(key);
-        const cls = saved
-          ? "word word-saved"
-          : tier === "advanced"
-            ? "word word-advanced"
-            : tier === "rare"
-              ? "word word-rare"
-              : "word";
+        // read-only phases keep the tier tint but drop the tap affordance
+        const cls = !interactive
+          ? "word-readonly"
+          : saved
+            ? "word word-saved"
+            : tier === "advanced"
+              ? "word word-advanced"
+              : tier === "rare"
+                ? "word word-rare"
+                : "word";
+        // in-text target mark rides on top of the tier class
+        const hit = hits.get(i);
+        const mark = hit ? (hit.hit.selected ? " word-target-on" : " word-target") : "";
         return (
-          <span key={i} className={cls} onClick={() => onWordClick(word)}>
+          <span
+            key={i}
+            className={cls + mark}
+            data-t={hit?.isFirst ? hit.hit.id : undefined}
+            onClick={
+              interactive
+                ? (e) => onWordClick(word, (e.target as HTMLElement).getBoundingClientRect())
+                : undefined
+            }
+          >
             {part}
           </span>
         );
@@ -257,13 +280,30 @@ function WordQuickLook({
   onAddTarget,
   onClose,
 }: {
-  card: { word: string; sentence: string } | null;
+  card: { word: string; sentence: string; rect: DOMRect } | null;
   contentId: number;
   savedWords: Set<string>;
   onSaved: (w: string) => void;
   onAddTarget?: (t: AdHocTarget) => void;
   onClose: () => void;
 }) {
+  const [isDesktop, setIsDesktop] = useState(true);
+  useEffect(() => {
+    const mq = window.matchMedia("(min-width: 1024px)");
+    const update = () => setIsDesktop(mq.matches);
+    update();
+    mq.addEventListener("change", update);
+    return () => mq.removeEventListener("change", update);
+  }, []);
+  // Esc closes — matching the esc hint chip
+  useEffect(() => {
+    if (!card) return;
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") onClose();
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [card, onClose]);
   const [data, setData] = useState<WordAnalysis | null>(null);
   const [loading, setLoading] = useState(true);
   const [guess, setGuess] = useState("");
@@ -292,9 +332,26 @@ function WordQuickLook({
   if (!card) return null;
   const saved = savedWords.has(card.word.toLowerCase());
 
+  // desktop popover: anchored under the tapped word, clamped to the viewport
+  const rect = card.rect;
+  const POP_W = 420;
+  const left = Math.min(Math.max(12, rect.left + rect.width / 2 - POP_W / 2), window.innerWidth - POP_W - 12);
+  const below = rect.bottom + 10;
+  const estimatedH = 320;
+  const flipUp = below + estimatedH > window.innerHeight;
+  const top = flipUp ? Math.max(12, rect.top - estimatedH - 10) : below;
+
   return (
-    <div className="fixed inset-x-0 bottom-5 z-40 flex justify-center px-4" onClick={onClose}>
-      <div className="material-panel enter w-full max-w-lg rounded-2xl px-5 py-4" onClick={(e) => e.stopPropagation()}>
+    <div className="fixed inset-0 z-40" onClick={onClose}>
+      <div
+        className={
+          isDesktop
+            ? "material-panel enter absolute w-[420px] max-w-[calc(100vw-24px)] rounded-2xl px-5 py-4 shadow-pop"
+            : "material-panel enter absolute bottom-5 left-1/2 w-[min(512px,calc(100vw-32px))] -translate-x-1/2 rounded-2xl px-5 py-4"
+        }
+        style={isDesktop ? { left, top } : undefined}
+        onClick={(e) => e.stopPropagation()}
+      >
         <div className="mb-2 flex items-center justify-between">
           <div className="flex items-baseline gap-2">
             <span className="text-[17px] font-semibold tracking-[-0.015em] text-ink">{card.word}</span>
@@ -351,6 +408,16 @@ function WordQuickLook({
             <div>
               <div className="text-[10.5px] font-semibold uppercase tracking-wide text-ink-3"><T en="Contextual meaning" zh="语境含义" /></div>
               <p className="text-[13.5px] leading-relaxed text-ink">{data?.contextualMeaning ?? "—"}</p>
+            </div>
+            <div className="grid grid-cols-1 gap-2.5 sm:grid-cols-2">
+              <div>
+                <div className="text-[10.5px] font-semibold uppercase tracking-wide text-ink-3"><T en="Grammar behaviour" zh="语法行为" /></div>
+                <p className="text-[12.5px] leading-relaxed text-ink-2">{data?.grammar ?? "—"}</p>
+              </div>
+              <div>
+                <div className="text-[10.5px] font-semibold uppercase tracking-wide text-ink-3"><T en="Register" zh="语域" /></div>
+                <p className="text-[12.5px] leading-relaxed text-ink-2">{data?.registerNote ?? "—"}</p>
+              </div>
             </div>
             {guess.trim() && (
               <div className="flex items-center gap-2 text-[12px]">
@@ -474,7 +541,7 @@ function ChunkGuessPanel({ chunk }: { chunk: RailTarget }) {
             onChange={(e) => setGuess(e.target.value)}
             rows={3}
             placeholder="写下你的猜测：意思 + 什么场合会用到它（中文或英文）"
-            className="w-full resize-none rounded-xl border-0 bg-black/[0.04] px-3.5 py-2.5 text-sm text-ink outline-none placeholder:text-ink-3 focus:bg-white focus:shadow-[0_0_0_2px_#0071e3]"
+            className="input-base w-full resize-none px-3.5 py-2.5 text-sm"
           />
           <div className="flex items-center gap-2">
             <button
@@ -538,6 +605,7 @@ function SentencePanel({ sentence }: { sentence: { id: number; text: string } })
 export function AnalysisSkeleton() {
   return (
     <div className="space-y-3">
+      <ElapsedWait en="Deep analysis running — usually 60–150 s" zh="深度分析中 — 通常 60–150 秒" />
       {[1, 2, 3, 4, 5].map((i) => (
         <div key={i} className="h-4 animate-pulse rounded bg-black/[0.05]" style={{ width: `${90 - i * 10}%` }} />
       ))}

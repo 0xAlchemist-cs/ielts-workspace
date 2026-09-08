@@ -211,7 +211,7 @@ export function ProfileView({
 
       {/* Learning Trajectory — sidebar "Progress" anchor */}
       <div id="trajectory" className="scroll-mt-20">
-      <Card title={<T en="Learning Trajectory 学习轨迹" zh="学习轨迹" />} subtitle={<T en="30-day trends with evidence-based attribution" zh="30 天趋势与证据归因" />} className="mb-6">
+      <Card title={<T en="Learning Trajectory" zh="学习轨迹" />} subtitle={<T en="30-day trends with evidence-based attribution" zh="30 天趋势与证据归因" />} className="mb-6">
         {trajectory.trends.length > 0 ? (
           <div className="space-y-3">
             {trajectory.trends.map((t) => (

@@ -1,6 +1,7 @@
 import { and, desc, eq, gte, isNotNull, lte, sql } from "drizzle-orm";
 import { db } from "@/db";
 import {
+  chunkEvents,
   dailyMissions,
   errors,
   reviewHistory,
@@ -64,6 +65,47 @@ export async function getTodayFunnel(userId: number): Promise<MissionCounters> {
     .where(and(eq(userProgress.userId, userId), eq(userProgress.date, date)))
     .limit(1);
   return { ...ZERO, ...(row?.metrics as Partial<MissionCounters>) };
+}
+
+/* ── Mission Outcome — "What changed today?" ─────────────────────────────────
+ * Concrete, evidence-backed wins for the day (real DB rows, never estimates):
+ * the felt-progress layer the honest funnel alone doesn't give. */
+export interface DailyEvidence {
+  activated: number;        // chunks Passive → Active today
+  savedExpressions: number; // expressions saved while reading
+  usedInOutput: number;     // expressions produced in speaking/writing/IELTS
+  wordsAdded: number;       // new vocabulary saved
+  reviewAnswers: number;    // retrieval prompts answered
+  reviewCorrect: number;    // …of which correct
+  errorsCaptured: number;   // new errors banked for revenge practice
+}
+
+export async function getTodayEvidence(userId: number): Promise<DailyEvidence> {
+  const start = new Date();
+  start.setHours(0, 0, 0, 0);
+  const since = start.getTime();
+  const n = sql<number>`count(*)`;
+
+  const [act, saved, used, words, reviews, errs] = await Promise.all([
+    db.select({ n }).from(chunksT).where(and(eq(chunksT.userId, userId), gte(chunksT.activatedAt, since))),
+    db.select({ n }).from(chunksT).where(and(eq(chunksT.userId, userId), gte(chunksT.createdAt, since))),
+    db.select({ n }).from(chunkEvents).where(and(eq(chunkEvents.userId, userId), eq(chunkEvents.type, "ielts_use"), gte(chunkEvents.createdAt, since))),
+    db.select({ n }).from(vocabularies).where(and(eq(vocabularies.userId, userId), gte(vocabularies.createdAt, since))),
+    db.select({ n: sql<number>`count(*)`, ok: sql<number>`sum(${reviewHistory.correct})` })
+      .from(reviewHistory)
+      .where(and(eq(reviewHistory.userId, userId), gte(reviewHistory.createdAt, since))),
+    db.select({ n }).from(errors).where(and(eq(errors.userId, userId), gte(errors.createdAt, since))),
+  ]);
+
+  return {
+    activated: act[0]?.n ?? 0,
+    savedExpressions: saved[0]?.n ?? 0,
+    usedInOutput: used[0]?.n ?? 0,
+    wordsAdded: words[0]?.n ?? 0,
+    reviewAnswers: reviews[0]?.n ?? 0,
+    reviewCorrect: reviews[0]?.ok ?? 0,
+    errorsCaptured: errs[0]?.n ?? 0,
+  };
 }
 
 export interface DashboardStats {

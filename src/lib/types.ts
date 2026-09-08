@@ -303,6 +303,10 @@ export interface MissionCounters {
 export interface WordAnalysis {
   word: string;
   contextualMeaning: string;
+  /** grammar behaviour: what structure follows it, who can be the subject */
+  grammar: string;
+  /** register & pragmatics: formality, politeness, stance, synonyms ladder */
+  registerNote: string;
   simpleDefinition: string;
   example: string;
   collocations: string[];
@@ -352,6 +356,7 @@ export interface SpeakingFeedback {
     original: string;
     improved: string;
     explanation: string;
+    kind?: "error" | "ambiguity" | "register" | "style";
   }[];
   chunksUsed: { text: string; used: boolean }[];
   acquisitions: {
@@ -373,8 +378,27 @@ export interface RewriteTask {
   fix: string;           // the corrected phrase (live models provide it)
   explanation: string;   // why — the language ability behind it
   hint: string;          // nudge, NOT the answer
+  kind?: "error" | "ambiguity" | "register" | "style"; // only "error" enters the Error Bank
   userRewrite?: string;  // filled by the learner
   betterVersion?: string; // revealed only after user attempts
+}
+
+export interface DrillInput {
+  wrongForm: string;
+  correctForm: string;
+  category: string;
+  explanation?: string;
+}
+
+export interface DrillItem {
+  context: string; // sentence with exactly one ____ where the correct form belongs
+  answer: string;
+  scene: string;
+}
+
+export interface DrillSet {
+  items: DrillItem[];
+  isMock: boolean;
 }
 
 export interface LanguageAcquisitionReport {

@@ -89,6 +89,8 @@ async function mockWord(input: WordInput): Promise<WordAnalysis> {
       contextualMeaning: context
         ? `In "${context.length > 70 ? context.slice(0, 70) + "…" : context}" — ${hit.entry.meaningEn}.`
         : hit.entry.meaningEn,
+      grammar: `Pattern guide for ${hit.entry.pos} — connect a live AI provider for full grammar behaviour (structure, subject type, transitivity).`,
+      registerNote: "Neutral in most uses — a live AI provider maps the formality ladder and near-synonym differences.",
       simpleDefinition: hit.entry.meaningEn,
       example: hit.entry.example,
       collocations: hit.entry.collocations,
@@ -101,6 +103,8 @@ async function mockWord(input: WordInput): Promise<WordAnalysis> {
     word: input.word,
     contextualMeaning:
       "This word isn't in the offline glossary. A real AI provider (or the ECDICT dictionary layer) can define it in context — set AI_BASE_URL and AI_API_KEY in .env.local to enable that.",
+    grammar: "—",
+    registerNote: "—",
     simpleDefinition: "—",
     example: "—",
     collocations: [],

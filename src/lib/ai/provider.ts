@@ -1,4 +1,5 @@
 import type {
+  DrillSet,
   ParaphraseFeedback,
   RetrievalGrade,
   SentenceAnalysis,
@@ -7,6 +8,7 @@ import type {
   WordAnalysis,
   WritingFeedback,
 } from "@/lib/types";
+import type { DrillInput } from "@/lib/types";
 import type { GradeTarget } from "@/lib/grading";
 
 export interface WordInput {
@@ -70,4 +72,6 @@ export interface AIProvider {
   writing(input: WritingInput): Promise<WritingFeedback>;
   paraphrase(input: ParaphraseInput): Promise<ParaphraseFeedback>;
   tutor(input: TutorInput): Promise<TutorReply>;
+  /** optional — providers without live drill generation fall back to mock frames */
+  drills?(input: DrillInput): Promise<DrillSet>;
 }

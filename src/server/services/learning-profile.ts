@@ -232,8 +232,8 @@ export async function computeFullProfile(userId: number): Promise<FullLearningPr
     ? Math.round((readingReviews.filter((r) => r.correct === 1).length / readingReviews.length) * 100)
     : 0;
   const reading: DimensionScore[] = [
-    { key: "comprehension", label: "Comprehension", score: readingAccuracy, evidence: `${readingReviews.length} reading-linked reviews, ${readingAccuracy}% accuracy` },
-    { key: "vocabulary", label: "Vocabulary", score: Math.min(100, vocabRows.length * 2), evidence: `${vocabRows.length} words in personal vocabulary` },
+    { key: "comprehension", label: "Comprehension", score: readingAccuracy, evidence: `${readingReviews.length} reading-linked review${readingReviews.length === 1 ? "" : "s"}, ${readingAccuracy}% accuracy` },
+    { key: "vocabulary", label: "Vocabulary", score: Math.min(100, vocabRows.length * 2), evidence: `${vocabRows.length} word${vocabRows.length === 1 ? "" : "s"} in personal vocabulary` },
     { key: "inference", label: "Inference", score: Math.round(retrievalAccuracy * 0.9), evidence: `Inferred from retrieval accuracy (${retrievalAccuracy}%) — inference requires vocabulary automation` },
     { key: "paraphrasing", label: "Paraphrasing", score: writeRows.length ? Math.round((writeRows[0].ieltsScores as Record<string, number> | null)?.lexical ?? 50) : 0, evidence: `Derived from writing Lexical Resource score` },
   ];

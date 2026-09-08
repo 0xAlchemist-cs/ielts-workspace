@@ -3,7 +3,7 @@
 import { useState, useRef, useEffect } from "react";
 import { Badge, MockBadge, btn, inputCls } from "@/components/ui";
 import { Drawer } from "@/components/motion";
-import { T } from "@/components/i18n";
+import { T, useBilingual } from "@/components/i18n";
 
 /* ── Ask Tutor — floating AI coach available from any page ────────────────
  * Reads user's learning context, explains at their level, connects
@@ -46,6 +46,7 @@ export function AskTutor({
   const [busy, setBusy] = useState(false);
   const [history, setHistory] = useState<{ role: "user" | "tutor"; text: string }[]>([]);
   const inputRef = useRef<HTMLInputElement>(null);
+  const bilingual = useBilingual();
 
   const submitRef = useRef<(q?: string, m?: TutorMode) => void>(() => {});
   const prevInitial = useRef<string | undefined>(undefined);
@@ -102,7 +103,7 @@ export function AskTutor({
                 mode === m.value ? "chip-on" : "chip"
               }`}
             >
-              {m.label} <span className="opacity-50">{m.zh}</span>
+              {m.label} {bilingual && <span className="opacity-50">{m.zh}</span>}
             </button>
           ))}
         </div>

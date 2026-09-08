@@ -1,6 +1,24 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState, type ReactNode } from "react";
+import { T } from "@/components/i18n";
+
+/* ── ElapsedWait — honest seconds counter for deep-AI waits ─────────────────
+ * Live AI calls run 40–180 s; a silently pulsing skeleton reads as "broken".
+ * Mounting this starts the clock, so it must render only while waiting. */
+export function ElapsedWait({ en, zh }: { en: string; zh: string }) {
+  const [s, setS] = useState(0);
+  useEffect(() => {
+    const t = setInterval(() => setS((v) => v + 1), 1000);
+    return () => clearInterval(t);
+  }, []);
+  return (
+    <p className="flex items-center gap-2 text-[12px] text-ink-3">
+      <span className="font-mono tabular-nums">{s}s</span>
+      <T en={en} zh={zh} />
+    </p>
+  );
+}
 
 /* ── Drawer — Vaul-style side sheet ─────────────────────────────────────────
  * Always mounted; enter/exit are pure CSS transitions on class change, so

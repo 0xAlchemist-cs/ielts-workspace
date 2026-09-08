@@ -44,9 +44,10 @@ export async function POST(req: Request) {
     recentErrors: recent,
   });
 
-  // Auto-bank significant corrections (P1/P2) into the Error Bank.
+  // Auto-bank significant corrections (P1/P2) into the Error Bank — but never
+  // register/style rephrasing suggestions: they are preferences, not mistakes.
   for (const c of feedback.corrections) {
-    if (c.priority === "P1" || c.priority === "P2") {
+    if ((c.priority === "P1" || c.priority === "P2") && c.kind !== "register" && c.kind !== "style") {
       await addError(userId, {
         category: (c.priority === "P2" && /preposition|collocation/i.test(c.explanation)
           ? "preposition"

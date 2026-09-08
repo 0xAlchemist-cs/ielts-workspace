@@ -506,6 +506,8 @@ export const ieltsTasks = sqliteTable("ielts_tasks", {
   estimatedBand: real("estimated_band").notNull().default(6),
   timeLimitMinutes: integer("time_limit_minutes").notNull().default(20),
   source: text("source").notNull().default("seed"),
+  /** Listening tasks: audio file under public/ to play while answering (null = none). */
+  audioUrl: text("audio_url"),
   createdAt: integer("created_at").notNull().$defaultFn(() => Date.now()),
 });
 

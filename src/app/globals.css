@@ -293,9 +293,18 @@ select:focus {
 /* ── Interaction tints — barely-there fills (nav items, list rows) ────────── */
 .nav-selected {
   background: color-mix(in srgb, var(--text-1) 9%, transparent);
+  animation: nav-pop 240ms var(--ease-out);
+  transform-origin: left center;
 }
 .nav-hover:hover {
   background: color-mix(in srgb, var(--text-1) 3.5%, transparent);
+}
+/* the active pill stretches in from the left when navigation lands */
+@keyframes nav-pop {
+  from {
+    opacity: 0;
+    transform: scaleX(0.55);
+  }
 }
 
 /* ── Filter chips — selected state inverts correctly in both modes ───────── */
@@ -332,7 +341,13 @@ select:focus {
   -webkit-backdrop-filter: blur(24px) saturate(180%);
   box-shadow: var(--shadow-pop);
 }
-/* Legacy sidebar material → solid surface (glass reserved for chrome) */
+/* Sidebar — opaque canvas (glass stays reserved for top bar / floating
+ * layers only: the sidebar spans full height and must never show text
+ * bleeding through in engines without backdrop-filter) */
+.app-sidebar {
+  background: var(--bg);
+}
+/* Legacy sidebar material → solid surface (kept for any remaining callers) */
 .material-sidebar {
   background: var(--surface);
   backdrop-filter: none;
@@ -380,12 +395,25 @@ select:focus {
   }
 }
 
-/* Press states */
+/* Press states — spring release (easeOutBack) so taps feel physical */
 .press {
-  transition: transform var(--dur-fast) var(--ease-out);
+  transition: transform var(--dur-base) cubic-bezier(0.34, 1.56, 0.64, 1);
 }
 .press:active {
-  transform: scale(0.98);
+  transform: scale(0.96);
+}
+
+/* ── Page transition (app/template.tsx re-mounts per navigation) ───────────
+ * Fade only — no translate/scale (transform on the wrapper breaks sticky
+ * children mid-animation) and no fill mode (content must never wait on
+ * the animation to become visible). */
+.page-enter {
+  animation: page-fade 160ms var(--ease-out);
+}
+@keyframes page-fade {
+  from {
+    opacity: 0;
+  }
 }
 
 /* ── Motion utilities ─────────────────────────────────────────────────────── */
@@ -437,6 +465,10 @@ select:focus {
 .reader-text .word-rare {
   border-bottom: 2px dotted color-mix(in srgb, var(--warning) 80%, transparent);
 }
+/* study+ phases: tier tint stays, tap affordance gone */
+.reader-text .word-readonly {
+  cursor: default;
+}
 .reader-text .word-saved {
   background: color-mix(in srgb, var(--warning) 14%, transparent);
   border-bottom: 2px solid color-mix(in srgb, var(--warning) 80%, transparent);
@@ -447,6 +479,40 @@ select:focus {
 }
 .reader-text .sentence:hover {
   background: color-mix(in srgb, var(--text-1) 4.5%, transparent);
+}
+
+/* ── In-article target marks (Active Reading rail ↔ article link) ─────────
+ * Unselected targets: dashed accent underline (distinct from the dotted
+ * tier marks above). Selected: quiet accent fill + solid accent underline. */
+.reader-text .word-target {
+  border-bottom: 2px dashed color-mix(in srgb, var(--accent) 55%, transparent);
+}
+.reader-text .word-target-on {
+  background: var(--accent-quiet);
+  border-bottom: 2px solid var(--accent);
+  box-decoration-break: clone;
+  -webkit-box-decoration-break: clone;
+}
+/* rail "locate" click: scroll-into-view + this flash */
+.reader-text [data-t].target-flash {
+  animation: target-flash 1.4s var(--ease-out) 1;
+}
+@keyframes target-flash {
+  0%, 45% {
+    background: var(--accent-quiet);
+    box-shadow: 0 0 0 4px var(--accent-quiet);
+  }
+}
+
+/* ── Focus reading mode (class on <html>, toggled by the read lab) ──────── */
+html.reading-focus .app-sidebar,
+html.reading-focus .app-topbar {
+  display: none;
+}
+html.reading-focus .app-frame {
+  max-width: none;
+  padding-top: 1.25rem;
+  padding-bottom: 2rem;
 }
 
 /* ── Dark-mode shims for not-yet-redesigned pages (removed as pages migrate) */
@@ -471,7 +537,9 @@ html.dark .border-black\/\[0\.05\] {
   .stagger > *,
   .enter,
   .card-lift,
-  .card-specular {
+  .card-specular,
+  .page-enter,
+  .nav-selected {
     animation: none;
     transition: opacity 150ms ease;
     transform: none;

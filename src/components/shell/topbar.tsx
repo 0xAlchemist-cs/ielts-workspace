@@ -68,7 +68,7 @@ export function Topbar({ aiLive, onOpenMobileNav }: { aiLive: boolean; onOpenMob
   const section = SECTION_MAP.find((s) => s.match(pathname));
 
   return (
-    <header className="material-header sticky top-0 z-30 flex h-[56px] shrink-0 items-center justify-between gap-3 border-b border-line px-4 sm:px-6">
+    <header className="app-topbar material-header sticky top-0 z-30 flex h-[56px] shrink-0 items-center justify-between gap-3 border-b border-line px-4 sm:px-6">
       {/* left — mobile nav + page title */}
       <div className="flex min-w-0 items-center gap-2.5">
         <button

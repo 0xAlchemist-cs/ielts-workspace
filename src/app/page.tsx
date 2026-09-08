@@ -1,12 +1,12 @@
 import Link from "next/link";
-import { Fragment } from "react";
-import { desc } from "drizzle-orm";
+import { Fragment, type ReactNode } from "react";
+import { desc, sql } from "drizzle-orm";
 import { ArrowRight, ArrowUpRight, BookOpen, Check, Headphones } from "lucide-react";
 import { db } from "@/db";
 import { contents as contentsT } from "@/db/schema";
 import { requireUser } from "@/server/current-user";
 import { getOrCreateTodayMission } from "@/server/services/mission";
-import { getDashboardStats, getTodayFunnel, getReturningToday, getTomorrowPreview } from "@/server/services/progress";
+import { getDashboardStats, getTodayEvidence, getTodayFunnel, getReturningToday, getTomorrowPreview } from "@/server/services/progress";
 import { getTrajectory } from "@/server/services/trajectory";
 import { T } from "@/components/i18n";
 import { LiteToggle } from "./lite-toggle";
@@ -36,10 +36,12 @@ type Step = {
   skipped: boolean;
 };
 
-/* The learning journey — nodes on a hairline, never a progress bar. */
+/* The learning journey — nodes on a hairline, never a progress bar.
+ * Mobile: 7 nodes exceed the viewport, so the rail pans horizontally
+ * (edge-to-edge, hairline intact) instead of overflowing the page. */
 function Journey({ steps, current }: { steps: Step[]; current: Step }) {
   return (
-    <div className="flex items-start">
+    <div className="-mx-4 flex items-start overflow-x-auto px-4 sm:mx-0 sm:overflow-x-visible sm:px-0">
       {steps.map((s, i) => {
         const isCurrent = s === current && !s.done;
         return (
@@ -93,9 +95,10 @@ export default async function HomePage() {
   const userId = cu.user.id;
   const mission = await getOrCreateTodayMission(userId);
   const plan = mission.plan as MissionPlan;
-  const [stats, funnel, returning, tomorrow, fullProfile] = await Promise.all([
+  const [stats, funnel, evidence, returning, tomorrow, fullProfile] = await Promise.all([
     getDashboardStats(userId, cu.profile.ieltsOverall),
     getTodayFunnel(userId),
+    getTodayEvidence(userId),
     getReturningToday(userId),
     getTomorrowPreview(userId),
     getTrajectory(userId, 30),
@@ -110,6 +113,8 @@ export default async function HomePage() {
       minutes: contentsT.minutes,
     })
     .from(contentsT)
+    // same readability gate as the Library: no archive residue, no stub bodies
+    .where(sql`${contentsT.topic} is not 'archive' and length(${contentsT.body}) >= 800`)
     .orderBy(desc(contentsT.createdAt), desc(contentsT.id))
     .limit(3);
 
@@ -217,6 +222,40 @@ export default async function HomePage() {
         <div className="mt-10 pt-2">
           <Journey steps={steps} current={current} />
         </div>
+
+        {/* ── Mission Outcome — the felt-progress layer: today's real wins,
+         * every line backed by a DB row, hidden until something happened ── */}
+        {(() => {
+          const lines: { en: ReactNode; zh: ReactNode }[] = [];
+          if (evidence.activated > 0)
+            lines.push({ en: `Activated ${evidence.activated} expression${evidence.activated > 1 ? "s" : ""} — passive → active`, zh: `激活 ${evidence.activated} 个表达 — 被动 → 主动` });
+          if (evidence.usedInOutput > 0)
+            lines.push({ en: `Produced ${evidence.usedInOutput} expression${evidence.usedInOutput > 1 ? "s" : ""} in real output`, zh: `在口语/写作中真实用出 ${evidence.usedInOutput} 个表达` });
+          if (evidence.reviewAnswers > 0)
+            lines.push({ en: `${evidence.reviewAnswers} retrieval prompt${evidence.reviewAnswers > 1 ? "s" : ""} answered · ${evidence.reviewCorrect} correct`, zh: `完成 ${evidence.reviewAnswers} 次提取练习 · 答对 ${evidence.reviewCorrect} 次` });
+          if (evidence.savedExpressions > 0)
+            lines.push({ en: `Saved ${evidence.savedExpressions} new expression${evidence.savedExpressions > 1 ? "s" : ""} while reading`, zh: `阅读时存入 ${evidence.savedExpressions} 个新表达` });
+          if (evidence.wordsAdded > 0)
+            lines.push({ en: `Added ${evidence.wordsAdded} word${evidence.wordsAdded > 1 ? "s" : ""} to your bank`, zh: `收录 ${evidence.wordsAdded} 个生词` });
+          if (evidence.errorsCaptured > 0)
+            lines.push({ en: `Captured ${evidence.errorsCaptured} error${evidence.errorsCaptured > 1 ? "s" : ""} to conquer`, zh: `记下 ${evidence.errorsCaptured} 个待复仇错误` });
+          if (lines.length === 0) return null;
+          return (
+            <div className="mt-8 rounded-xl bg-accent/[0.06] px-5 py-4">
+              <p className="text-[12px] font-medium tracking-[0.07em] text-ink-3 uppercase">
+                <T en="What changed today" zh="今天你拿下了什么" />
+              </p>
+              <ul className="mt-2.5 space-y-1.5">
+                {lines.map((l, i) => (
+                  <li key={i} className="flex items-start gap-2 text-[13px] leading-relaxed text-ink-2">
+                    <Check size={13} strokeWidth={2.4} className="mt-[3px] shrink-0 text-accent-text" />
+                    <T en={l.en} zh={l.zh} />
+                  </li>
+                ))}
+              </ul>
+            </div>
+          );
+        })()}
 
         {(urgent.length > 0 || returning.length > 0 || tomorrow.count > 0) && (
           <p className="mt-6 text-[12px] text-ink-3">

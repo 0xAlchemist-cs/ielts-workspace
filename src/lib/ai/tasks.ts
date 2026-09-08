@@ -14,6 +14,8 @@ import type {
 export const wordSchema = z.object({
   word: z.string(),
   contextualMeaning: z.string(),
+  grammar: z.string(),
+  registerNote: z.string(),
   simpleDefinition: z.string(),
   example: z.string(),
   collocations: z.array(z.string()),
@@ -62,6 +64,7 @@ export const speakingSchema = z.object({
       original: z.string(),
       improved: z.string(),
       explanation: z.string(),
+      kind: z.enum(["error", "ambiguity", "register", "style"]).optional(),
     }),
   ),
   chunksUsed: z.array(z.object({ text: z.string(), used: z.boolean() })),
@@ -99,6 +102,7 @@ export const writingSchema = z.object({
     fix: z.string().optional().default(""),
     explanation: z.string(),
     hint: z.string().optional().default(""),
+    kind: z.enum(["error", "ambiguity", "register", "style"]).optional(),
   })).optional().default([]),
   acquisition: z.object({
     activeItemsUsed: z.array(z.object({ text: z.string(), itemId: z.number(), wasTargeted: z.boolean() })),
@@ -146,7 +150,7 @@ Core rules:
 export const WORD_PROMPT = `${TUTOR_PERSONA}
 
 Task: analyse ONE word for the learner. Reply with STRICT JSON only:
-{ "word": "...", "contextualMeaning": "what it means IN THIS SENTENCE (1 sentence)", "simpleDefinition": "a simple English definition (A2 vocabulary)", "example": "a NEW example sentence (not the original)", "collocations": ["3-4 common collocations"], "meaningZh": "简明中文释义", "cefr": "A2|B1|B2|C1" }
+{ "word": "...", "contextualMeaning": "what it means IN THIS SENTENCE (1 sentence)", "grammar": "grammar behaviour: the pattern it demands — what structure follows it, who/what can be the subject, transitivity, countability (≤2 short clauses, e.g. 'help sb (to) do; subject = person')", "registerNote": "register & pragmatics: formality + a near-synonym ladder showing the range (e.g. 'neutral; kids > children > minors=formal/legal')", "simpleDefinition": "a simple English definition (A2 vocabulary)", "example": "a NEW example sentence (not the original)", "collocations": ["3-4 common collocations"], "meaningZh": "简明中文释义", "cefr": "A2|B1|B2|C1" }
 The learner will see contextualMeaning and simpleDefinition BEFORE the Chinese — English first.`;
 
 export const SENTENCE_PROMPT = `${TUTOR_PERSONA}
@@ -162,12 +166,28 @@ export const RETRIEVAL_PROMPT = `You grade retrieval-practice answers. The learn
 export const SPEAKING_PROMPT = `${TUTOR_PERSONA}
 
 Task: evaluate one speaking turn. Input includes the prompt, the transcript, targetChunks the learner should try to use, and recentErrors. Reply with STRICT JSON only:
-{ "ielts": { "fluency": 4-9, "coherence": 4-9, "lexical": 4-9, "grammar": 4-9, "pronunciation": 4-9 }, "overallEstimate": 4-9, "corrections": [ { "priority": "P1|P2|P3|P4|P5", "original": "the exact learner words", "improved": "corrected version", "explanation": "why — 1 sentence" } ], "chunksUsed": [ { "text": "chunk", "used": boolean } ], "acquisitions": { "newExpressionsUsed": ["chunks they successfully produced"], "failedRetrievals": ["target chunks they avoided or misused"], "overusedWords": ["words repeated too often"], "chineseStyleEnglish": ["direct translations from Chinese, if any"], "paraphraseOpportunities": ["places where they could have paraphrased better"] }, "followUp": "ONE follow-up question that pushes them to elaborate or abstract-up", "summary": "2-sentence coaching summary" }
-Give at most 2 corrections, highest priority first. Scores must reflect a real examiner: a short generic answer is 5.0–5.5, developed specific answers 6–7.`;
+{ "ielts": { "fluency": 4-9, "coherence": 4-9, "lexical": 4-9, "grammar": 4-9, "pronunciation": 4-9 }, "overallEstimate": 4-9, "corrections": [ { "priority": "P1|P2|P3|P4|P5", "original": "the exact learner words", "improved": "corrected version", "explanation": "why — 1 sentence", "kind": "error | ambiguity | register | style" } ], "chunksUsed": [ { "text": "chunk", "used": boolean } ], "acquisitions": { "newExpressionsUsed": ["chunks they successfully produced"], "failedRetrievals": ["target chunks they avoided or misused"], "overusedWords": ["words repeated too often"], "chineseStyleEnglish": ["direct translations from Chinese, if any"], "paraphraseOpportunities": ["places where they could have paraphrased better"] }, "followUp": "ONE follow-up question that pushes them to elaborate or abstract-up", "summary": "2-sentence coaching summary" }
+Give at most 2 corrections, highest priority first. Classify each correction's kind honestly: error = actually wrong; ambiguity = understandable two ways; register = grammatically fine but wrong formality; style = a nicer alternative, not a mistake. A smoother phrasing is NOT automatically an error. Scores must reflect a real examiner: a short generic answer is 5.0–5.5, developed specific answers 6–7.`;
 
 export const WRITING_PROMPT = `You are an IELTS Writing examiner + language analyst for a Chinese learner. Evaluate the essay. Reply with STRICT JSON only:
-{ "ielts": { "taskResponse": 4-9, "coherence": 4-9, "lexical": 4-9, "grammar": 4-9 }, "overallEstimate": 4-9, "comparisons": [ { "original": "exact phrase from the essay", "better": "upgraded version", "why": "lexical precision | grammatical complexity | collocation | academic register — 1 sentence" } ], "repeatedMistakes": ["patterns that recur in their writing"], "abilityDiagnosis": ["the underlying LANGUAGE ability problems behind the errors, e.g. 'relies on very+adj intensifiers — build gradable/ungradable adjective awareness'"], "rewriteTasks": [ { "id": 1, "original": "exact erroneous phrase quoted from the essay", "problem": "grammar | preposition | collocation | word form | agreement | Chinese-style | spelling", "fix": "the corrected phrase", "explanation": "why it is wrong, 1 sentence", "hint": "how to fix it WITHOUT revealing the answer" } ], "summary": "3-sentence examiner summary" }
-Give 3-5 comparisons quoted from their actual text. List a rewriteTask for EVERY real error you find (3-8 tasks) — they feed the learner's error bank and revenge practice, so quote the exact wrong text. Be a strict but constructive examiner.`;
+{ "ielts": { "taskResponse": 4-9, "coherence": 4-9, "lexical": 4-9, "grammar": 4-9 }, "overallEstimate": 4-9, "comparisons": [ { "original": "exact phrase from the essay", "better": "upgraded version", "why": "lexical precision | grammatical complexity | collocation | academic register — 1 sentence" } ], "repeatedMistakes": ["patterns that recur in their writing"], "abilityDiagnosis": ["the underlying LANGUAGE ability problems behind the errors, e.g. 'relies on very+adj intensifiers — build gradable/ungradable adjective awareness'"], "rewriteTasks": [ { "id": 1, "original": "exact erroneous phrase quoted from the essay", "problem": "grammar | preposition | collocation | word form | agreement | Chinese-style | spelling", "fix": "the corrected phrase", "explanation": "why it is wrong, 1 sentence", "hint": "how to fix it WITHOUT revealing the answer", "kind": "error | ambiguity | register | style" } ], "summary": "3-sentence examiner summary" }
+Give 3-5 comparisons quoted from their actual text. List a rewriteTask for EVERY real error you find (3-8 tasks) — they feed the learner's error bank and revenge practice, so quote the exact wrong text. Classify each task's kind honestly: error = actually wrong (the only kind that enters the error bank); ambiguity = understandable two ways; register = grammatically fine but wrong formality for IELTS writing; style = an upgrade preference, not a mistake. Do not relabel style upgrades as errors — only mark "error" when the original is genuinely incorrect. Be a strict but constructive examiner.`;
+
+export const drillSchema = z.object({
+  items: z
+    .array(
+      z.object({
+        context: z.string(),
+        answer: z.string(),
+        scene: z.string().optional().default(""),
+      }),
+    )
+    .min(1)
+    .max(6),
+});
+
+export const DRILL_PROMPT = `You create parallel drills for ONE learner error — new contexts that re-test the same pattern. Given the wrong form, the correct form and a note, write THREE fill-in sentences in three DIFFERENT everyday or IELTS contexts (e.g. workplace, travel, study, daily life). Each sentence contains exactly one blank "____" placed exactly where the correct form belongs and naturally eliciting it (inflections allowed); the sentence must NOT contain the wrong form. Vary subject and tense. Reply with STRICT JSON only:
+{ "items": [ { "context": "sentence with ____", "answer": "the expected correct form", "scene": "e.g. 'at the airport'" } ] }`;
 
 export const PARAPHRASE_PROMPT = `You evaluate paraphrase practice: one meaning → multiple English expressions. Reply with STRICT JSON only:
 { "variation": 0-100, "naturalness": 0-100, "ieltsRelevance": 0-100, "analysis": "2-3 sentences: what changed well (vocabulary vs grammar moves) and what still copies the source", "modelParaphrases": ["2-3 strong paraphrases, each using a DIFFERENT strategy (verb change, idiom, structure change)"] }`;

@@ -121,6 +121,9 @@ export async function POST(req: Request) {
   // …", "You didn't use: …") and any hallucinated live quote alike.
   for (const task of (feedback.rewriteTasks ?? []).slice(0, 6)) {
     if (!task.original || !text.includes(task.original)) continue;
+    // register/style/ambiguity notes are feedback, not mistakes — keep them
+    // out of the error bank (only genuinely-wrong items become revenge items)
+    if (task.kind && task.kind !== "error") continue;
     const p = task.problem.toLowerCase();
     const category: ErrorCategory = p.includes("chinese")
       ? "chinese_english"

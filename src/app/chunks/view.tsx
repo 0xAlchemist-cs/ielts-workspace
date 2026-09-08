@@ -74,7 +74,7 @@ export function ChunkBankView({
   };
 
   return (
-    <div>
+    <div className="shell-wide">
       <header className="mb-5 flex flex-wrap items-end justify-between gap-3">
         <div>
           <h1 className="text-display">
@@ -332,7 +332,7 @@ function ChunkDetail({ chunk }: { chunk: MyChunk }) {
         <ProgressBar value={chunk.strength} label="Retrieval strength" />
         <p className="mt-2 text-[12px] text-ink-3">
           {chunk.lastReviewAt
-            ? `Last reviewed ${new Date(chunk.lastReviewAt).toLocaleDateString()}`
+            ? `Last reviewed ${new Date(chunk.lastReviewAt).toLocaleDateString("en-US")}`
             : "Never reviewed — it's waiting in your queue."}
         </p>
         <Link href="/review" className={`${btn.primary} mt-3`}>

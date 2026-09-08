@@ -153,10 +153,10 @@ export function ReviewSession({
     .join(" · ");
 
   return (
-    <div>
+    <div className="shell-wide">
       {/* ── Header ─────────────────────────────────────────────────────────── */}
       <header>
-        <h1 className="text-[28px] font-semibold tracking-[-0.022em] text-ink">
+        <h1 className="text-display">
           <T en="Review" zh="复习" />
         </h1>
         <p className="mt-1.5 text-[13px] text-ink-2">
