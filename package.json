@@ -39,7 +39,7 @@
     "test:writing-gate": "tsx scripts/verify-writing-gate.ts",
     "test:input-gates": "tsx scripts/verify-input-gates.ts",
     "test:security": "tsx scripts/verify-security.ts",
-    "verify:all": "npm run lint && npm run test:smoke && npm run test:pm && npm run test:engine && npm run test:rotation && npm run test:loop && npm run test:writing-gate && npm run test:input-gates"
+    "verify:all": "npm run lint && tsc --noEmit && npm run test:smoke && npm run test:pm && npm run test:engine && npm run test:rotation && npm run test:loop && npm run test:writing-gate && npm run test:input-gates"
   },
   "dependencies": {
     "better-sqlite3": "^13.0.3",
