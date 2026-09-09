@@ -22,16 +22,28 @@ interface Entry {
   essay: string;
 }
 
-/** split a block into (bold-runs-as-prompt, rest-as-essay) */
+/** split a block into (bold/heading runs as prompt, rest as essay) */
 function splitBoldPrompt(block: string): { prompt: string; rest: string } {
   const runs: string[] = [];
   let rest = block;
-  const re = /^\s*(\*{2,3}[^*]+\*{2,3})\s*/;
-  for (let i = 0; i < 8; i++) {
-    const m = rest.match(re);
-    if (!m) break;
-    runs.push(m[1]);
-    rest = rest.slice(m[0].length);
+  const boldRe = /^\s*(\*{2,3}[^*]+\*{2,3})\s*/;
+  // some entries lost their bold markers in conversion and mark the question
+  // with ##### headings instead — accept those as prompt runs too
+  const headRe = /^\s*(#{3,5}[^#\n]+)\n?/;
+  for (let i = 0; i < 10; i++) {
+    const b = rest.match(boldRe);
+    if (b) {
+      runs.push(b[1]);
+      rest = rest.slice(b[0].length);
+      continue;
+    }
+    const h = rest.match(headRe);
+    if (h) {
+      runs.push(h[1]);
+      rest = rest.slice(h[0].length);
+      continue;
+    }
+    break;
   }
   return { prompt: stripBold(runs.join(" ")), rest };
 }
@@ -51,7 +63,8 @@ function parseTask2(md: string): Entry[] {
       .replace(/Example answer：?/g, "")
       .replace(/\s+/g, " ")
       .trim();
-    if (prompt.includes("?") && wordCount(essay) > 120) out.push({ zhTitle, prompt, essay });
+    // discussion-type prompts legitimately end without "?" — substance check
+    if (prompt.length >= 80 && wordCount(essay) > 120) out.push({ zhTitle, prompt, essay });
   }
   return out;
 }

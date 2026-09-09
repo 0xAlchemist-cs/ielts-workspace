@@ -33,6 +33,24 @@ interface BankQuestion {
 const norm = (s: string) =>
   s.toLowerCase().replace(/[^a-z0-9%£$ ]/g, " ").replace(/\s+/g, " ").trim();
 
+/** strip scoring-rubric junk the answer strings trail into ("28-40 acceptable
+ * you are likely to get an examination…"), and glued range-group tails. */
+const ANSWER_CUTS = [
+  / ?\d{1,2}\s*[-~–]{1,2}\s*\d{1,2}\s*(?:n |c )?(?:acceptable|you are|you score|eptable)/i,
+  / ?(likely to get an|xamination acceptable|amination acceptable|examination acceptable|mination acceptable|eptable score).*/i,
+  / ?\d{1,2}&\d{1,2}\b.*$/,
+  / ?\d{1,2}\s*[-~–]{1,2}\s*\d{1,2}\b.*$/,
+];
+function cleanAnswer(a: string): string {
+  if (/OCTOBER/i.test(a)) return a; // legit date variants
+  let out = a.trim();
+  for (const re of ANSWER_CUTS) {
+    const na = out.replace(re, "").trim();
+    if (na !== out && na.length >= 1) out = na;
+  }
+  return out;
+}
+
 // static patterns only (no dynamic regex construction)
 const BLANK_PAIR = /(\d{1,2})\s*[·.…]{3,}/g; // "3 ········" blank with its number
 const STEM_NUM = /^(\d{1,2})\s+(?=\S)/; // "7 The tour costs..."
@@ -41,24 +59,51 @@ const Q_RANGE = /Questions\s+(\d+)\s*[–—-]\s*(\d+)/g;
 /** Parse "11 by minibus / a minibus 12 15 ..." per number. Sections restart
  * numbering at 1/11/21/31 — the map only opens on the section's first
  * number; a bare number starts the NEXT answer when it equals expected+1
- * (or +2 for choose-TWO pairs); digits inside answers stay put. */
+ * (or +2 for choose-TWO pairs); digits inside answers stay put.
+ * OCR noise handled: "ll"/"II" = 11, "I 8" = 18, bare single digits in a
+ * 11+/21+/31+ section are missing their decade ("3" = 33), "5&36" = 35&36. */
 function parseAnswers(raw: string, startQ: number, max: number): Map<number, string[]> {
   const out = new Map<number, string[]>();
-  const tokens = raw.trim().split(/\s+/);
+  const decade = startQ >= 11 ? Math.floor(startQ / 10) * 10 : 0;
+  const cleaned = raw
+    .trim()
+    .replace(/\b[ll]{2}\b/g, "11")
+    .replace(/\bII\b/g, "11")
+    .replace(/\bI\b/g, "1");
+  const tokens = cleaned.split(/\s+/);
   let cur = 0;
   let buf: string[] = [];
+  let pairNext: number | null = null; // "5&36" shares one answer across two numbers
   const flush = () => {
     if (cur > 0 && buf.length) {
       const variants = buf.join(" ").split(/\s*\/\s*/).map((v) => v.trim()).filter(Boolean);
       out.set(cur, variants);
+      if (pairNext !== null) {
+        out.set(pairNext, variants);
+        pairNext = null;
+      }
+    } else {
+      pairNext = null;
     }
     buf = [];
   };
   for (const t of tokens) {
     const stripped = t.replace(/^[·.()[\]]+/, "").replace(/[).:\]]+$/, "");
-    const num = /^\d{1,2}$/.test(stripped) ? Number(stripped) : null;
-    const startsNext = num !== null && num <= max && (cur === 0 ? num === startQ : num === cur + 1 || num === cur + 2);
-    if (startsNext) {
+    // joined pair "5&36" → 35 & 36 share the following answer (decade applied)
+    const pair = stripped.match(/^(\d)&(\d{1,2})$/);
+    if (pair && decade > 0) {
+      const a = Number(pair[1]) <= 9 ? Number(pair[1]) + decade : Number(pair[1]);
+      const b = Number(pair[2]);
+      if (cur > 0) flush();
+      cur = a;
+      pairNext = b;
+      continue;
+    }
+    let num: number | null = /^\d{1,2}$/.test(stripped) ? Number(stripped) : null;
+    if (num !== null && decade > 0 && num < 10) num = num + decade;
+    const startsNext =
+      num !== null && num <= max && (cur === 0 ? num === startQ || num === startQ + 1 : num === cur + 1 || num === cur + 2);
+    if (startsNext && num !== null) {
       flush();
       cur = num;
     } else {
@@ -156,6 +201,7 @@ async function main() {
     // transcript cross-validation: keep a variant only if it appears in the transcript
     let ok = 0;
     for (const r of rows) {
+      r.answer = cleanAnswer(r.answer);
       const all = [r.answer, ...(r.acceptable ?? [])].filter(Boolean);
       const hits = all.filter((v) => transcript.includes(norm(v)));
       if (hits.length) {
