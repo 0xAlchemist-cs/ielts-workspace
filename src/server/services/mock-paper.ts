@@ -2,10 +2,11 @@ import { and, eq, inArray, sql } from "drizzle-orm";
 import { db } from "@/db";
 import { ieltsTasks } from "@/db/schema";
 
-/* ── Full mock paper assembly — Reading (3 passages) + Writing (T1+T2) ─────
- * The paper is date-seeded: same day = same paper, so an accidental refresh
- * (with localStorage answers) never destroys an exam in progress.
- * Answers NEVER travel to the client — grading re-fetches tasks server-side. */
+/* ── Full mock paper assembly — Listening (4 parts) + Reading (3 passages)
+ * + Writing (T1+T2). The paper is date-seeded: same day = same paper, so an
+ * accidental refresh (with localStorage answers) never destroys an exam in
+ * progress. Answers NEVER travel to the client — grading re-fetches tasks
+ * server-side. */
 
 export interface PaperQuestion {
   no: number;
@@ -17,17 +18,20 @@ export interface PaperQuestion {
 
 export interface PaperPassage {
   taskId: number;
-  label: string; // Passage 1/2/3
+  label: string; // Passage 1/2/3 — or Part 1/2/3/4 for listening
   title: string;
   content: string;
+  audioUrl?: string; // listening parts only
   questions: PaperQuestion[];
 }
 
 export interface MockPaper {
   seed: number;
   dateKey: string;
+  listening: PaperPassage[];
   passages: PaperPassage[];
   writing: { task1: { taskId: number; prompt: string }; task2: { taskId: number; prompt: string } };
+  listeningQuestions: number;
   totalQuestions: number;
   minutes: number;
 }
@@ -86,6 +90,38 @@ export async function buildMockPaper(seed: number, dateKey: string): Promise<Moc
     db.select({ id: ieltsTasks.id, prompt: ieltsTasks.prompt }).from(ieltsTasks).where(eq(ieltsTasks.taskType, "writing_task1")).orderBy(sql`random()`).limit(6),
     db.select({ id: ieltsTasks.id, prompt: ieltsTasks.prompt }).from(ieltsTasks).where(eq(ieltsTasks.taskType, "writing_task2")).orderBy(sql`random()`).limit(6),
   ]);
+  // one COMPLETE listening test — all 4 parts of a random cN-testM group
+  const lrows = await db
+    .select({ id: ieltsTasks.id, prompt: ieltsTasks.prompt, audioUrl: ieltsTasks.audioUrl, questions: ieltsTasks.questions })
+    .from(ieltsTasks)
+    .where(eq(ieltsTasks.source, "listening-bank-c10-19"));
+  const groups = new Map<string, typeof lrows>();
+  for (const r of lrows) {
+    const g = r.audioUrl?.match(/(c\d+-test\d+)/)?.[1];
+    if (!g) continue;
+    if (!groups.has(g)) groups.set(g, []);
+    groups.get(g)!.push(r);
+  }
+  const completeGroups = [...groups.values()].filter((g) => g.length === 4);
+  const listeningGroup = completeGroups.length ? pick(rng, completeGroups).slice().sort((a, b) => (a.audioUrl ?? "").localeCompare(b.audioUrl ?? "")) : [];
+
+  let lno = 0;
+  const listening: PaperPassage[] = listeningGroup.map((row, i) => {
+    const qs = (row.questions as unknown as RawQuestion[]) ?? [];
+    return {
+      taskId: row.id,
+      label: `Part ${i + 1}`,
+      title: row.prompt.split("—")[0].trim(),
+      content: "",
+      audioUrl: row.audioUrl ?? undefined,
+      questions: qs.map((q) => ({
+        no: ++lno,
+        question: q.question,
+        subSkill: q.subSkill,
+        multi: false, // listening bank is completion-only
+      })),
+    };
+  });
 
   let no = 0;
   const passages: PaperPassage[] = buckets.map((rows, i) => {
@@ -109,13 +145,15 @@ export async function buildMockPaper(seed: number, dateKey: string): Promise<Moc
   return {
     seed,
     dateKey,
+    listening,
     passages,
     writing: {
       task1: (() => { const r = pick(rng, t1rows); return { taskId: r.id, prompt: r.prompt }; })(),
       task2: (() => { const r = pick(rng, t2rows); return { taskId: r.id, prompt: r.prompt }; })(),
     },
+    listeningQuestions: lno,
     totalQuestions: no,
-    minutes: 120,
+    minutes: 150,
   };
 }
 
@@ -155,8 +193,9 @@ export interface GradedQuestion {
   question: string;
 }
 
-/** Academic-reading band ladder (39–40 → 9.0 …), scaled by ratio for 39-Q papers. */
-export function readingBand(raw: number, total: number): number {
+/** Academic band ladder (39–40 → 9.0 …), scaled by ratio — valid for both
+ * listening and reading raw scores. */
+export function sectionBand(raw: number, total: number): number {
   const p = total ? raw / total : 0;
   const ladder: [number, number][] = [
     [0.975, 9], [0.925, 8.5], [0.875, 8], [0.825, 7.5], [0.75, 7], [0.675, 6.5],
@@ -167,10 +206,20 @@ export function readingBand(raw: number, total: number): number {
   return 2;
 }
 
-export async function gradeMockReading(
-  taskIds: number[],
-  responses: Record<string, string | string[]>,
-): Promise<{ perQuestion: GradedQuestion[]; raw: number; total: number; band: number; passageScores: { label: string; raw: number; total: number }[] }> {
+/** Backwards-compatible alias. */
+export const readingBand = sectionBand;
+
+export interface SectionGrade {
+  perQuestion: GradedQuestion[];
+  raw: number;
+  total: number;
+  band: number;
+  partScores: { label: string; raw: number; total: number }[];
+}
+
+/** Grades one objective section (listening or reading). Response keys carry a
+ * section prefix ("L3" / "R14") so the two sections share one answer map. */
+export async function gradeMockSection(taskIds: number[], responses: Record<string, string | string[]>, keyPrefix: string, partLabel: string): Promise<SectionGrade> {
   const rows = await db
     .select({ id: ieltsTasks.id, questions: ieltsTasks.questions })
     .from(ieltsTasks)
@@ -178,7 +227,7 @@ export async function gradeMockReading(
   const byId = new Map(rows.map((r) => [r.id, r]));
 
   const perQuestion: GradedQuestion[] = [];
-  const passageScores: { label: string; raw: number; total: number }[] = [];
+  const partScores: { label: string; raw: number; total: number }[] = [];
   let no = 0;
   let raw = 0;
   for (const id of taskIds) {
@@ -186,7 +235,7 @@ export async function gradeMockReading(
     let pRaw = 0;
     for (const q of qs) {
       const n = ++no;
-      const resp = responses[String(n)];
+      const resp = responses[`${keyPrefix}${n}`];
       const multi = /\b(two|three|TWO|THREE)\b/.test(q.question) && !!q.options;
       const correct = multi
         ? multiMatches(Array.isArray(resp) ? resp : [String(resp ?? "")], q.answer)
@@ -197,7 +246,7 @@ export async function gradeMockReading(
       }
       perQuestion.push({ no: n, correct, yourAnswer: Array.isArray(resp) ? resp.join(", ") : String(resp ?? ""), answer: q.answer, question: q.question });
     }
-    passageScores.push({ label: `Passage ${passageScores.length + 1}`, raw: pRaw, total: qs.length });
+    partScores.push({ label: `${partLabel} ${partScores.length + 1}`, raw: pRaw, total: qs.length });
   }
-  return { perQuestion, raw, total: no, band: readingBand(raw, no), passageScores };
+  return { perQuestion, raw, total: no, band: sectionBand(raw, no), partScores };
 }

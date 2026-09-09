@@ -27,6 +27,8 @@
     "db:phrases": "tsx scripts/import-writing-phrases.ts",
     "db:writingvocab": "tsx scripts/import-writing-vocab.ts",
     "db:listening": "tsx scripts/import-listening-bank.ts",
+    "db:listening:c20": "tsx scripts/import-c20-listening.ts",
+    "db:cambridgewriting": "tsx scripts/import-cambridge-writing.ts",
     "test:smoke": "tsx scripts/smoke.ts",
     "test:pm": "tsx scripts/verify-pm.ts",
     "test:engine": "tsx scripts/verify-engine.ts",
