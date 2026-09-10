@@ -1,11 +1,11 @@
 "use client";
 
-import { useState, useTransition } from "react";
+import { useEffect, useState, useTransition } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { Badge, btn, inputCls } from "@/components/ui";
 import { Segmented, toast } from "@/components/motion";
-import { T } from "@/components/i18n";
+import { T, useBilingual } from "@/components/i18n";
 import { importContentAction, assessDifficultyAction } from "@/app/actions";
 
 interface Item {
@@ -53,13 +53,16 @@ const TOPIC_ZH: Record<string, string> = {
 };
 
 export function LibraryView({ contents }: { contents: Item[] }) {
+  const bilingual = useBilingual();
   const [tab, setTab] = useState<Tab>("library");
-  // nav "Listening" lands on /library?type=listening — honour it once on mount
-  const [filter, setFilter] = useState<FilterType>(() => {
-    if (typeof window === "undefined") return "all";
+  const [filter, setFilter] = useState<FilterType>("all");
+  // nav "Listening" lands on /library?type=listening — applied after mount so
+  // SSR and the first client render agree (avoids hydration text mismatch)
+  useEffect(() => {
     const t = new URLSearchParams(window.location.search).get("type");
-    return t === "reading" || t === "listening" ? t : "all";
-  });
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- one-time URL-param hydration
+    if (t === "reading" || t === "listening") setFilter(t);
+  }, []);
   const [topic, setTopic] = useState("all");
   // the bank holds hundreds of items — render progressively instead of one
   // giant list; reset whenever the visible set changes
@@ -114,7 +117,7 @@ export function LibraryView({ contents }: { contents: Item[] }) {
                 <button key={t} onClick={() => { setTopic(t); setLimit(PAGE); }}
                   className={`press rounded-lg px-2.5 py-1 text-[12px] font-medium transition-colors ${
                     topic === t ? "chip-on" : "chip"
-                  }`}>{t === "all" ? "All topics 全部" : `${t}${TOPIC_ZH[t] ? ` ${TOPIC_ZH[t]}` : ""}`}</button>
+                  }`}>{t === "all" ? (bilingual ? "All topics 全部" : "All topics") : `${t}${bilingual && TOPIC_ZH[t] ? ` ${TOPIC_ZH[t]}` : ""}`}</button>
               ))}
             </div>
             <span className="ml-auto text-[12px] text-ink-3">{rows.length} items</span>

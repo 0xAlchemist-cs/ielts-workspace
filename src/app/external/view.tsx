@@ -4,7 +4,7 @@ import { useState, useTransition } from "react";
 import { logExternalSessionAction } from "@/app/actions";
 import { Badge, Card, btn, inputCls } from "@/components/ui";
 import { toast } from "@/components/motion";
-import { T } from "@/components/i18n";
+import { T, useBilingual } from "@/components/i18n";
 import type { ExternalCoach } from "@/lib/external-coaches";
 
 interface SessionLog {
@@ -27,6 +27,7 @@ export function ExternalCoachView({
   sessions: SessionLog[];
 }) {
   const [showLog, setShowLog] = useState(false);
+  const bilingual = useBilingual();
 
   return (
     <div>
@@ -54,7 +55,7 @@ export function ExternalCoachView({
             </div>
             <h3 className="mt-3 text-[16px] font-semibold tracking-[-0.015em] text-ink">
               {coach.name}
-              <span className="ml-2 text-[12px] font-normal text-ink-3">{coach.nameZh}</span>
+              {bilingual && <span className="ml-2 text-[12px] font-normal text-ink-3">{coach.nameZh}</span>}
             </h3>
             <p className="mt-1.5 text-[13px] leading-relaxed text-ink-2">{coach.description}</p>
             <div className="mt-3 rounded-xl bg-black/[0.03] px-3.5 py-2.5">

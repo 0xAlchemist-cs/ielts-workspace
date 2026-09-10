@@ -9,7 +9,7 @@ import {
 } from "@/lib/banks";
 import { Badge, Card, ProgressBar, Sparkline, Stat, btn, inputCls } from "@/components/ui";
 import { toast } from "@/components/motion";
-import { T } from "@/components/i18n";
+import { T, useBilingual } from "@/components/i18n";
 import type { CEFR, MissionCounters } from "@/lib/types";
 import type { FullLearningProfile, ErrorPattern } from "@/server/services/learning-profile";
 import type { SkillTrend, Bottleneck, WeeklyReview } from "@/lib/types";
@@ -81,6 +81,7 @@ export function ProfileView({
     listening: { profile: Record<string, string>; misses: Record<string, number> };
   };
 }) {
+  const bilingual = useBilingual();
   const [cefr, setCefr] = useState(profile.cefr);
   const [immersion, setImmersion] = useState(profile.immersionLevel);
   const [grammar, setGrammar] = useState(new Set(profile.grammarWeaknesses));
@@ -120,6 +121,58 @@ export function ProfileView({
         </div>
       </header>
 
+      {/* Who am I as a learner — meaningful statements first, numbers only as
+       * supporting evidence (spec: prefer sentences over percentages) */}
+      {(() => {
+        const named: [string, number | null, { en: string; zh: string }][] = [
+          ["listening", profile.ieltsListening, { en: "Listening", zh: "听力" }],
+          ["reading", profile.ieltsReading, { en: "Reading", zh: "阅读" }],
+          ["writing", profile.ieltsWriting, { en: "Writing", zh: "写作" }],
+          ["speaking", profile.ieltsSpeaking, { en: "Speaking", zh: "口语" }],
+        ];
+        const scored = named.filter(([, v]) => typeof v === "number" && v > 0) as [string, number, { en: string; zh: string }][];
+        const stmts: { en: string; zh: string }[] = [];
+        if (scored.length >= 2) {
+          scored.sort((a, b) => b[1] - a[1]);
+          const top = scored[0];
+          const low = scored[scored.length - 1];
+          const gap = top[1] - low[1];
+          if (gap >= 0.5) {
+            stmts.push({
+              en: `Your ${top[2].en.toLowerCase()} leads at ${top[1].toFixed(1)}, while ${low[2].en.toLowerCase()} trails at ${low[1].toFixed(1)} — that ${gap.toFixed(1)}-band gap is where the fastest points hide.`,
+              zh: `你的${top[2].zh}最强（${top[1].toFixed(1)}），${low[2].zh}最弱（${low[1].toFixed(1)}）——这 ${gap.toFixed(1)} 分的差距是最快涨分的地方。`,
+            });
+          } else {
+            stmts.push({
+              en: `Your four skills are balanced around ${top[1].toFixed(1)} — improvement now comes from depth (retrieval & production), not another skill.`,
+              zh: `你的四科水平接近（约 ${top[1].toFixed(1)}）——现在提升靠深度（提取与产出），而不是再换一科。`,
+            });
+          }
+        }
+        if (fullProfile.weakestLink.score > 0) {
+          stmts.push({
+            en: `Deepest weakness: ${fullProfile.weakestLink.subSkill} in ${fullProfile.weakestLink.skill.toLowerCase()} — ${fullProfile.weakestLink.evidence}`,
+            zh: `最深层的弱点：${fullProfile.weakestLink.skill}中的${fullProfile.weakestLink.subSkill}——${fullProfile.weakestLink.evidence}`,
+          });
+        }
+        if (!stmts.length) return null;
+        return (
+          <div className="mb-6 rounded-2xl bg-surface px-6 py-5">
+            <p className="t-section">
+              <T en="Who you are as a learner" zh="你是怎样的学习者" />
+            </p>
+            <ul className="mt-2.5 space-y-2">
+              {stmts.map((s, i) => (
+                <li key={i} className="flex items-start gap-2 text-[14px] leading-relaxed text-ink">
+                  <span className="mt-[8px] h-[5px] w-[5px] shrink-0 rounded-full bg-accent" />
+                  <T en={s.en} zh={s.zh} />
+                </li>
+              ))}
+            </ul>
+          </div>
+        );
+      })()}
+
       {/* Weakest Link — the single most actionable insight */}
       {fullProfile.weakestLink.score > 0 && (
         <div className="mb-6 rounded-2xl bg-[#ff3b30]/[0.05] px-6 py-4 shadow-[0_0_0_0.5px_rgba(255,59,48,0.15)]">
@@ -137,7 +190,7 @@ export function ProfileView({
       {/* Overall metrics */}
       <div className="mb-6 grid grid-cols-2 gap-2.5 sm:grid-cols-3 lg:grid-cols-5">
         <Stat label="Active Vocab" labelZh="主动词汇" value={stats.activeVocabulary} tone="accent" sub={`+${stats.passiveVocabulary} passive`} />
-        <Stat label="Active Chunks" labelZh="主动语块" value={stats.activeChunks} sub={`强度 ${stats.averageStrength}`} />
+        <Stat label="Active Chunks" labelZh="主动语块" value={stats.activeChunks} sub={bilingual ? `强度 ${stats.averageStrength}` : `avg strength ${stats.averageStrength}`} />
         <Stat label="Retrieval Acc" labelZh="提取正确率" value={`${stats.retrievalAccuracy}%`} sub="near 30 days" />
         <Stat label="Due now" labelZh="待复习" value={stats.dueNow} sub={`${stats.totalItems} tracked`} />
         <Stat label="Total Events" labelZh="学习事件" value={fullProfile.totalEvents} sub="all modules" />
@@ -412,6 +465,7 @@ function SkillCard({
   onDrill: (key: string | null) => void;
   drillKey: string | null;
 }) {
+  const bilingual = useBilingual();
   const avg = dimensions.length
     ? Math.round(dimensions.reduce((a, d) => a + d.score, 0) / dimensions.length)
     : 0;
@@ -420,7 +474,7 @@ function SkillCard({
     <div className="card-specular rounded-2xl bg-white px-5 py-4">
       <div className="mb-3 flex items-center justify-between">
         <div className="text-[13px] font-semibold tracking-[-0.01em] text-ink">
-          {title} <span className="ml-1 text-[12px] font-normal text-ink-3">{zh}</span>
+          {title} {bilingual && <span className="ml-1 text-[12px] font-normal text-ink-3">{zh}</span>}
         </div>
         <span className={`font-mono text-[18px] font-semibold tabular-nums ${avg < 50 ? "text-[#d70015]" : avg < 70 ? "text-[#9a6200]" : "text-[#1f7a37]"}`}>
           {avg || "—"}
