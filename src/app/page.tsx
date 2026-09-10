@@ -9,6 +9,7 @@ import { getOrCreateTodayMission } from "@/server/services/mission";
 import { getDashboardStats, getTodayEvidence, getTodayFunnel, getReturningToday, getTomorrowPreview } from "@/server/services/progress";
 import { getTrajectory } from "@/server/services/trajectory";
 import { T } from "@/components/i18n";
+import { EvidenceFunnel } from "@/components/funnel";
 import { LiteToggle } from "./lite-toggle";
 import type { MissionPlan } from "@/lib/types";
 
@@ -451,38 +452,32 @@ export default async function HomePage() {
         </div>
       </section>
 
-      {/* ── Today's ledger — one honest line + the most meaningful recent shift ── */}
-      {(() => {
-        const improving = fullProfile.trends.find((t) => t.direction === "improving");
-        const labelOf: Record<string, { en: string; zh: string }> = {
-          listening: { en: "Listening", zh: "听力" },
-          reading: { en: "Reading", zh: "阅读" },
-          speaking: { en: "Speaking", zh: "口语" },
-          writing: { en: "Writing", zh: "写作" },
-          overall: { en: "Overall", zh: "综合" },
-          retrievalAccuracy: { en: "Retrieval accuracy", zh: "提取准确率" },
-          transferRate: { en: "Transfer rate", zh: "迁移率" },
-        };
-        return (
-          <div className="space-y-1">
-            <p className="t-caption">
-              <T
-                en={`Today — exposed ${funnel.exposure} · understood ${funnel.understood} · retrieved ${funnel.retrieved} · used ${funnel.used}`}
-                zh={`今日 — 接触 ${funnel.exposure} · 理解 ${funnel.understood} · 提取 ${funnel.retrieved} · 使用 ${funnel.used}`}
-              />
+      {/* ── Today's evidence — the honest funnel + the most meaningful recent shift ── */}
+      <section>
+        <EvidenceFunnel counters={funnel} />
+        {(() => {
+          const improving = fullProfile.trends.find((t) => t.direction === "improving");
+          const labelOf: Record<string, { en: string; zh: string }> = {
+            listening: { en: "Listening", zh: "听力" },
+            reading: { en: "Reading", zh: "阅读" },
+            speaking: { en: "Speaking", zh: "口语" },
+            writing: { en: "Writing", zh: "写作" },
+            overall: { en: "Overall", zh: "综合" },
+            retrievalAccuracy: { en: "Retrieval accuracy", zh: "提取准确率" },
+            transferRate: { en: "Transfer rate", zh: "迁移率" },
+          };
+          if (!improving || !labelOf[improving.key]) return null;
+          return (
+            <p className="mt-4 text-[12px] text-ink-3">
+              <T en="Recent change · " zh="最近变化 · " />
+              <span className="text-ok-text">
+                <T en={labelOf[improving.key].en} zh={labelOf[improving.key].zh} /> ↑
+              </span>
+              <T en=" improving across recent sessions" zh="近几次学习在持续提升" />
             </p>
-            {improving && labelOf[improving.key] && (
-              <p className="text-[12px] text-ink-3">
-                <T en="Recent change · " zh="最近变化 · " />
-                <span className="text-ok-text">
-                  <T en={labelOf[improving.key].en} zh={labelOf[improving.key].zh} /> ↑
-                </span>
-                <T en=" improving across recent sessions" zh="近几次学习在持续提升" />
-              </p>
-            )}
-          </div>
-        );
-      })()}
+          );
+        })()}
+      </section>
     </div>
   );
 }

@@ -351,6 +351,35 @@ export function MockExam({ paper }: { paper: MockPaper }) {
           </p>
         )}
 
+        {(() => {
+          /* measurement feeds the loop: the weakest section becomes tomorrow's focus */
+          const scored: [string, number, { en: string; zh: string }][] = [];
+          if (listening) scored.push(["listening", listening.band, { en: "Listening", zh: "听力" }]);
+          if (reading) scored.push(["reading", reading.band, { en: "Reading", zh: "阅读" }]);
+          if (writing?.task1.band != null && writing?.task2.band != null)
+            scored.push(["writing", (writing.task1.band + writing.task2.band) / 2, { en: "Writing", zh: "写作" }]);
+          if (scored.length < 2) return null;
+          scored.sort((a, b) => a[1] - b[1]);
+          const weakest = scored[0];
+          const gap = scored[scored.length - 1][1] - weakest[1];
+          return (
+            <div className="rounded-xl bg-accent/[0.06] px-5 py-4">
+              <p className="text-[12px] font-medium uppercase tracking-[0.07em] text-ink-3">
+                <T en="What's next" zh="下一步" />
+              </p>
+              <p className="mt-1.5 text-[13px] leading-relaxed text-ink-2">
+                <T
+                  en={`Weakest section: ${weakest[2].en} (${weakest[1].toFixed(1)}). Tomorrow's mission will weight ${weakest[2].en.toLowerCase()} practice${gap >= 0.5 ? ` — it trails your best section by ${gap.toFixed(1)} bands` : ""}. Correct the reviewed mistakes above and they'll return in retrieval until dead.`}
+                  zh={`最弱一科：${weakest[2].zh}（${weakest[1].toFixed(1)} 分）。明天的任务会加重${weakest[2].zh}练习${gap >= 0.5 ? `——它比你最好的一科低 ${gap.toFixed(1)} 分` : ""}。把上面复盘过的错误改掉，它们会回到复习里直到被消灭。`}
+                />
+              </p>
+              <Link href="/" className="press mt-2 inline-flex items-center gap-1.5 text-[13px] font-medium text-accent-text">
+                <T en="Back to Today" zh="回到今日" />
+              </Link>
+            </div>
+          );
+        })()}
+
         {[listening, reading].filter((s): s is SectionResult => !!s).map((section, si) => (
           <section key={si}>
             <p className="t-section mb-3">

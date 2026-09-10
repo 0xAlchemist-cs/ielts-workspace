@@ -44,12 +44,12 @@ export function ErrorBankView({ errors }: { errors: ErrorItem[] }) {
       <header className="mb-5 flex flex-wrap items-end justify-between gap-3">
         <div>
           <h1 className="text-display">
-            <T en="My English Problems" zh="我的英语问题库" />
+            <T en="Your Recurring Mistakes" zh="惯犯错误" />
           </h1>
           <p className="mt-1.5 text-[13px] text-ink-2">
             <T
-              en="Every correction lands here and returns in retrieval practice until it's dead."
-              zh="每一条纠正都会存在这里，并在提取练习中反复回来，直到你彻底消灭它。不再重复的错误是涨分最快的途径。"
+              en="The system remembers every mistake and keeps testing it in new contexts until it's dead."
+              zh="系统记住你的每一个错误，换着场景反复测试，直到你彻底消灭它。"
             />
           </p>
         </div>
@@ -195,6 +195,9 @@ function ErrorRow({ e, onToggle, onAskTutor, onDrills }: { e: ErrorItem; onToggl
           <span className="text-ink-3 line-through">{e.wrongForm}</span>
           <span className="text-ink-3">→</span>
           <span className="font-semibold text-ink">{e.correctForm}</span>
+          <Badge tone={e.status === "improving" ? "warn" : "danger"}>
+            {e.status === "improving" ? <T en="IMPROVING" zh="改善中" /> : <T en="UNSTABLE" zh="不稳定" />}
+          </Badge>
         </div>
         <div className="flex items-center gap-2.5">
           <span className="font-mono text-[12px] tabular-nums text-ink-3">×{e.occurrenceCount}</span>
@@ -205,15 +208,17 @@ function ErrorRow({ e, onToggle, onAskTutor, onDrills }: { e: ErrorItem; onToggl
         </div>
       </div>
       {e.explanation && <p className="mt-1.5 text-[12.5px] leading-relaxed text-ink-2">{e.explanation}</p>}
-      <button
-        onClick={() => onAskTutor(`Why do I keep making the mistake "${e.wrongForm}" instead of "${e.correctForm}"? This has happened ${e.occurrenceCount} times.`)}
-        className={`${btn.ghost} mt-2 text-[#0068d0]`}
-      >
-        🤖 <T en="Ask Tutor why" zh="问导师为什么" />
-      </button>
-      <button onClick={onDrills} className={`${btn.ghost} mt-2 ml-1 text-[#0068d0]`}>
-        <T en="Parallel drills" zh="平行操练" />
-      </button>
+      <div className="mt-2 flex flex-wrap items-center gap-2">
+        <button onClick={onDrills} className={`${btn.primary} px-3.5 py-1.5 text-[12px]`}>
+          <T en="Practice in new contexts" zh="换场景再测（平行操练）" />
+        </button>
+        <button
+          onClick={() => onAskTutor(`Why do I keep making the mistake "${e.wrongForm}" instead of "${e.correctForm}"? This has happened ${e.occurrenceCount} times.`)}
+          className={`${btn.ghost} text-[#0068d0]`}
+        >
+          🤖 <T en="Ask Tutor why" zh="问导师为什么" />
+        </button>
+      </div>
     </div>
   );
 }

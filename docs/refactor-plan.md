@@ -32,11 +32,11 @@
 |---|---|---|---|
 | D | 侧栏导航 | 上表重分组+改名；补听力入口 | ✅ 已验（nav+引擎术语清零）|
 | E | 首页 | 三问结构+Why3+What will change+Recent change | ✅ 已验 |
-| F | 证据呈现 | 漏斗五级可视化组件（Exposed→…→Retained）首页+Profile 复用 | ☐ |
-| G | Error Bank | 从表格→"你的惯犯错误"卡片：发生次数/模式/状态(UNSTABLE)/平行操练为主 CTA | ☐ |
+| F | 证据呈现 | 漏斗五级可视化组件（Exposed→…→Retained）首页+Profile 复用 | ✅ 首页已上（EvidenceFunnel）；Profile 复用待 I |
+| G | Error Bank | 从表格→"你的惯犯错误"卡片：发生次数/模式/状态(UNSTABLE)/平行操练为主 CTA | ✅ 已验 |
 | G2 | Review | 保持先想后揭晓；去卡片化装饰 | ☐（现状已接近，微调） |
 | H | Reading/Listening/Writing | 已达标（近两轮重构完成）；Writing 检查 TASK→PLAN→WRITE 流 | ☐ 核对 |
-| I | Profile | 语句化结论优先（"词汇认读强，即兴提取弱"），数字只作佐证；Mock 报告→下一步学习建议 | ☐ |
+| I | Profile | 语句化结论优先（"词汇认读强，即兴提取弱"），数字只作佐证；Mock 报告→下一步学习建议 | ◐ Mock→下一步已上；Profile 语句化待做 |
 | J | 语言模式 | 二态已合规；全站审计一遍泄漏 | ☐ |
 | K | 暗色/亮色 | 已有令牌体系；抽查 | ☐ |
 | L | 响应式 1024-1920 | 抽查 | ☐ |
