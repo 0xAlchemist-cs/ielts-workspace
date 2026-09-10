@@ -54,7 +54,12 @@ const TOPIC_ZH: Record<string, string> = {
 
 export function LibraryView({ contents }: { contents: Item[] }) {
   const [tab, setTab] = useState<Tab>("library");
-  const [filter, setFilter] = useState<FilterType>("all");
+  // nav "Listening" lands on /library?type=listening — honour it once on mount
+  const [filter, setFilter] = useState<FilterType>(() => {
+    if (typeof window === "undefined") return "all";
+    const t = new URLSearchParams(window.location.search).get("type");
+    return t === "reading" || t === "listening" ? t : "all";
+  });
   const [topic, setTopic] = useState("all");
   // the bank holds hundreds of items — render progressively instead of one
   // giant list; reset whenever the visible set changes

@@ -6,9 +6,10 @@ import { useEffect, useState } from "react";
 import {
   BookOpen,
   CircleAlert,
-  ExternalLink,
+  ClipboardCheck,
   FlaskConical,
   GraduationCap,
+  Headphones,
   Layers,
   Mic,
   PanelLeftClose,
@@ -18,7 +19,6 @@ import {
   Settings,
   Target,
   TrendingUp,
-  User,
 } from "lucide-react";
 import { T } from "@/components/i18n";
 import type { LucideIcon } from "lucide-react";
@@ -28,51 +28,53 @@ import type { LucideIcon } from "lucide-react";
 type Item = { href: string; en: string; zh: string; icon: LucideIcon };
 type Group = { label: string; labelZh: string; items: Item[] };
 
+/* IA v2 — the product is the loop, modules are environments:
+ * Today (the loop's daily orchestration) · Practice (environments) ·
+ * Study (memory-driven training) · Progress (evidence). No engine names. */
 export const NAV: Group[] = [
   {
-    label: "Learn",
-    labelZh: "学习",
-    items: [
-      { href: "/", en: "Mission", zh: "今日任务", icon: Target },
-      { href: "/library", en: "Reading", zh: "阅读内容", icon: BookOpen },
-      { href: "/writing", en: "Writing", zh: "写作", icon: PenLine },
-      { href: "/speaking", en: "Speaking", zh: "口语", icon: Mic },
-      { href: "/ielts", en: "IELTS", zh: "雅思引擎", icon: GraduationCap },
-    ],
+    label: "Today",
+    labelZh: "今日",
+    items: [{ href: "/", en: "Today", zh: "今日", icon: Target }],
   },
   {
     label: "Practice",
     labelZh: "练习",
     items: [
+      { href: "/library", en: "Reading", zh: "阅读", icon: BookOpen },
+      { href: "/library?type=listening", en: "Listening", zh: "听力", icon: Headphones },
+      { href: "/writing", en: "Writing", zh: "写作", icon: PenLine },
+      { href: "/external", en: "Speaking", zh: "口语", icon: Mic },
+      { href: "/ielts", en: "IELTS Practice", zh: "雅思练习", icon: GraduationCap },
+      { href: "/ielts/mock", en: "Mock Exam", zh: "全真模考", icon: ClipboardCheck },
+    ],
+  },
+  {
+    label: "Study",
+    labelZh: "学习",
+    items: [
       { href: "/review", en: "Review", zh: "复习", icon: RotateCcw },
+      { href: "/errors", en: "Mistakes", zh: "惯犯错误", icon: CircleAlert },
       { href: "/chunks", en: "Language", zh: "语言库", icon: Layers },
       { href: "/lab", en: "Lab", zh: "语言实验室", icon: FlaskConical },
-      { href: "/errors", en: "Errors", zh: "错误银行", icon: CircleAlert },
     ],
   },
   {
-    label: "You",
-    labelZh: "我的",
-    items: [
-      { href: "/profile", en: "Profile", zh: "学习画像", icon: User },
-      { href: "/profile#trajectory", en: "Progress", zh: "学习轨迹", icon: TrendingUp },
-    ],
-  },
-  {
-    label: "Coach",
-    labelZh: "教练",
-    items: [{ href: "/external", en: "External Coach", zh: "外部教练", icon: ExternalLink }],
+    label: "Progress",
+    labelZh: "进步",
+    items: [{ href: "/profile", en: "My Progress", zh: "我的进步", icon: TrendingUp }],
   },
 ];
 
-function isActive(pathname: string, href: string, hash: string): boolean {
-  const [route, anchor] = href.split("#");
-  if (route === "/profile") {
-    // Progress / Profile share one page — the hash picks the selected item
-    if (pathname !== "/profile") return false;
-    return anchor ? hash === `#${anchor}` : hash === "" || hash === "#";
-  }
-  return pathname === route || (route !== "/" && pathname.startsWith(route));
+function isActive(pathname: string, href: string, hash: string, search: string): boolean {
+  const [routeQ, anchor] = href.split("#");
+  const [route, query] = routeQ.split("?");
+  if (pathname !== route) return false;
+  if (anchor) return hash === `#${anchor}`;
+  // queried siblings (Listening vs Reading on /library) split by the param;
+  // the query-less item never lights up while a queried sibling matches
+  if (query) return search.includes(query);
+  return !search.includes("type=");
 }
 
 export function Sidebar({
@@ -90,12 +92,20 @@ export function Sidebar({
 }) {
   const pathname = usePathname();
   const [hash, setHash] = useState("");
+  const [search, setSearch] = useState("");
 
   useEffect(() => {
-    const read = () => setHash(window.location.hash);
+    const read = () => {
+      setHash(window.location.hash);
+      setSearch(window.location.search);
+    };
     read();
     window.addEventListener("hashchange", read);
-    return () => window.removeEventListener("hashchange", read);
+    window.addEventListener("popstate", read);
+    return () => {
+      window.removeEventListener("hashchange", read);
+      window.removeEventListener("popstate", read);
+    };
   }, [pathname]);
 
   return (
@@ -159,7 +169,7 @@ export function Sidebar({
                 </div>
               )}
               {group.items.map((item) => {
-                const active = isActive(pathname, item.href, hash);
+                const active = isActive(pathname, item.href, hash, search);
                 const Icon = item.icon;
                 // Same-page "/profile → /profile#trajectory" links: a plain
                 // Link to the same route won't strip the hash or scroll —

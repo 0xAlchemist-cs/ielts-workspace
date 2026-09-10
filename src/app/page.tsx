@@ -194,14 +194,65 @@ export default async function HomePage() {
           {est} · {steps.length} <T en="steps" zh="步" />
         </p>
 
-        {why && (
-          <div className="mt-5">
-            <p className="text-[12px] font-medium uppercase tracking-[0.07em] text-ink-3">
-              <T en="Why today" zh="为什么是今天" />
-            </p>
-            <p className="mt-1 max-w-xl text-[13px] leading-relaxed text-ink-2">{why}</p>
-          </div>
-        )}
+        {(() => {
+          /* WHY TODAY — up to three concise evidence points, never a vague
+           * "recommended for you" */
+          const whyPoints: { en: string; zh: string }[] = [];
+          for (const u of urgent.slice(0, 3)) whyPoints.push({ en: u, zh: u });
+          if (whyPoints.length < 3 && returning.length > 0)
+            whyPoints.push({
+              en: `${returning.length} items are due for retrieval today`,
+              zh: `${returning.length} 项表达今天到期待提取`,
+            });
+          if (whyPoints.length === 0 && why)
+            whyPoints.push({ en: why, zh: why });
+          if (whyPoints.length === 0) return null;
+          return (
+            <div className="mt-5">
+              <p className="text-[12px] font-medium uppercase tracking-[0.07em] text-ink-3">
+                <T en="Why today" zh="为什么是今天" />
+              </p>
+              <ul className="mt-1.5 space-y-1">
+                {whyPoints.slice(0, 3).map((p, i) => (
+                  <li key={i} className="flex items-start gap-2 text-[13px] leading-relaxed text-ink-2">
+                    <span className="mt-[7px] h-[5px] w-[5px] shrink-0 rounded-full bg-accent" />
+                    <T en={p.en} zh={p.zh} />
+                  </li>
+                ))}
+              </ul>
+            </div>
+          );
+        })()}
+
+        {(() => {
+          /* WHAT WILL CHANGE — the concrete outcome of this session, derived
+           * from the plan itself (counts are real, never promises) */
+          const noticeN = plan.notice?.chunkIds?.length ?? 0;
+          const retrieveN = plan.retrieval?.itemIds?.length ?? 0;
+          const lines: { en: string; zh: string }[] = [];
+          if (noticeN > 0)
+            lines.push({ en: `notice ${noticeN} new expressions in context`, zh: `在语境中注意 ${noticeN} 个新表达` });
+          if (retrieveN > 0)
+            lines.push({ en: `retrieve ${retrieveN} items from memory`, zh: `闭卷提取 ${retrieveN} 项` });
+          if (!plan.speaking || plan.speaking.status !== "skipped")
+            lines.push({ en: "produce English out loud", zh: "开口产出英语" });
+          if (lines.length === 0) return null;
+          return (
+            <div className="mt-5 rounded-xl bg-surface-2 px-5 py-4">
+              <p className="text-[12px] font-medium uppercase tracking-[0.07em] text-ink-3">
+                <T en="What will change" zh="本轮结束时你将" />
+              </p>
+              <p className="mt-1.5 text-[13px] leading-relaxed text-ink-2">
+                {lines.map((l, i) => (
+                  <span key={i}>
+                    {i > 0 && " · "}
+                    <T en={l.en} zh={l.zh} />
+                  </span>
+                ))}
+              </p>
+            </div>
+          );
+        })()}
 
         <div className="mt-7">
           <Link
@@ -400,13 +451,38 @@ export default async function HomePage() {
         </div>
       </section>
 
-      {/* ── Today's ledger — one honest line ─────────────────────────────── */}
-      <p className="t-caption">
-        <T
-          en={`Today — exposed ${funnel.exposure} · understood ${funnel.understood} · retrieved ${funnel.retrieved} · used ${funnel.used}`}
-          zh={`今日 — 接触 ${funnel.exposure} · 理解 ${funnel.understood} · 提取 ${funnel.retrieved} · 使用 ${funnel.used}`}
-        />
-      </p>
+      {/* ── Today's ledger — one honest line + the most meaningful recent shift ── */}
+      {(() => {
+        const improving = fullProfile.trends.find((t) => t.direction === "improving");
+        const labelOf: Record<string, { en: string; zh: string }> = {
+          listening: { en: "Listening", zh: "听力" },
+          reading: { en: "Reading", zh: "阅读" },
+          speaking: { en: "Speaking", zh: "口语" },
+          writing: { en: "Writing", zh: "写作" },
+          overall: { en: "Overall", zh: "综合" },
+          retrievalAccuracy: { en: "Retrieval accuracy", zh: "提取准确率" },
+          transferRate: { en: "Transfer rate", zh: "迁移率" },
+        };
+        return (
+          <div className="space-y-1">
+            <p className="t-caption">
+              <T
+                en={`Today — exposed ${funnel.exposure} · understood ${funnel.understood} · retrieved ${funnel.retrieved} · used ${funnel.used}`}
+                zh={`今日 — 接触 ${funnel.exposure} · 理解 ${funnel.understood} · 提取 ${funnel.retrieved} · 使用 ${funnel.used}`}
+              />
+            </p>
+            {improving && labelOf[improving.key] && (
+              <p className="text-[12px] text-ink-3">
+                <T en="Recent change · " zh="最近变化 · " />
+                <span className="text-ok-text">
+                  <T en={labelOf[improving.key].en} zh={labelOf[improving.key].zh} /> ↑
+                </span>
+                <T en=" improving across recent sessions" zh="近几次学习在持续提升" />
+              </p>
+            )}
+          </div>
+        );
+      })()}
     </div>
   );
 }
