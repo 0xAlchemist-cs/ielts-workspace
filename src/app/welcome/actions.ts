@@ -1,10 +1,46 @@
 "use server";
 
 import { and, eq } from "drizzle-orm";
+import { cookies } from "next/headers";
 import { db } from "@/db";
-import { retrievalItems } from "@/db/schema";
-import { getUserIdOrNull } from "@/server/current-user";
+import { retrievalItems, users, learningProfiles } from "@/db/schema";
+import { getCurrentUser, getUserIdOrNull } from "@/server/current-user";
 import { saveCorpusChunk } from "@/server/services/bank";
+import { generateTodayMission } from "@/server/services/mission";
+
+/* Idempotent bootstrap of the single user with quick-start defaults — safe
+ * from page rendering (GET). Cookie writes are NOT allowed there, so the
+ * tour-done marker lives in completeTourAction only. */
+export async function ensureWelcomeUser(): Promise<void> {
+  const existing = await getCurrentUser();
+  if (existing) return;
+  const rows = await db.select().from(users).limit(1);
+  let u = rows[0];
+  if (!u) [u] = await db.insert(users).values({ name: "Learner" }).returning();
+  const profile = await db
+    .select({ userId: learningProfiles.userId })
+    .from(learningProfiles)
+    .where(eq(learningProfiles.userId, u.id))
+    .limit(1);
+  if (!profile.length) {
+    await db.insert(learningProfiles).values({
+      userId: u.id,
+      cefr: "B1",
+      immersionLevel: 1,
+      dailyMinutes: 45,
+    });
+    await generateTodayMission(u.id);
+  }
+}
+
+/* Tour completion: create the user with quick-start defaults if this is a
+ * truly fresh start, and mark the tour done in a long-lived cookie so the
+ * homepage beginner branch retires itself. Server Action only (sets cookie). */
+export async function completeTourAction(): Promise<void> {
+  await ensureWelcomeUser();
+  const jar = await cookies();
+  jar.set("tour_done", "1", { maxAge: 60 * 60 * 24 * 365, path: "/" });
+}
 
 /* Notice-step write: clone the corpus chunk into the learner's own bank and
  * surface the retrieval item the Retrieve step will answer. Reuses the exact

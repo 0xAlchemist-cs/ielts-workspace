@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { cookies } from "next/headers";
 import { eq, sql } from "drizzle-orm";
 import { ArrowRight, Check } from "lucide-react";
 import { db } from "@/db";
@@ -41,7 +42,10 @@ export default async function HomePage() {
     db.select({ n: sql<number>`count(*)` }).from(vocabT).where(eq(vocabT.userId, userId)),
   ]);
   const bilingual = (cu.profile.immersionLevel ?? 1) <= 2;
-  const isBeginner = histEv[0].n === 0 && histRh[0].n === 0 && histVocab[0].n === 0;
+  // beginner = no learning history AND hasn't seen the tour (tour completion
+  // sets the tour_done cookie via completeTourAction)
+  const tourDone = (await cookies()).get("tour_done")?.value === "1";
+  const isBeginner = !tourDone && histEv[0].n === 0 && histRh[0].n === 0 && histVocab[0].n === 0;
   const g = greeting();
 
   /* ── Beginner: one card, one button — the loop is taught at /welcome ──── */
@@ -62,15 +66,15 @@ export default async function HomePage() {
           </h2>
           <p className="mt-3 text-[14px] leading-relaxed text-ink-2">
             <T
-              en="One short session: read a little, notice one expression, recall it, use it. About three minutes."
-              zh="一次短学习：读一小段，注意一个表达，回忆它，使用它。大约三分钟。"
+              en="A quick tour first — see what each part of this workspace is for. Thirty seconds, no test."
+              zh="先快速逛一圈——看看这个工作台的每个部分是干嘛的。三十秒，不做题。"
             />
           </p>
           <Link
             href="/welcome"
             className="btn-apple press mt-6 inline-flex h-11 items-center gap-2 rounded-lg px-6 text-[14px] font-medium text-white"
           >
-            <T en="Start your first session" zh="开始第一次学习" />
+            <T en="Start the tour" zh="开始导览" />
             <ArrowRight size={15} strokeWidth={2} />
           </Link>
         </section>
