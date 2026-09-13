@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useTransition } from "react";
+import { Mic } from "lucide-react";
 import { logExternalSessionAction } from "@/app/actions";
 import { Badge, Card, btn, inputCls } from "@/components/ui";
 import { toast } from "@/components/motion";
@@ -43,26 +44,31 @@ export function ExternalCoachView({
         </p>
       </header>
 
-      {/* Coach Cards */}
-      <div className="stagger grid gap-4 sm:grid-cols-2">
+      {/* Coach Card — one GPT link, one card (speaking + listening are ways to
+       * use the same coach, not two products) */}
+      <div className="stagger max-w-xl">
         {coaches.map((coach) => (
           <div key={coach.id} className="card-specular card-lift rounded-2xl bg-white p-6">
             <div className="flex items-start justify-between gap-3">
-              <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-[#0071e3]/10 text-[20px]">
-                {coach.skill === "speaking" ? "🎤" : "🎧"}
+              <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-[#0071e3]/10">
+                <Mic size={20} strokeWidth={1.7} className="text-accent-text" />
               </div>
-              <Badge tone="accent">{coach.skill}</Badge>
+              <Badge tone="accent">{coach.skill === "both" ? "speaking · listening" : coach.skill}</Badge>
             </div>
             <h3 className="mt-3 text-[16px] font-semibold tracking-[-0.015em] text-ink">
               {coach.name}
               {bilingual && <span className="ml-2 text-[12px] font-normal text-ink-3">{coach.nameZh}</span>}
             </h3>
-            <p className="mt-1.5 text-[13px] leading-relaxed text-ink-2">{coach.description}</p>
+            <p className="mt-1.5 text-[13px] leading-relaxed text-ink-2">
+              {bilingual && coach.descriptionZh ? coach.descriptionZh : coach.description}
+            </p>
             <div className="mt-3 rounded-xl bg-black/[0.03] px-3.5 py-2.5">
               <div className="text-[10px] font-semibold uppercase tracking-wide text-ink-3">
                 <T en="Recommended for" zh="推荐用于" />
               </div>
-              <p className="mt-0.5 text-[12px] leading-relaxed text-ink-2">{coach.recommendedFor}</p>
+              <p className="mt-0.5 text-[12px] leading-relaxed text-ink-2">
+                {bilingual && coach.recommendedForZh ? coach.recommendedForZh : coach.recommendedFor}
+              </p>
             </div>
             <div className="mt-4 flex gap-2.5">
               <a
@@ -120,8 +126,8 @@ export function ExternalCoachView({
       <div className="mt-8 rounded-xl bg-[#ff9f0a]/[0.06] px-5 py-4">
         <p className="text-[12px] leading-relaxed text-ink-2">
           <T
-            en="⚠ Self-assessment is auxiliary data only. It does NOT increase IELTS Band, Retrieval Strength, or LanguageItem Strength. Only verified learning events (retrieval, production, transfer) inside the Workspace move real metrics."
-            zh="⚠ 自评仅作为辅助数据，不会增加雅思分数、提取强度或语言项强度。只有 Workspace 内的可验证学习事件才会推动真实指标。"
+            en="Self-assessment is auxiliary data only. It does NOT increase any score or strength metric — only practice you actually do inside the Workspace (recalling, writing, using what you learned) moves the real numbers."
+            zh="自评仅作为辅助数据，不会增加任何分数或强度指标——只有在 Workspace 里真实完成的练习（回忆、写作、用上学过的表达）才会推动真实数字。"
           />
         </p>
       </div>

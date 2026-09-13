@@ -9,31 +9,26 @@ export interface ExternalCoach {
   descriptionZh: string;
   recommendedFor: string;
   recommendedForZh: string;
-  skill: "listening" | "speaking";
+  /** "both" = one coach covering both skills (single GPT link) */
+  skill: "listening" | "speaking" | "both";
   url: string;
 }
 
+/* One GPT link = one card. It used to be rendered as two coaches (speaking /
+ * listening) pointing at the same URL — duplicated chrome, zero information. */
 export const EXTERNAL_COACHES: ExternalCoach[] = [
   {
-    id: "ielts-speaking",
-    name: "IELTS Speaking Coach",
-    nameZh: "雅思口语教练",
-    description: "AI speaking practice with Part 1/2/3 questions, feedback, and follow-up.",
-    descriptionZh: "AI 口语练习：Part 1/2/3 提问、反馈与追问。",
-    recommendedFor: "Speaking Part 2 long turns, Part 3 abstract discussion, pronunciation feedback",
-    recommendedForZh: "口语 Part 2 长篇独白、Part 3 抽象讨论、发音反馈",
-    skill: "speaking",
-    url: EXTERNAL_COACH_URL,
-  },
-  {
-    id: "ielts-listening",
-    name: "IELTS Listening Coach",
-    nameZh: "雅思听力教练",
-    description: "Active listening / spoken English training. Ask it to read passages aloud, explain connected speech, or practice dictation.",
-    descriptionZh: "主动听力 / 口语英语训练。让它朗读文章、解释连读现象、练习听写。",
-    recommendedFor: "Connected speech recognition, dictation practice, spoken form analysis",
-    recommendedForZh: "连读辨认、听写练习、口语形态分析",
-    skill: "listening",
+    id: "ielts-coach",
+    name: "IELTS Speaking & Listening Coach",
+    nameZh: "雅思口语·听力教练",
+    description:
+      "One AI coach for both skills: Part 1/2/3 speaking practice with feedback and follow-up, or ask it to read passages aloud, explain connected speech, and drill dictation.",
+    descriptionZh:
+      "一个 AI 教练覆盖两项：口语 Part 1/2/3 提问、反馈与追问；或让它朗读文章、讲解连读、练习听写。",
+    recommendedFor:
+      "Speaking Part 2 long turns · Part 3 discussion · pronunciation feedback · connected speech · dictation",
+    recommendedForZh: "口语 Part 2 长独白 · Part 3 讨论 · 发音反馈 · 连读辨认 · 听写",
+    skill: "both",
     url: EXTERNAL_COACH_URL,
   },
 ];
