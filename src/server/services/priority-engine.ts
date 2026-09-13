@@ -3,6 +3,7 @@ import { db } from "@/db";
 import { chunks, errors, retrievalItems, reviewHistory, contents, dailyMissions, learningProfiles } from "@/db/schema";
 import { computeFullProfile } from "@/server/services/learning-profile";
 import { detectErrorPatterns } from "@/server/services/learning-profile";
+import { plural } from "@/lib/plural";
 import type { MissionRationale, MissionOutcome } from "@/lib/types";
 import type { DailyMission } from "@/db/schema";
 
@@ -59,14 +60,19 @@ export async function computeMissionDecision(userId: number): Promise<MissionDec
   const dailyMinutes = profile?.dailyMinutes ?? 45;
 
   // ── Factor 1: Weakness (from learning profile) — weight 0.30 ────────────
+  // weakest.score === null means "no VERIFIED evidence yet": the weakness
+  // factor goes neutral (50) instead of pretending 100 − 0 = max weakness.
   const weakest = fullProfile.weakestLink;
-  const weaknessScore = 100 - weakest.score;
+  const weakestScore = typeof weakest.score === "number" ? weakest.score : 50;
+  const weaknessScore = 100 - weakestScore;
   const weaknessFactor: PriorityFactor = {
     name: "Weakness",
     weight: 0.30,
     rawScore: weaknessScore,
     weightedScore: weaknessScore * 0.30,
-    detail: `${weakest.skill} → ${weakest.subSkill} scored ${weakest.score}/100. ${weakest.evidence}`,
+    detail: typeof weakest.score === "number"
+      ? `${weakest.skill} → ${weakest.subSkill} scored ${weakest.score}/100. ${weakest.evidence}`
+      : `${weakest.skill} → ${weakest.subSkill}: ${weakest.evidence}`,
   };
 
   // ── Factor 2: Error Risk (from error patterns) — weight 0.25 ───────────
@@ -92,7 +98,7 @@ export async function computeMissionDecision(userId: number): Promise<MissionDec
     weight: 0.20,
     rawScore: urgencyScore,
     weightedScore: urgencyScore * 0.20,
-    detail: `${overdueCount} items overdue, ${dueSoonCount} due within 24h. Forgetting curve decay active.`,
+    detail: `${plural(overdueCount, "item")} overdue, ${dueSoonCount} due within 24h. Forgetting curve decay active.`,
   };
 
   // ── Factor 4: IELTS Relevance — weight 0.15 ─────────────────────────────
@@ -106,7 +112,7 @@ export async function computeMissionDecision(userId: number): Promise<MissionDec
     weight: 0.15,
     rawScore: ieltsScore,
     weightedScore: ieltsScore * 0.15,
-    detail: `Recent accuracy: ${recentAccuracy}% (${recentReviews.length} attempts, ${weekFailures} failures this week).`,
+    detail: `Recent accuracy: ${recentAccuracy}% (${plural(recentReviews.length, "attempt")}, ${plural(weekFailures, "failure")} this week).`,
   };
 
   // ── Factor 5: Transfer Value (cross-module items) — weight 0.10 ─────────
@@ -120,7 +126,7 @@ export async function computeMissionDecision(userId: number): Promise<MissionDec
     weight: 0.10,
     rawScore: transferScore,
     weightedScore: transferScore * 0.10,
-    detail: `${lowTransferChunks.length} items ready for transfer (at retrieval/usage state but not yet transferred).`,
+    detail: `${plural(lowTransferChunks.length, "item")} ready for transfer (at retrieval/usage state but not yet transferred).`,
   };
 
   // ── Factor 6: Time Decay (items not seen recently) — weight 0.10 ────────
@@ -136,7 +142,7 @@ export async function computeMissionDecision(userId: number): Promise<MissionDec
     rawScore: decayScore,
     weightedScore: decayScore * 0.10,
     detail: staleItems.length > 0
-      ? `${staleItems.length} items not produced in 3+ days — memory traces fading.`
+      ? `${plural(staleItems.length, "item")} not produced in 3+ days — memory traces fading.`
       : "All items recently exercised.",
   };
 
@@ -220,10 +226,10 @@ export async function computeMissionDecision(userId: number): Promise<MissionDec
     decayFactor.weightedScore;
 
   const urgentItems: string[] = [];
-  if (overdueCount > 0) urgentItems.push(`${overdueCount} items overdue for retrieval`);
-  if (highSeverityCount > 0) urgentItems.push(`${highSeverityCount} high-severity error patterns active`);
+  if (overdueCount > 0) urgentItems.push(`${plural(overdueCount, "item")} overdue for retrieval`);
+  if (highSeverityCount > 0) urgentItems.push(`${plural(highSeverityCount, "high-severity error pattern")} active`);
   const failedItems = dueItems.filter((i) => i.failCount >= 2);
-  if (failedItems.length > 0) urgentItems.push(`${failedItems.length} items with repeated retrieval failures`);
+  if (failedItems.length > 0) urgentItems.push(`${plural(failedItems.length, "item")} with repeated retrieval failures`);
 
   const rationale: MissionRationale = {
     headline: `Focus: ${adjustedSkill} → ${weakest.subSkill}. ` +
@@ -231,7 +237,7 @@ export async function computeMissionDecision(userId: number): Promise<MissionDec
         ? `Urgent: ${urgentItems[0]}.`
         : `Maintaining steady progress across all skills.`),
     factors: [weaknessFactor, errorRiskFactor, urgencyFactor, ieltsFactor, transferFactor, decayFactor],
-    primaryFocus: { skill: adjustedSkill, subSkill: weakest.subSkill, score: weakest.score },
+    primaryFocus: { skill: adjustedSkill, subSkill: weakest.subSkill, score: weakestScore },
     diversityNote,
     urgentItems,
   };

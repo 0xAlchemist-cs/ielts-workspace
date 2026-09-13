@@ -2,7 +2,7 @@
 
 import { useEffect, useState, useTransition } from "react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { Badge, btn, inputCls } from "@/components/ui";
 import { Segmented, toast } from "@/components/motion";
 import { T, useBilingual } from "@/components/i18n";
@@ -56,13 +56,17 @@ export function LibraryView({ contents }: { contents: Item[] }) {
   const bilingual = useBilingual();
   const [tab, setTab] = useState<Tab>("library");
   const [filter, setFilter] = useState<FilterType>("all");
-  // nav "Listening" lands on /library?type=listening — applied after mount so
-  // SSR and the first client render agree (avoids hydration text mismatch)
+  // Nav entries share the /library route and differ only by ?type= — a
+  // query-only navigation re-renders but does NOT remount this component,
+  // so the filter follows the live search param (applied after mount so SSR
+  // and the first client render agree; manual chip picks hold until the
+  // next URL change).
+  const searchParams = useSearchParams();
   useEffect(() => {
-    const t = new URLSearchParams(window.location.search).get("type");
-    // eslint-disable-next-line react-hooks/set-state-in-effect -- one-time URL-param hydration
-    if (t === "reading" || t === "listening") setFilter(t);
-  }, []);
+    const t = searchParams.get("type");
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- sync filter to URL param (incl. query-only navigations)
+    setFilter(t === "reading" || t === "listening" ? t : "all");
+  }, [searchParams]);
   const [topic, setTopic] = useState("all");
   // the bank holds hundreds of items — render progressively instead of one
   // giant list; reset whenever the visible set changes

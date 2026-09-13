@@ -66,8 +66,11 @@ export async function missStats(userId: number): Promise<Record<string, number>>
 const LEVEL_ORDER = ["A2", "B1", "B2"];
 
 function bump(level: string | undefined, up: boolean): string {
+  // Levels move BOTH ways: positive evidence (clean session / good recall)
+  // bumps up, diagnosed misses / poor recall demote one step. A ratchet-only
+  // ladder would let a stale level mask real regression.
   const cur = LEVEL_ORDER.indexOf(level ?? "B1");
-  const next = Math.max(0, Math.min(LEVEL_ORDER.length - 1, cur + (up ? 1 : 0)));
+  const next = Math.max(0, Math.min(LEVEL_ORDER.length - 1, cur + (up ? 1 : -1)));
   return LEVEL_ORDER[next];
 }
 
@@ -100,12 +103,25 @@ export async function updateListeningProfileAfterSession(
 
   const m = session.misses;
   const zero = (...cats: MissCategory[]) => cats.every((c) => !(m[c] ?? 0));
-  // improvement rules — only real session evidence moves levels
-  if (session.globalUnderstanding) p.global = bump(p.global, true);
-  if (zero("unknown", "known_not_recognized") && session.recallTotal > 0) p.wordRecognition = bump(p.wordRecognition, session.recallHit / session.recallTotal >= 0.6);
+  // level rules — real session evidence moves levels in BOTH directions:
+  // clean evidence bumps up, diagnosed misses demote one step
+  if (session.globalUnderstanding && zero("meaning_integration")) p.global = bump(p.global, true);
+  else if (m.meaning_integration) p.global = bump(p.global, false);
+
+  if (zero("unknown", "known_not_recognized") && session.recallTotal > 0 && session.recallHit / session.recallTotal >= 0.6) {
+    p.wordRecognition = bump(p.wordRecognition, true);
+  } else if (!zero("unknown", "known_not_recognized") || (session.recallTotal > 0 && session.recallHit / session.recallTotal < 0.4)) {
+    p.wordRecognition = bump(p.wordRecognition, false);
+  }
+
   if (zero("connected_speech", "reduction")) p.connectedSpeech = bump(p.connectedSpeech, true);
+  else p.connectedSpeech = bump(p.connectedSpeech, false);
+
   if (zero("weak_form")) p.weakForms = bump(p.weakForms, true);
+  else p.weakForms = bump(p.weakForms, false);
+
   if (zero("speed")) p.speed = bump(p.speed, true);
+  else p.speed = bump(p.speed, false);
 
   await db
     .update(learningProfiles)

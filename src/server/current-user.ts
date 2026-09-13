@@ -21,10 +21,10 @@ export async function getCurrentUser(): Promise<CurrentUser | null> {
   return { user: rows[0].user, profile: rows[0].profile };
 }
 
-/** For pages: bounce to onboarding when no user/profile exists yet. */
+/** For pages: bounce to the guided first session when no user/profile exists yet. */
 export async function requireUser(): Promise<CurrentUser> {
   const cu = await getCurrentUser();
-  if (!cu) redirect("/onboarding");
+  if (!cu) redirect("/welcome");
   return cu;
 }
 

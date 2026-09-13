@@ -1,5 +1,5 @@
 import { requireUser } from "@/server/current-user";
-import { getTrend14 } from "@/server/services/progress";
+import { getTrend14, getTodayEvidence, getTodayFunnel } from "@/server/services/progress";
 import { computeFullProfile } from "@/server/services/learning-profile";
 import { getUserVocabulary, getUserChunks } from "@/server/services/bank";
 import { retrievalStats } from "@/server/services/retrieval";
@@ -11,7 +11,7 @@ export default async function ProfilePage() {
   const cu = await requireUser();
   const userId = cu.user.id;
 
-  const [fullProfile, trend, vocab, chunks, retrieval, lProfile, lMisses, trajectory, efficiency, weekly] =
+  const [fullProfile, trend, vocab, chunks, retrieval, lProfile, lMisses, trajectory, efficiency, weekly, funnel, evidence] =
     await Promise.all([
       computeFullProfile(userId),
       getTrend14(userId),
@@ -23,6 +23,8 @@ export default async function ProfilePage() {
       getTrajectory(userId, 30),
       getLearningEfficiency(userId),
       generateWeeklyReview(userId),
+      getTodayFunnel(userId),
+      getTodayEvidence(userId),
     ]);
 
   return (
@@ -59,7 +61,7 @@ export default async function ProfilePage() {
         daysStudied: 0,
         dueNow: retrieval.dueNow,
         totalItems: retrieval.totalItems,
-        todayFunnel: { exposure: 0, understood: 0, retrieved: 0, used: 0, retained: 0 },
+        todayFunnel: funnel,
         vocabStatusCounts: {
           passive: vocab.filter((v) => v.status === "passive").length,
           active: vocab.filter((v) => v.status === "active").length,
@@ -68,6 +70,8 @@ export default async function ProfilePage() {
         trend,
         listening: { profile: lProfile, misses: lMisses },
       }}
+      funnel={funnel}
+      evidence={evidence}
     />
   );
 }

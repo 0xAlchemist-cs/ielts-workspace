@@ -6,6 +6,7 @@ import { getUserIdOrNull } from "@/server/current-user";
 import { buildTutorContext, contextToPrompt } from "@/server/services/tutor-context";
 import { logChunkEvent } from "@/server/services/events";
 import { getProvider, isLiveConfigured } from "@/lib/ai";
+import { plural } from "@/lib/plural";
 import { readJsonBody, stringField, badRequest } from "@/lib/request";
 
 /* ── AI Tutor API ───────────────────────────────────────────────────────────
@@ -119,7 +120,7 @@ export async function POST(req: Request) {
     reply,
     mode,
     isMock,
-    contextSummary: `${tutorContext.cefr} · ${tutorContext.recentAccuracy}% acc · ${tutorContext.activeItems} items`,
+    contextSummary: `${tutorContext.cefr} · ${tutorContext.recentAccuracy}% acc · ${plural(tutorContext.activeItems, "item")}`,
     suggestedPractice,
     suggestedErrorBank,
   };

@@ -8,8 +8,10 @@ import {
   speakingWeaknessOptions,
 } from "@/lib/banks";
 import { Badge, Card, ProgressBar, Sparkline, Stat, btn, inputCls } from "@/components/ui";
+import { EvidenceFunnel } from "@/components/funnel";
 import { toast } from "@/components/motion";
 import { T, useBilingual } from "@/components/i18n";
+import { plural } from "@/lib/plural";
 import type { CEFR, MissionCounters } from "@/lib/types";
 import type { FullLearningProfile, ErrorPattern } from "@/server/services/learning-profile";
 import type { SkillTrend, Bottleneck, WeeklyReview } from "@/lib/types";
@@ -59,6 +61,8 @@ export function ProfileView({
   efficiency,
   weeklyReview,
   stats,
+  funnel,
+  evidence,
 }: {
   profile: ProfileData;
   fullProfile: FullLearningProfile;
@@ -79,6 +83,16 @@ export function ProfileView({
     chunkCount: number;
     trend: { days: string[]; produced: number[]; accuracy: number[] };
     listening: { profile: Record<string, string>; misses: Record<string, number> };
+  };
+  funnel: MissionCounters;
+  evidence: {
+    activated: number;
+    usedInOutput: number;
+    reviewAnswers: number;
+    reviewCorrect: number;
+    savedExpressions: number;
+    wordsAdded: number;
+    errorsCaptured: number;
   };
 }) {
   const bilingual = useBilingual();
@@ -106,7 +120,7 @@ export function ProfileView({
         <div className="flex flex-wrap items-end justify-between gap-3">
           <div>
             <h1 className="text-display">
-              <T en="Learning Profile" zh="学习画像" />
+              <T en="Your progress" zh="你的进步" />
             </h1>
             <p className="mt-1.5 text-[13px] text-ink-2">
               <T
@@ -116,10 +130,47 @@ export function ProfileView({
             </p>
           </div>
           <a href="/api/export" className={btn.secondary} download>
-            <T en="⤓ Export my data (JSON)" zh="⤓ 导出学习数据" />
+            <T en="Export my data (JSON)" zh="导出学习数据" />
           </a>
         </div>
       </header>
+
+      {/* Today — the evidence layer that used to live on the homepage:
+       * real counts from real events, plus the honest funnel. */}
+      {(() => {
+        const lines: { en: string; zh: string }[] = [];
+        if (evidence.activated > 0)
+          lines.push({ en: `Activated ${plural(evidence.activated, "expression")} — passive → active`, zh: `激活 ${evidence.activated} 个表达 — 被动 → 主动` });
+        if (evidence.usedInOutput > 0)
+          lines.push({ en: `Produced ${plural(evidence.usedInOutput, "expression")} in real output`, zh: `在口语/写作中真实用出 ${evidence.usedInOutput} 个表达` });
+        if (evidence.reviewAnswers > 0)
+          lines.push({ en: `${plural(evidence.reviewAnswers, "recall")} answered · ${evidence.reviewCorrect} correct`, zh: `完成 ${evidence.reviewAnswers} 次回忆练习 · 答对 ${evidence.reviewCorrect} 次` });
+        if (evidence.savedExpressions > 0)
+          lines.push({ en: `Saved ${plural(evidence.savedExpressions, "new expression")} while reading`, zh: `阅读时存入 ${evidence.savedExpressions} 个新表达` });
+        if (evidence.wordsAdded > 0)
+          lines.push({ en: `Added ${plural(evidence.wordsAdded, "word")} to your bank`, zh: `收录 ${evidence.wordsAdded} 个生词` });
+        if (evidence.errorsCaptured > 0)
+          lines.push({ en: `Captured ${plural(evidence.errorsCaptured, "error")} to conquer`, zh: `记下 ${evidence.errorsCaptured} 个待改错误` });
+        if (lines.length === 0) return null;
+        return (
+          <div className="mb-6">
+            <p className="t-section">
+              <T en="What changed today" zh="今天你拿下了什么" />
+            </p>
+            <ul className="mt-3 space-y-1.5">
+              {lines.map((l, i) => (
+                <li key={i} className="flex items-start gap-2 text-[13px] leading-relaxed text-ink-2">
+                  <span className="mt-[7px] h-[5px] w-[5px] shrink-0 rounded-full bg-accent" />
+                  <T en={l.en} zh={l.zh} />
+                </li>
+              ))}
+            </ul>
+            <div className="mt-5">
+              <EvidenceFunnel counters={funnel} />
+            </div>
+          </div>
+        );
+      })()}
 
       {/* Who am I as a learner — meaningful statements first, numbers only as
        * supporting evidence (spec: prefer sentences over percentages) */}
@@ -149,7 +200,7 @@ export function ProfileView({
             });
           }
         }
-        if (fullProfile.weakestLink.score > 0) {
+        if ((fullProfile.weakestLink.score ?? 0) > 0) {
           stmts.push({
             en: `Deepest weakness: ${fullProfile.weakestLink.subSkill} in ${fullProfile.weakestLink.skill.toLowerCase()} — ${fullProfile.weakestLink.evidence}`,
             zh: `最深层的弱点：${fullProfile.weakestLink.skill}中的${fullProfile.weakestLink.subSkill}——${fullProfile.weakestLink.evidence}`,
@@ -173,11 +224,12 @@ export function ProfileView({
         );
       })()}
 
-      {/* Weakest Link — the single most actionable insight */}
-      {fullProfile.weakestLink.score > 0 && (
+      {/* Weakest Link — the single most actionable insight (hidden until
+       * verified numeric evidence exists; null = not enough evidence yet) */}
+      {(fullProfile.weakestLink.score ?? 0) > 0 && (
         <div className="mb-6 rounded-2xl bg-[#ff3b30]/[0.05] px-6 py-4 shadow-[0_0_0_0.5px_rgba(255,59,48,0.15)]">
           <div className="text-[10.5px] font-semibold uppercase tracking-[0.07em] text-[#d70015]">
-            <T en="Weakest Link · Mission targets this" zh="最弱环节 · Mission 针对此生成" />
+            <T en="What to focus on · today's practice targets this" zh="今日焦点 · 今日练习针对此安排" />
           </div>
           <p className="mt-1 text-[18px] font-semibold tracking-[-0.02em] text-ink">
             {fullProfile.weakestLink.skill} → {fullProfile.weakestLink.subSkill}
@@ -198,17 +250,17 @@ export function ProfileView({
 
       {/* Four skills with drill-down */}
       <div className="mb-6 grid gap-4 lg:grid-cols-2">
-        <SkillCard title="🎧 Listening" zh="听力" dimensions={fullProfile.listening} onDrill={setDrillDown} drillKey={drillDown} />
-        <SkillCard title="📖 Reading" zh="阅读" dimensions={fullProfile.reading} onDrill={setDrillDown} drillKey={drillDown} />
-        <SkillCard title="🎤 Speaking" zh="口语" dimensions={fullProfile.speaking} onDrill={setDrillDown} drillKey={drillDown} />
-        <SkillCard title="✍️ Writing" zh="写作" dimensions={fullProfile.writing} onDrill={setDrillDown} drillKey={drillDown} />
+        <SkillCard title="Listening" zh="听力" dimensions={fullProfile.listening} onDrill={setDrillDown} drillKey={drillDown} />
+        <SkillCard title="Reading" zh="阅读" dimensions={fullProfile.reading} onDrill={setDrillDown} drillKey={drillDown} />
+        <SkillCard title="Speaking" zh="口语" dimensions={fullProfile.speaking} onDrill={setDrillDown} drillKey={drillDown} />
+        <SkillCard title="Writing" zh="写作" dimensions={fullProfile.writing} onDrill={setDrillDown} drillKey={drillDown} />
       </div>
 
       {/* Error Patterns */}
       {fullProfile.errorPatterns.length > 0 && (
         <Card
-          title={<T en="⚠️ Recurring Error Patterns" zh="⚠️ 重复错误模式" />}
-          subtitle={<T en="The system groups isolated errors into patterns and schedules them for retrieval" zh="系统将孤立错误归因为模式，并排入提取复习" />}
+          title={<T en="Mistakes that keep coming back" zh="反复出现的错误" />}
+          subtitle={<T en="When the same slip shows up across your writing and speaking, it lands here" zh="同一个错误在写作和口语中反复出现时，会归到这里" />}
           className="mb-6"
         >
           <div className="space-y-2.5">
@@ -251,7 +303,7 @@ export function ProfileView({
 
       {/* Listening misses breakdown */}
       {Object.keys(stats.listening.misses).length > 0 && (
-        <Card title={<T en="🎧 Diagnosed Miss Causes" zh="🎧 已诊断的漏听原因" />} className="mb-6">
+        <Card title={<T en="Why you miss things when listening" zh="听力漏听原因" />} className="mb-6">
           <div className="flex flex-wrap gap-1.5">
             {Object.entries(stats.listening.misses).sort((a, b) => b[1] - a[1]).map(([cat, n]) => (
               <Badge key={cat} tone={cat === "known_not_recognized" ? "warn" : "neutral"}>
@@ -310,7 +362,7 @@ export function ProfileView({
       </div>
 
       {/* Learning Efficiency */}
-      <Card title={<T en="⚡ Learning Efficiency" zh="⚡ 学习效率" />} subtitle={<T en="Meaningful events per study hour — not time spent" zh="每小时有效学习事件——不是学习时长" />} className="mb-6">
+      <Card title={<T en="Learning efficiency" zh="学习效率" />} subtitle={<T en="Meaningful events per study hour — not time spent" zh="每小时有效学习事件——不是学习时长" />} className="mb-6">
         <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
           <div className="rounded-xl bg-black/[0.03] px-4 py-3 text-center">
             <div className="font-mono text-[18px] font-semibold text-ink">{efficiency.eventsPerHour}</div>
@@ -338,7 +390,7 @@ export function ProfileView({
 
       {/* Weekly Review */}
       {weeklyReview && (
-        <Card title={<T en="📋 Weekly Review" zh="📋 周报" />} subtitle={`Week of ${weeklyReview.weekOf}`} className="mb-6">
+        <Card title={<T en="Weekly review" zh="每周回顾" />} subtitle={`Week of ${weeklyReview.weekOf}`} className="mb-6">
           <div className="space-y-4">
             {weeklyReview.improved.length > 0 && (
               <div>
@@ -365,7 +417,7 @@ export function ProfileView({
       )}
 
       {/* Phone access */}
-      <Card title={<T en="📱 Phone (same WiFi)" zh="📱 手机访问（同一 WiFi）" />} className="mb-6">
+      <Card title={<T en="Phone (same WiFi)" zh="手机访问（同一 WiFi）" />} className="mb-6">
         <code className="block overflow-x-auto rounded-lg bg-black/[0.05] px-3.5 py-2.5 font-mono text-[12px] text-ink">
           npm run start -- -H 0.0.0.0
         </code>
@@ -461,14 +513,17 @@ function SkillCard({
 }: {
   title: string;
   zh: string;
-  dimensions: { key: string; label: string; score: number; evidence: string }[];
+  dimensions: { key: string; label: string; score: number | null; evidence: string }[];
   onDrill: (key: string | null) => void;
   drillKey: string | null;
 }) {
   const bilingual = useBilingual();
-  const avg = dimensions.length
-    ? Math.round(dimensions.reduce((a, d) => a + d.score, 0) / dimensions.length)
-    : 0;
+  // Average only verified dimensions; unverified (null) ones never drag the
+  // number down or fake it upward — no numeric evidence shows as "—".
+  const numeric = dimensions.filter((d): d is { key: string; label: string; score: number; evidence: string } => typeof d.score === "number");
+  const avg = numeric.length
+    ? Math.round(numeric.reduce((a, d) => a + d.score, 0) / numeric.length)
+    : null;
 
   return (
     <div className="card-specular rounded-2xl bg-white px-5 py-4">
@@ -476,13 +531,14 @@ function SkillCard({
         <div className="text-[13px] font-semibold tracking-[-0.01em] text-ink">
           {title} {bilingual && <span className="ml-1 text-[12px] font-normal text-ink-3">{zh}</span>}
         </div>
-        <span className={`font-mono text-[18px] font-semibold tabular-nums ${avg < 50 ? "text-[#d70015]" : avg < 70 ? "text-[#9a6200]" : "text-[#1f7a37]"}`}>
-          {avg || "—"}
+        <span className={`font-mono text-[18px] font-semibold tabular-nums ${avg == null ? "text-ink-3" : avg < 50 ? "text-[#d70015]" : avg < 70 ? "text-[#9a6200]" : "text-[#1f7a37]"}`}>
+          {avg ?? "—"}
         </span>
       </div>
       <div className="space-y-2">
         {dimensions.map((d) => {
           const isOpen = drillKey === `${title}:${d.key}`;
+          const s = typeof d.score === "number" ? d.score : null;
           return (
             <div key={d.key}>
               <button
@@ -491,12 +547,18 @@ function SkillCard({
               >
                 <span className="w-32 shrink-0 truncate text-[12px] text-ink-2">{d.label}</span>
                 <div className="h-1.5 flex-1 overflow-hidden rounded-full bg-black/[0.06]">
-                  <div
-                    className={`h-full rounded-full ${d.score >= 70 ? "bg-[#34c759]" : d.score >= 40 ? "bg-[#0071e3]" : "bg-[#ff3b30]"}`}
-                    style={{ width: `${Math.max(d.score, 2)}%` }}
-                  />
+                  {s !== null ? (
+                    <div
+                      className={`h-full rounded-full ${s >= 70 ? "bg-[#34c759]" : s >= 40 ? "bg-[#0071e3]" : "bg-[#ff3b30]"}`}
+                      style={{ width: `${Math.max(s, 2)}%` }}
+                    />
+                  ) : (
+                    <div className="h-full w-full bg-black/[0.06]" aria-hidden />
+                  )}
                 </div>
-                <span className="w-8 shrink-0 text-right font-mono text-[12px] tabular-nums text-ink-3">{fmtScore(d.score)}</span>
+                <span className="w-[70px] shrink-0 text-right font-mono text-[11px] tabular-nums text-ink-3">
+                  {s !== null ? s : <T en="Developing" zh="发展中" />}
+                </span>
               </button>
               {isOpen && (
                 <div className="enter mt-1 rounded-lg bg-black/[0.03] px-3 py-2 text-[12px] leading-relaxed text-ink-2">

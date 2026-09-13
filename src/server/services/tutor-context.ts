@@ -5,6 +5,7 @@ import {
   retrievalItems, chunkEvents, learningSnapshots, ieltsSkillProfiles,
 } from "@/db/schema";
 import { lookupWord } from "@/server/services/dictionary";
+import { plural } from "@/lib/plural";
 
 /* ── Tutor Context Builder ─────────────────────────────────────────────────
  * Assembles ONLY the data relevant to the user's current question.
@@ -164,7 +165,7 @@ export function contextToPrompt(ctx: TutorContext): string {
   const parts: string[] = [];
 
   parts.push(`Learner profile: CEFR ${ctx.cefr}, IELTS target ${ctx.ieltsTarget ?? "not set"}.`);
-  parts.push(`Recent retrieval: ${ctx.recentAccuracy}% accuracy over ${ctx.recentAttempts} attempts (7 days).`);
+  parts.push(`Recent retrieval: ${ctx.recentAccuracy}% accuracy over ${plural(ctx.recentAttempts, "attempt")} (7 days).`);
   parts.push(`Active language items: ${ctx.activeItems}, average retention score: ${ctx.retentionScore}/100.`);
 
   if (ctx.relevantErrors.length > 0) {

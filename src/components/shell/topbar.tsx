@@ -11,19 +11,20 @@ import { ThemeToggle } from "@/components/theme";
 /* ── Top Bar — one line of wayfinding; chrome, not content ─────────────────── */
 
 const SECTION_MAP: { match: (p: string) => boolean; en: string; zh: string }[] = [
-  { match: (p) => p === "/", en: "Mission Control", zh: "主控台" },
-  { match: (p) => p.startsWith("/library"), en: "Reading", zh: "阅读" },
-  { match: (p) => p.startsWith("/read"), en: "Active Reading", zh: "主动阅读" },
+  { match: (p) => p === "/", en: "Today", zh: "今日" },
+  { match: (p) => p.startsWith("/welcome"), en: "Welcome", zh: "开始" },
+  { match: (p) => p.startsWith("/library"), en: "Library", zh: "内容库" },
+  { match: (p) => p.startsWith("/read"), en: "Reading", zh: "阅读" },
   { match: (p) => p.startsWith("/listen"), en: "Listening", zh: "听力" },
   { match: (p) => p.startsWith("/writing"), en: "Writing", zh: "写作" },
-  { match: (p) => p.startsWith("/speaking"), en: "Speaking", zh: "口语" },
+  { match: (p) => p.startsWith("/ielts/mock"), en: "Mock exam", zh: "全真模考" },
   { match: (p) => p.startsWith("/ielts"), en: "IELTS", zh: "雅思" },
-  { match: (p) => p.startsWith("/review"), en: "Review", zh: "复习" },
+  { match: (p) => p.startsWith("/review"), en: "Practice", zh: "练习" },
   { match: (p) => p.startsWith("/chunks"), en: "Language", zh: "语言库" },
-  { match: (p) => p.startsWith("/lab"), en: "Lab", zh: "语言实验室" },
-  { match: (p) => p.startsWith("/errors"), en: "Errors", zh: "错误银行" },
-  { match: (p) => p.startsWith("/profile"), en: "Profile", zh: "学习画像" },
-  { match: (p) => p.startsWith("/external"), en: "External Coach", zh: "外部教练" },
+  { match: (p) => p.startsWith("/lab"), en: "AI Lab", zh: "AI 实验室" },
+  { match: (p) => p.startsWith("/errors"), en: "Mistakes", zh: "惯犯错误" },
+  { match: (p) => p.startsWith("/profile"), en: "Progress", zh: "进步" },
+  { match: (p) => p.startsWith("/external"), en: "Speaking", zh: "口语" },
   { match: (p) => p.startsWith("/settings"), en: "Settings", zh: "设置" },
 ];
 
@@ -84,15 +85,13 @@ export function Topbar({ aiLive, onOpenMobileNav }: { aiLive: boolean; onOpenMob
         </span>
       </div>
 
-      {/* right — AI · Language · Appearance · Profile · Settings */}
+      {/* right — AI status dot · Language · Appearance · Profile · Settings */}
       <div className="flex shrink-0 items-center gap-1.5">
         <span
           title={aiLive ? "Live AI provider connected" : "Offline Mock AI — set AI_BASE_URL + AI_API_KEY in .env.local to upgrade"}
-          className="mr-0.5 hidden items-center gap-1.5 rounded-full py-1 pl-1.5 pr-2.5 text-[10.5px] font-medium text-ink-3 md:inline-flex"
-        >
-          <span className={`h-1.5 w-1.5 rounded-full ${aiLive ? "bg-ok" : "bg-warn"}`} />
-          {aiLive ? "AI Live" : "Mock AI"}
-        </span>
+          aria-label={aiLive ? "AI live" : "Mock AI"}
+          className={`mr-1 hidden h-1.5 w-1.5 rounded-full md:block ${aiLive ? "bg-ok" : "bg-warn"}`}
+        />
 
         <div
           className={`hidden items-center rounded-lg bg-surface-2 p-0.5 transition-opacity duration-150 sm:flex ${

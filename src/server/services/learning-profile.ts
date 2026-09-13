@@ -1,7 +1,8 @@
 import { and, desc, eq, sql } from "drizzle-orm";
 import { db } from "@/db";
-import { errors, reviewHistory, retrievalItems, chunkEvents, chunks, vocabularies, speakingAttempts, writingAttempts, listeningMisses, learningProfiles } from "@/db/schema";
+import { errors, reviewHistory, retrievalItems, chunkEvents, chunks, vocabularies, speakingAttempts, writingAttempts, listeningMisses, learningProfiles, contentHistory } from "@/db/schema";
 import type { ErrorCategory, ErrorStatus, ModuleContext } from "@/lib/types";
+import { plural } from "@/lib/plural";
 
 /* ── Error Pattern Detection ────────────────────────────────────────────────
  * Groups isolated errors into recurring patterns. "interested on" ×3 isn't
@@ -140,9 +141,13 @@ export async function advanceErrorStatus(
 export interface DimensionScore {
   key: string;
   label: string;
-  score: number; // 0-100
+  /** null = insufficient evidence — practiced at most, never verified.
+   *  The UI must render a "Developing" state, never a fabricated number.
+   *  Absence of diagnosed failure is NOT mastery; only positive test
+   *  evidence (diagnosed misses, graded attempts, reviews) yields a score. */
+  score: number | null;
   evidence: string; // human-readable trace
-  subDimensions?: { key: string; label: string; score: number; evidence: string }[];
+  subDimensions?: { key: string; label: string; score: number | null; evidence: string }[];
 }
 
 export interface FullLearningProfile {
@@ -154,7 +159,7 @@ export interface FullLearningProfile {
   weakestLink: {
     skill: string;
     subSkill: string;
-    score: number;
+    score: number | null;
     evidence: string;
   };
   errorPatterns: ErrorPattern[];
@@ -166,7 +171,7 @@ export async function computeFullProfile(userId: number): Promise<FullLearningPr
   const month = Date.now() - 30 * 86_400_000;
 
   // ── Fetch all real data ─────────────────────────────────────────────────
-  const [reviewRows, errorRows, chunkRows, vocabRows, speakRows, writeRows, listenMissRows, eventRows] =
+  const [reviewRows, errorRows, chunkRows, vocabRows, speakRows, writeRows, listenMissRows, eventRows, listenSessionRows] =
     await Promise.all([
       db.select().from(reviewHistory).where(and(eq(reviewHistory.userId, userId), sql`${reviewHistory.createdAt} > ${month}`)),
       db.select().from(errors).where(eq(errors.userId, userId)),
@@ -178,7 +183,11 @@ export async function computeFullProfile(userId: number): Promise<FullLearningPr
         .from(writingAttempts).where(eq(writingAttempts.userId, userId)).orderBy(desc(writingAttempts.createdAt)).limit(10),
       db.select().from(listeningMisses).where(eq(listeningMisses.userId, userId)),
       db.select().from(chunkEvents).where(eq(chunkEvents.userId, userId)),
+      // engagement basis for listening: distinct listening contents actually opened
+      db.select({ c: sql<number>`count(distinct ${contentHistory.contentId})` })
+        .from(contentHistory).where(and(eq(contentHistory.userId, userId), eq(contentHistory.skill, "listening"))),
     ]);
+  const listeningSessions = Number(listenSessionRows[0]?.c ?? 0);
 
   const totalReviews = reviewRows.length;
   const correctReviews = reviewRows.filter((r) => r.correct === 1).length;
@@ -210,11 +219,11 @@ export async function computeFullProfile(userId: number): Promise<FullLearningPr
     },
     {
       key: "active_vocab", label: "Active Vocabulary", score: Math.min(100, activeVocab * 5),
-      evidence: `${activeVocab} words promoted to active status through production`,
+      evidence: `${plural(activeVocab, "word")} promoted to active status through production`,
     },
     {
       key: "active_chunks", label: "Active Chunks", score: Math.min(100, activeChunks * 10),
-      evidence: `${activeChunks} expressions activated (produced in speech/writing)`,
+      evidence: `${plural(activeChunks, "expression")} activated (produced in speech/writing)`,
     },
     {
       key: "transfer_rate", label: "Transfer Rate", score: transferRate,
@@ -222,82 +231,102 @@ export async function computeFullProfile(userId: number): Promise<FullLearningPr
     },
     {
       key: "retention", label: "Retention", score: retention,
-      evidence: `${retainedItems}/${chunkRows.length} chunks at strength ≥60 after spaced retrieval`,
+      evidence: `${retainedItems}/${plural(chunkRows.length, "chunk")} at strength ≥60 after spaced retrieval`,
     },
   ];
 
-  // Reading: derived from reading-related review performance + word knowledge
+  // Reading: derived from reading-related review performance + word knowledge.
+  // No reviews yet → null (not 0): "never tested" must not read as "zero ability".
   const readingReviews = reviewRows.filter((r) => r.mode === "cued_recall" || r.mode === "recognition");
   const readingAccuracy = readingReviews.length
     ? Math.round((readingReviews.filter((r) => r.correct === 1).length / readingReviews.length) * 100)
     : 0;
   const reading: DimensionScore[] = [
-    { key: "comprehension", label: "Comprehension", score: readingAccuracy, evidence: `${readingReviews.length} reading-linked review${readingReviews.length === 1 ? "" : "s"}, ${readingAccuracy}% accuracy` },
+    { key: "comprehension", label: "Comprehension", score: readingReviews.length ? readingAccuracy : null, evidence: readingReviews.length ? `${readingReviews.length} reading-linked review${readingReviews.length === 1 ? "" : "s"}, ${readingAccuracy}% accuracy` : "No reading-linked reviews yet" },
     { key: "vocabulary", label: "Vocabulary", score: Math.min(100, vocabRows.length * 2), evidence: `${vocabRows.length} word${vocabRows.length === 1 ? "" : "s"} in personal vocabulary` },
-    { key: "inference", label: "Inference", score: Math.round(retrievalAccuracy * 0.9), evidence: `Inferred from retrieval accuracy (${retrievalAccuracy}%) — inference requires vocabulary automation` },
-    { key: "paraphrasing", label: "Paraphrasing", score: writeRows.length ? Math.round((writeRows[0].ieltsScores as Record<string, number> | null)?.lexical ?? 50) : 0, evidence: `Derived from writing Lexical Resource score` },
+    { key: "inference", label: "Inference", score: totalReviews ? Math.round(retrievalAccuracy * 0.9) : null, evidence: totalReviews ? `Inferred from retrieval accuracy (${retrievalAccuracy}%) — inference requires vocabulary automation` : "No retrieval evidence yet" },
+    { key: "paraphrasing", label: "Paraphrasing", score: writeRows.length ? Math.round((writeRows[0].ieltsScores as Record<string, number> | null)?.lexical ?? 50) : null, evidence: writeRows.length ? `Derived from writing Lexical Resource score` : "No writing attempts yet" },
   ];
 
-  // Listening: from listening_misses + listening sub-profile
+  // Listening: honest evidence model.
+  // A dimension gets a NUMBER only from diagnosed misses (real test evidence).
+  // Practiced-but-undiagnosed → null "Developing"; never practiced → null too.
+  // The old formula scored 100 − misses×penalty for EVERYONE, so a single
+  // session with zero marked misses rendered all 7 dimensions as 100 —
+  // "not observed failing" was being read as "verified mastery".
   const listenByCat: Record<string, number> = {};
   for (const m of listenMissRows) listenByCat[m.category] = (listenByCat[m.category] ?? 0) + 1;
-  const totalMisses = listenMissRows.length;
-  const globalScore = Math.max(0, 100 - (listenByCat.meaning_integration ?? 0) * 10);
-  const wordScore = Math.max(0, 100 - (listenByCat.unknown ?? 0) * 10 - (listenByCat.known_not_recognized ?? 0) * 5);
-  const connectedScore = Math.max(0, 100 - (listenByCat.connected_speech ?? 0) * 12);
-  const weakFormScore = Math.max(0, 100 - (listenByCat.weak_form ?? 0) * 12);
-  const reductionScore = Math.max(0, 100 - (listenByCat.reduction ?? 0) * 12);
-  const speedScore = Math.max(0, 100 - (listenByCat.speed ?? 0) * 10);
+  const sessionWord = listeningSessions === 1 ? "session" : "sessions";
+  const listenDim = (
+    key: string, label: string, missCount: number, penalty: number, missLabel: string,
+  ): DimensionScore => {
+    if (listeningSessions === 0) {
+      return { key, label, score: null, evidence: "No listening sessions recorded yet — start one in the Listening Lab" };
+    }
+    if (missCount === 0) {
+      return { key, label, score: null, evidence: `Practiced in ${listeningSessions} listening ${sessionWord}, nothing diagnosed wrong here yet — a score needs test evidence` };
+    }
+    return { key, label, score: Math.max(0, 100 - missCount * penalty), evidence: `${missCount} ${missLabel} diagnosed across ${listeningSessions} listening ${sessionWord}` };
+  };
   const listening: DimensionScore[] = [
-    { key: "global", label: "Global Comprehension", score: globalScore, evidence: `${listenByCat.meaning_integration ?? 0} meaning-integration misses diagnosed` },
-    { key: "word_rec", label: "Word Recognition", score: wordScore, evidence: `${(listenByCat.unknown ?? 0) + (listenByCat.known_not_recognized ?? 0)} word-level misses` },
-    { key: "connected", label: "Connected Speech", score: connectedScore, evidence: `${listenByCat.connected_speech ?? 0} connected-speech misses diagnosed` },
-    { key: "weak_forms", label: "Weak Forms", score: weakFormScore, evidence: `${listenByCat.weak_form ?? 0} weak-form misses` },
-    { key: "linking", label: "Linking", score: connectedScore, evidence: `Grouped with connected speech (${connectedScore})` },
-    { key: "reduction", label: "Reduction", score: reductionScore, evidence: `${listenByCat.reduction ?? 0} reduction misses (gonna/wanna)` },
-    { key: "speed", label: "Speed Tolerance", score: speedScore, evidence: `${listenByCat.speed ?? 0} speed-related misses` },
+    listenDim("global", "Global Comprehension", listenByCat.meaning_integration ?? 0, 10, "meaning-integration misses"),
+    listenDim("word_rec", "Word Recognition", (listenByCat.unknown ?? 0) + (listenByCat.known_not_recognized ?? 0), 8, "word-level misses"),
+    listenDim("connected", "Connected Speech", listenByCat.connected_speech ?? 0, 12, "connected-speech misses"),
+    listenDim("weak_forms", "Weak Forms", listenByCat.weak_form ?? 0, 12, "weak-form misses"),
+    listenDim("linking", "Linking", listenByCat.connected_speech ?? 0, 12, "linking/connected-speech misses"),
+    listenDim("reduction", "Reduction", listenByCat.reduction ?? 0, 12, "reduction misses (gonna/wanna)"),
+    listenDim("speed", "Speed Tolerance", listenByCat.speed ?? 0, 10, "speed-related misses"),
   ];
 
-  // Speaking: from speaking attempt scores
+  // Speaking: from speaking attempt scores — no attempts → null, not 0
   const recentSpeak = speakRows.slice(0, 5).map((s) => (s.ieltsScores as Record<string, number> | null) ?? {});
   const avg = (key: string) => {
     const vals = recentSpeak.map((s) => s[key]).filter((v): v is number => v != null);
     return vals.length ? vals.reduce((a, b) => a + b, 0) / vals.length : 0;
   };
   const bandTo100 = (band: number) => Math.round((band / 9) * 100);
+  const hasSpeakEvidence = recentSpeak.some((s) => Object.keys(s).length > 0);
   const speaking: DimensionScore[] = [
-    { key: "fluency", label: "Fluency", score: bandTo100(avg("fluency")), evidence: `Average fluency ${avg("fluency").toFixed(1)} from ${recentSpeak.length} speaking attempts` },
-    { key: "grammar", label: "Grammar", score: bandTo100(avg("grammar")), evidence: `Average grammar ${avg("grammar").toFixed(1)}` },
-    { key: "vocabulary", label: "Vocabulary", score: bandTo100(avg("lexical")), evidence: `Average lexical ${avg("lexical").toFixed(1)}` },
-    { key: "naturalness", label: "Naturalness", score: Math.round(bandTo100(avg("grammar")) * 0.9), evidence: `Inferred from grammar accuracy and Chinese-style English error count` },
-    { key: "production", label: "Active Production", score: Math.min(100, activeChunks * 10), evidence: `${activeChunks} chunks successfully produced in speaking` },
+    { key: "fluency", label: "Fluency", score: hasSpeakEvidence ? bandTo100(avg("fluency")) : null, evidence: hasSpeakEvidence ? `Average fluency ${avg("fluency").toFixed(1)} from ${plural(recentSpeak.length, "speaking attempt")}` : "No speaking attempts recorded yet" },
+    { key: "grammar", label: "Grammar", score: hasSpeakEvidence ? bandTo100(avg("grammar")) : null, evidence: hasSpeakEvidence ? `Average grammar ${avg("grammar").toFixed(1)}` : "No speaking attempts recorded yet" },
+    { key: "vocabulary", label: "Vocabulary", score: hasSpeakEvidence ? bandTo100(avg("lexical")) : null, evidence: hasSpeakEvidence ? `Average lexical ${avg("lexical").toFixed(1)}` : "No speaking attempts recorded yet" },
+    { key: "naturalness", label: "Naturalness", score: hasSpeakEvidence ? Math.round(bandTo100(avg("grammar")) * 0.9) : null, evidence: hasSpeakEvidence ? `Inferred from grammar accuracy and Chinese-style English error count` : "No speaking attempts recorded yet" },
+    { key: "production", label: "Active Production", score: Math.min(100, activeChunks * 10), evidence: `${plural(activeChunks, "chunk")} successfully produced in speaking` },
   ];
 
-  // Writing: from writing attempt scores
+  // Writing: from writing attempt scores — no essays → null, not 0
   const recentWrite = writeRows.slice(0, 5).map((w) => (w.ieltsScores as Record<string, number> | null) ?? {});
   const wAvg = (key: string) => {
     const vals = recentWrite.map((s) => s[key]).filter((v): v is number => v != null);
     return vals.length ? vals.reduce((a, b) => a + b, 0) / vals.length : 0;
   };
+  const hasWriteEvidence = recentWrite.some((s) => Object.keys(s).length > 0);
   const writing: DimensionScore[] = [
-    { key: "task_response", label: "Task Response", score: bandTo100(wAvg("taskResponse")), evidence: `Average TR ${wAvg("taskResponse").toFixed(1)} from ${recentWrite.length} essays` },
-    { key: "coherence", label: "Coherence", score: bandTo100(wAvg("coherence")), evidence: `Average CC ${wAvg("coherence").toFixed(1)}` },
-    { key: "lexical", label: "Lexical Resource", score: bandTo100(wAvg("lexical")), evidence: `Average LR ${wAvg("lexical").toFixed(1)}` },
-    { key: "grammar", label: "Grammar", score: bandTo100(wAvg("grammar")), evidence: `Average GRA ${wAvg("grammar").toFixed(1)}` },
-    { key: "sentence_variety", label: "Sentence Variety", score: bandTo100(wAvg("lexical")), evidence: `Correlated with Lexical Resource score` },
-    { key: "paraphrasing", label: "Paraphrasing", score: bandTo100(wAvg("taskResponse")), evidence: `Correlated with Task Response (ability to reformulate)` },
+    { key: "task_response", label: "Task Response", score: hasWriteEvidence ? bandTo100(wAvg("taskResponse")) : null, evidence: hasWriteEvidence ? `Average TR ${wAvg("taskResponse").toFixed(1)} from ${plural(recentWrite.length, "essay")}` : "No writing attempts yet" },
+    { key: "coherence", label: "Coherence", score: hasWriteEvidence ? bandTo100(wAvg("coherence")) : null, evidence: hasWriteEvidence ? `Average CC ${wAvg("coherence").toFixed(1)}` : "No writing attempts yet" },
+    { key: "lexical", label: "Lexical Resource", score: hasWriteEvidence ? bandTo100(wAvg("lexical")) : null, evidence: hasWriteEvidence ? `Average LR ${wAvg("lexical").toFixed(1)}` : "No writing attempts yet" },
+    { key: "grammar", label: "Grammar", score: hasWriteEvidence ? bandTo100(wAvg("grammar")) : null, evidence: hasWriteEvidence ? `Average GRA ${wAvg("grammar").toFixed(1)}` : "No writing attempts yet" },
+    { key: "sentence_variety", label: "Sentence Variety", score: hasWriteEvidence ? bandTo100(wAvg("lexical")) : null, evidence: hasWriteEvidence ? `Correlated with Lexical Resource score` : "No writing attempts yet" },
+    { key: "paraphrasing", label: "Paraphrasing", score: hasWriteEvidence ? bandTo100(wAvg("taskResponse")) : null, evidence: hasWriteEvidence ? `Correlated with Task Response (ability to reformulate)` : "No writing attempts yet" },
   ];
 
   // ── Weakest Link: find lowest dimension across all skills ──────────────
+  // Only dimensions with verified numeric evidence participate; null
+  // (developing / untested) dimensions cannot be a "weakest link".
   const allDims = [
     ...listening.map((d) => ({ skill: "Listening", ...d })),
     ...reading.map((d) => ({ skill: "Reading", ...d })),
     ...speaking.map((d) => ({ skill: "Speaking", ...d })),
     ...writing.map((d) => ({ skill: "Writing", ...d })),
-  ].filter((d) => d.score > 0); // only dimensions with data
+  ].filter((d) => typeof d.score === "number" && d.score > 0);
 
-  const sorted = allDims.sort((a, b) => a.score - b.score);
-  const weakest = sorted[0] ?? { skill: "Listening", label: "Connected Speech", score: 50, evidence: "Insufficient data — defaults to listening focus" };
+  const sorted = allDims.sort((a, b) => (a.score as number) - (b.score as number));
+  const weakest = sorted[0] ?? {
+    skill: "Listening",
+    label: "Building first evidence",
+    score: null,
+    evidence: "Not enough verified evidence yet — complete learning sessions and the weakest link will be computed from real data",
+  };
 
   return {
     overall,

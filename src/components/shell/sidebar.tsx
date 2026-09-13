@@ -7,9 +7,7 @@ import {
   BookOpen,
   CircleAlert,
   ClipboardCheck,
-  FlaskConical,
   GraduationCap,
-  Headphones,
   Layers,
   Mic,
   PanelLeftClose,
@@ -17,64 +15,42 @@ import {
   PenLine,
   RotateCcw,
   Settings,
+  Sparkles,
   Target,
   TrendingUp,
 } from "lucide-react";
 import { T } from "@/components/i18n";
 import type { LucideIcon } from "lucide-react";
 
-/* ── Sidebar — quiet canvas rail; the content is the hero, never the nav ──── */
+/* ── Sidebar — four places, then everything else folded away ────────────────
+ * A learner needs to answer "where do I do things", not "how is the product
+ * architected": TODAY / PRACTICE / LIBRARY / PROGRESS are the whole primary
+ * nav. Capabilities (writing, mock, mistakes, language tools) live behind one
+ * collapsed "More" group; Settings stays in the footer. */
 
 type Item = { href: string; en: string; zh: string; icon: LucideIcon };
-type Group = { label: string; labelZh: string; items: Item[] };
 
-/* IA v2 — the product is the loop, modules are environments:
- * Today (the loop's daily orchestration) · Practice (environments) ·
- * Study (memory-driven training) · Progress (evidence). No engine names. */
-export const NAV: Group[] = [
-  {
-    label: "Today",
-    labelZh: "今日",
-    items: [{ href: "/", en: "Today", zh: "今日", icon: Target }],
-  },
-  {
-    label: "Practice",
-    labelZh: "练习",
-    items: [
-      { href: "/library", en: "Reading", zh: "阅读", icon: BookOpen },
-      { href: "/library?type=listening", en: "Listening", zh: "听力", icon: Headphones },
-      { href: "/writing", en: "Writing", zh: "写作", icon: PenLine },
-      { href: "/external", en: "Speaking", zh: "口语", icon: Mic },
-      { href: "/ielts", en: "IELTS Practice", zh: "雅思练习", icon: GraduationCap },
-      { href: "/ielts/mock", en: "Mock Exam", zh: "全真模考", icon: ClipboardCheck },
-    ],
-  },
-  {
-    label: "Study",
-    labelZh: "学习",
-    items: [
-      { href: "/review", en: "Review", zh: "复习", icon: RotateCcw },
-      { href: "/errors", en: "Mistakes", zh: "惯犯错误", icon: CircleAlert },
-      { href: "/chunks", en: "Language", zh: "语言库", icon: Layers },
-      { href: "/lab", en: "Lab", zh: "语言实验室", icon: FlaskConical },
-    ],
-  },
-  {
-    label: "Progress",
-    labelZh: "进步",
-    items: [{ href: "/profile", en: "My Progress", zh: "我的进步", icon: TrendingUp }],
-  },
+const PRIMARY: Item[] = [
+  { href: "/", en: "Today", zh: "今日", icon: Target },
+  { href: "/review", en: "Practice", zh: "练习", icon: RotateCcw },
+  { href: "/library", en: "Library", zh: "内容库", icon: BookOpen },
+  { href: "/profile", en: "Progress", zh: "进步", icon: TrendingUp },
 ];
 
-function isActive(pathname: string, href: string, hash: string, search: string): boolean {
-  const [routeQ, anchor] = href.split("#");
-  const [route, query] = routeQ.split("?");
-  if (pathname !== route) return false;
-  if (anchor) return hash === `#${anchor}`;
-  // queried siblings (Listening vs Reading on /library) split by the param;
-  // the query-less item never lights up while a queried sibling matches
-  if (query) return search.includes(query);
-  return !search.includes("type=");
+const MORE: Item[] = [
+  { href: "/writing", en: "Writing", zh: "写作", icon: PenLine },
+  { href: "/external", en: "Speaking", zh: "口语", icon: Mic },
+  { href: "/ielts", en: "IELTS", zh: "雅思练习", icon: GraduationCap },
+  { href: "/ielts/mock", en: "Mock exam", zh: "全真模考", icon: ClipboardCheck },
+  { href: "/errors", en: "Mistakes", zh: "惯犯错误", icon: CircleAlert },
+  { href: "/chunks", en: "Language", zh: "语言库", icon: Layers },
+  { href: "/lab", en: "AI Lab", zh: "AI 实验室", icon: Sparkles },
+];
+
+function isActive(pathname: string, href: string): boolean {
+  const route = href.split("?")[0];
+  if (route === "/") return pathname === "/";
+  return pathname === route || pathname.startsWith(`${route}/`);
 }
 
 export function Sidebar({
@@ -91,22 +67,57 @@ export function Sidebar({
   onNavigate: () => void;
 }) {
   const pathname = usePathname();
-  const [hash, setHash] = useState("");
-  const [search, setSearch] = useState("");
+  // folded by default — a first-time visitor sees exactly four destinations;
+  // opening it once persists across sessions
+  const [moreOpen, setMoreOpen] = useState(false);
 
   useEffect(() => {
-    const read = () => {
-      setHash(window.location.hash);
-      setSearch(window.location.search);
-    };
-    read();
-    window.addEventListener("hashchange", read);
-    window.addEventListener("popstate", read);
-    return () => {
-      window.removeEventListener("hashchange", read);
-      window.removeEventListener("popstate", read);
-    };
-  }, [pathname]);
+    const saved = localStorage.getItem("sb-more");
+    if (saved === "1") {
+      // eslint-disable-next-line react-hooks/set-state-in-effect -- hydrate persisted fold state once
+      setMoreOpen(true);
+    }
+  }, []);
+
+  const toggleMore = () => {
+    setMoreOpen((o) => {
+      try {
+        localStorage.setItem("sb-more", o ? "0" : "1");
+      } catch {
+        /* ignore */
+      }
+      return !o;
+    });
+  };  const itemCls = (active: boolean, secondary: boolean) =>
+    `press mb-0.5 flex items-center gap-3 rounded-[11px] transition-colors duration-150 ${
+      collapsed ? "justify-center px-0 py-[12px]" : "px-3 py-[10px]"
+    } ${secondary ? "text-[13px]" : "text-[14px]"} ${
+      active ? "nav-selected font-semibold text-ink" : "nav-hover text-ink-2 hover:text-ink"
+    }`;
+
+  const renderItem = (item: Item, secondary: boolean) => {
+    const active = isActive(pathname, item.href);
+    const Icon = item.icon;
+    return (
+      <Link
+        key={item.href}
+        href={item.href}
+        onClick={onNavigate}
+        title={collapsed ? item.en : undefined}
+        aria-current={active ? "page" : undefined}
+        className={itemCls(active, secondary)}
+      >
+        <Icon
+          size={collapsed ? 19 : secondary ? 16 : 18}
+          strokeWidth={active ? 1.9 : 1.6}
+          className={active ? "text-ink-2" : "text-ink-3"}
+        />
+        {!collapsed && <T en={item.en} zh={item.zh} />}
+      </Link>
+    );
+  };
+
+  const moreActive = MORE.some((m) => isActive(pathname, m.href));
 
   return (
     <>
@@ -157,62 +168,40 @@ export function Sidebar({
           )}
         </div>
 
-        {/* nav */}
+        {/* nav — four primary destinations + one folded capability group */}
         <nav className="flex-1 overflow-y-auto overflow-x-hidden px-3 py-5">
-          {NAV.map((group, gi) => (
-            <div key={group.label} className={gi > 0 ? "mt-7" : ""}>
-              {collapsed ? (
+          {PRIMARY.map((item) => renderItem(item, false))}
+
+          <div className="mt-7">
+            {collapsed ? (
+              <>
                 <div className="mx-auto mb-3 h-px w-6 bg-line" />
-              ) : (
-                <div className="px-3 pb-2 text-[10px] font-semibold uppercase tracking-[0.12em] text-ink-3/80">
-                  <T en={group.label} zh={group.labelZh} />
-                </div>
-              )}
-              {group.items.map((item) => {
-                const active = isActive(pathname, item.href, hash, search);
-                const Icon = item.icon;
-                // Same-page "/profile → /profile#trajectory" links: a plain
-                // Link to the same route won't strip the hash or scroll —
-                // handle it manually so Profile ↔ Progress always works.
-                const samePageProfile = item.href === "/profile" && pathname === "/profile";
-                const samePageTrajectory = item.href === "/profile#trajectory" && pathname === "/profile";
-                return (
-                  <Link
-                    key={item.href}
-                    href={item.href}
-                    onClick={(e) => {
-                      onNavigate();
-                      if (samePageProfile) {
-                        // same route without hash: Link would no-op — return to top manually
-                        e.preventDefault();
-                        window.scrollTo({ top: 0, behavior: "smooth" });
-                        history.replaceState(null, "", window.location.pathname);
-                        setHash("");
-                      } else if (samePageTrajectory) {
-                        // same route adding a hash: Link would drop it — set it manually
-                        e.preventDefault();
-                        history.pushState(null, "", "/profile#trajectory");
-                        document.getElementById("trajectory")?.scrollIntoView({ behavior: "smooth" });
-                        setHash("#trajectory");
-                      }
-                    }}
-                    title={collapsed ? item.en : undefined}
-                    aria-current={active ? "page" : undefined}
-                    className={`press mb-0.5 flex items-center gap-3 rounded-[11px] text-[14px] transition-colors duration-150 ${
-                      collapsed ? "justify-center px-0 py-[12px]" : "px-3 py-[10px]"
-                    } ${
-                      active
-                        ? "nav-selected font-semibold text-ink"
-                        : "nav-hover text-ink-2 hover:text-ink"
-                    }`}
+                {MORE.map((item) => renderItem(item, true))}
+              </>
+            ) : (
+              <>
+                <button
+                  type="button"
+                  onClick={toggleMore}
+                  aria-expanded={moreOpen}
+                  className="group mb-1.5 flex w-full items-center gap-1.5 px-3 pb-1 text-[10px] font-semibold uppercase tracking-[0.12em] text-ink-3/80 transition-colors duration-150 hover:text-ink-2"
+                >
+                  <T en="More" zh="更多" />
+                  {moreActive && !moreOpen && <span className="h-1 w-1 rounded-full bg-accent" />}
+                  <svg
+                    viewBox="0 0 12 12"
+                    className={`ml-auto h-2.5 w-2.5 transition-transform duration-150 ${moreOpen ? "" : "-rotate-90"}`}
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth={1.8}
                   >
-                    <Icon size={collapsed ? 19 : 18} strokeWidth={active ? 1.9 : 1.6} className={active ? "text-ink-2" : "text-ink-3"} />
-                    {!collapsed && <T en={item.en} zh={item.zh} />}
-                  </Link>
-                );
-              })}
-            </div>
-          ))}
+                    <path d="M3 4.5 6 7.5 9 4.5" />
+                  </svg>
+                </button>
+                {moreOpen && MORE.map((item) => renderItem(item, true))}
+              </>
+            )}
+          </div>
         </nav>
 
         {/* footer — settings + user, breathing room */}

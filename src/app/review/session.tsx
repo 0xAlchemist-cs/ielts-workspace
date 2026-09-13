@@ -1,17 +1,18 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
-import { Check, Play, X } from "lucide-react";
+import { Check, ChevronDown, Play, X } from "lucide-react";
 import { markStepAction } from "@/app/actions";
 import { btn } from "@/components/ui";
 import { Segmented } from "@/components/motion";
 import { T, useBilingual } from "@/components/i18n";
+import { plural } from "@/lib/plural";
 import { useSpeech } from "@/hooks/speech";
 import type { ReviewMode } from "@/lib/types";
 
-/* ── Review session — one calm vertical flow:
- * Header → Mode → Summary → Item → Input → Action. No divider lines;
- * zones breathe 32–48px apart; the language item is the visual subject. */
+/* ── Review session — a focused training room, not a quiz dashboard:
+ * Header → quiet summary → (folded) session options → ONE item → ONE action.
+ * The language item is the visual subject; everything else is tertiary. */
 
 interface QueueItem {
   retrievalItemId: number;
@@ -46,31 +47,33 @@ type SessionMode = "quick" | "standard" | "deep";
 /* Instruction labels — secondary captions, never shouting */
 const MODE_LABEL: Record<string, { en: string; zh: string; zhOnly?: string; enImmersion?: string }> = {
   production: { en: "Produce from Chinese", zh: "看中文，产出英文", enImmersion: "Produce from context" },
-  cued_recall: { en: "Cued recall — produce the word", zh: "提示回忆，拼出这个词" },
+  cued_recall: { en: "Recall the word", zh: "回忆这个词" },
   recognition: { en: "Recognise the expression", zh: "再认这个表达" },
   cloze: { en: "Fill the blank in context", zh: "情境填空" },
-  context_transfer: { en: "Transfer to a new context", zh: "换一个情境迁移" },
-  audio_retrieval: { en: "Listen and produce", zh: "先听，再产出" },
-  retention_check: { en: "Retention check — long-term memory", zh: "留存检验——长期记忆" },
+  context_transfer: { en: "Try it in a new situation", zh: "换一个情境试试" },
+  audio_retrieval: { en: "Listen, then produce", zh: "先听，再产出" },
+  retention_check: { en: "Do you still remember this?", zh: "你还记得它吗？" },
 };
 
+/* why this item is here — learner words, never engine categories */
 const CATEGORY_TEXT: Record<string, { en: string; zh: string }> = {
-  overdue: { en: "overdue", zh: "逾期" },
-  weak_retrieval: { en: "weak retrieval", zh: "提取薄弱" },
-  recurring_error: { en: "recurring error", zh: "重复错误" },
-  retention_check: { en: "retention check", zh: "留存检验" },
-  at_risk: { en: "at risk", zh: "遗忘风险" },
-  new_item: { en: "new", zh: "新项" },
+  overdue: { en: "needs practice", zh: "该练了" },
+  weak_retrieval: { en: "often forgotten", zh: "经常忘" },
+  recurring_error: { en: "you often get this wrong", zh: "经常错" },
+  retention_check: { en: "long-term check", zh: "长期检验" },
+  at_risk: { en: "starting to slip", zh: "开始生疏" },
+  new_item: { en: "new", zh: "新学" },
 };
 
 export function ReviewSession({
-  accuracy30d, overdueCount, atRiskCount,
+  overdueCount, atRiskCount,
 }: {
   accuracy30d: number;
   overdueCount: number;
   atRiskCount: number;
 }) {
   const [mode, setMode] = useState<SessionMode>("standard");
+  const [optionsOpen, setOptionsOpen] = useState(false);
   const [queue, setQueue] = useState<QueueItem[]>([]);
   const [categories, setCategories] = useState<Record<string, number>>({});
   const [estMinutes, setEstMinutes] = useState(0);
@@ -144,55 +147,64 @@ export function ReviewSession({
     return bilingual ? `${l.en} · ${l.zh}` : l.en;
   };
 
-  /* quiet category summary, e.g. "2 overdue · 5 weak retrieval · 1 retention check" */
-  const categoryLine = Object.entries(categories)
-    .map(([cat, n]) => {
-      const t = CATEGORY_TEXT[cat];
-      return t ? `${n} ${t.en}` : `${n} ${cat}`;
-    })
-    .join(" · ");
-
   return (
     <div className="shell-wide">
       {/* ── Header ─────────────────────────────────────────────────────────── */}
       <header>
         <h1 className="text-display">
-          <T en="Review" zh="复习" />
+          <T en="Practice" zh="练习" />
         </h1>
         <p className="mt-1.5 text-[13px] text-ink-2">
-          <T en="Spaced retrieval — seeing ≠ learning." zh="间隔提取——看过 ≠ 学会。" />
+          <T en="Answer from memory — that's what makes it stick." zh="凭记忆作答——这样才真正记得住。" />
         </p>
       </header>
-
-      {/* ── Mode selector ──────────────────────────────────────────────────── */}
-      <div className="mt-10 flex flex-wrap items-center gap-3">
-        <Segmented<SessionMode>
-          value={mode}
-          onChange={(m) => { setMode(m); load(m); }}
-          options={[
-            { value: "quick", label: <T en="Quick · 5–10 min" zh="快速 · 5–10 分钟" /> },
-            { value: "standard", label: <T en="Standard · 15 min" zh="标准 · 15 分钟" /> },
-            { value: "deep", label: <T en="Deep · 30 min" zh="深度 · 30 分钟" /> },
-          ]}
-        />
-        <a
-          href="/review?filter=errors"
-          className="press text-[12.5px] font-medium text-accent-text hover:underline"
-        >
-          <T en="Error revenge" zh="错误复仇" />
-        </a>
-      </div>
 
       {/* ── Summary — one quiet line, no chips ─────────────────────────────── */}
       {!loading && queue.length > 0 && idx === 0 && !result && (
         <p className="mt-8 text-[12.5px] text-ink-3">
-          {queue.length} <T en="items" zh="项" /> · ~{estMinutes} min · 30d <T en="accuracy" zh="正确率" /> {accuracy30d}% · {categoryLine}
+          <T en={plural(queue.length, "item")} zh={`${queue.length} 项`} /> · ~{estMinutes} min
           {atRiskCount > 0 && (
-            <span className="text-err-text"> · {atRiskCount} <T en="need attention" zh="项需关注" /></span>
+            <span className="text-err-text">
+              {" · "}
+              <T en={`${plural(atRiskCount, "item")} needs attention`} zh={`${atRiskCount} 项需要关注`} />
+            </span>
           )}
         </p>
       )}
       {loading && <p className="mt-8 text-[13px] text-ink-3"><T en="Building your review queue…" zh="正在生成复习队列…" /></p>}
+
+      {/* ── Session options — folded away: modes and error revenge never
+       * compete with the item on screen ──────────────────────────────────── */}
+      <div className="mt-5">
+        <button
+          type="button"
+          onClick={() => setOptionsOpen((o) => !o)}
+          aria-expanded={optionsOpen}
+          className="press inline-flex items-center gap-1 text-[12px] font-medium text-ink-3 transition-colors duration-150 hover:text-ink"
+        >
+          <ChevronDown size={12} strokeWidth={1.9} className={`transition-transform duration-150 ${optionsOpen ? "" : "-rotate-90"}`} />
+          <T en="Session options" zh="会话选项" />
+        </button>
+        {optionsOpen && (
+          <div className="enter mt-3 flex flex-wrap items-center gap-3">
+            <Segmented<SessionMode>
+              value={mode}
+              onChange={(m) => { setMode(m); load(m); }}
+              options={[
+                { value: "quick", label: <T en="Quick · 5–10 min" zh="快速 · 5–10 分钟" /> },
+                { value: "standard", label: <T en="Standard · 15 min" zh="标准 · 15 分钟" /> },
+                { value: "deep", label: <T en="Deep · 30 min" zh="深度 · 30 分钟" /> },
+              ]}
+            />
+            <a
+              href="/review?filter=errors"
+              className="press text-[12.5px] font-medium text-accent-text hover:underline"
+            >
+              <T en="Practice my mistakes" zh="练我的错题" />
+            </a>
+          </div>
+        )}
+      </div>
 
       {/* ── Finished ───────────────────────────────────────────────────────── */}
       {finished && (
@@ -233,10 +245,9 @@ export function ReviewSession({
           {current.mode === "retention_check" && (
             <p className="mt-1 text-[12px] leading-relaxed text-ink-3">
               <T
-                en="A long-term memory test — success proves the item survived time."
-                zh="长期记忆测试——成功证明它经受住了时间。"
+                en="It's been a while — let's see if it's still there."
+                zh="有段时间了——看看它还在不在。"
               />
-              {current.reasonDetail && <span className="ml-1">{current.reasonDetail}</span>}
             </p>
           )}
 
@@ -286,11 +297,11 @@ export function ReviewSession({
                 />
               )}
 
-              {/* ── Action ─────────────────────────────────────────────────── */}
+              {/* ── Action — one primary decision ─────────────────────────── */}
               <div className="mt-5 flex items-center gap-5">
                 {!(current.options && current.options.length >= 2) && (
                   <button onClick={() => submit()} disabled={submitting || !response.trim()} className={btn.primary}>
-                    <T en={submitting ? "Checking…" : "Submit"} zh="提交" />
+                    <T en={submitting ? "Checking…" : "Check"} zh={submitting ? "检查中…" : "检查"} />
                   </button>
                 )}
                 <button onClick={() => submit(true)} disabled={submitting} className="text-[12.5px] font-medium text-ink-3 transition-colors duration-150 hover:text-ink">
@@ -325,18 +336,13 @@ export function ReviewSession({
                 )}
                 {result.forgettingDetected && (
                   <p className="mt-2 text-[12px] text-err-text">
-                    <T en="Forgetting detected — retention halved, priority boosted." zh="检测到遗忘——留存分减半，优先级提升。" />
+                    <T
+                      en="You knew this before — it's starting to slip, so you'll see it more often."
+                      zh="你以前会——最近开始生疏，所以会更常安排它。"
+                    />
                   </p>
                 )}
               </div>
-
-              {result.retentionScore !== undefined && (
-                <p className="text-[12px] text-ink-3">
-                  <T en="Retention" zh="留存" /> <b className="font-medium tabular-nums text-ink-2">{result.retentionScore}</b>
-                  {" · "}
-                  <T en="Strength" zh="强度" /> <b className="font-medium tabular-nums text-ink-2">{result.strength ?? "—"}</b>
-                </p>
-              )}
 
               {/* teach panel */}
               {result.quality < 5 && current.teach && (
@@ -370,7 +376,7 @@ export function ReviewSession({
 
               <div>
                 <button onClick={next} className={btn.primary}>
-                  {idx + 1 >= queue.length ? <T en="Load next batch" zh="下一批" /> : <T en="Next" zh="下一个" />}
+                  {idx + 1 >= queue.length ? <T en="Load next batch" zh="下一批" /> : <T en="Continue" zh="继续" />}
                 </button>
               </div>
             </div>

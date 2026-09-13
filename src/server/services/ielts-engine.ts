@@ -158,9 +158,11 @@ export async function selectAdaptiveTask(
     reason += `Rotating from ${lastSkill} for diversity. `;
   }
 
-  // Match difficulty to profile level
-  const avgScore = fullProfile[selectedSkill === "listening" ? "listening" : selectedSkill === "reading" ? "reading" : selectedSkill === "speaking" ? "speaking" : "writing"]
-    ?.reduce((a, d) => a + d.score, 0) ?? 50;
+  // Match difficulty to profile level — only VERIFIED (numeric) dimensions
+  // count; unverified (null) ones neither inflate nor deflate the average.
+  const skillDims = fullProfile[selectedSkill === "listening" ? "listening" : selectedSkill === "reading" ? "reading" : selectedSkill === "speaking" ? "speaking" : "writing"] ?? [];
+  const numericScores = skillDims.map((d) => d.score).filter((s): s is number => typeof s === "number");
+  const avgScore = numericScores.length ? numericScores.reduce((a, b) => a + b, 0) / numericScores.length : 50;
   const difficulty = avgScore / 100 > 0.7 ? 4 : avgScore / 100 > 0.5 ? 3 : 2;
 
   // Select task
@@ -174,7 +176,9 @@ export async function selectAdaptiveTask(
     return { task: null, reason: "No tasks available for this skill.", targetChunks: targetChunkTexts };
   }
 
-  reason += `Difficulty ${match.difficulty} (profile score ~${Math.round(avgScore / (fullProfile[selectedSkill as "listening"]?.length || 1))}). `;
+  reason += numericScores.length
+    ? `Difficulty ${match.difficulty} (verified profile score ~${Math.round(avgScore)}). `
+    : `Difficulty ${match.difficulty} (no verified profile evidence yet — mid difficulty). `;
   reason += targetChunkTexts.length > 0
     ? `Transfer targets ready: ${targetChunkTexts.join(", ")}.`
     : "No transfer targets due — pure measurement.";

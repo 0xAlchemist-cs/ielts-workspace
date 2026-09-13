@@ -228,36 +228,36 @@ select:focus {
 
 /* ── Typography scale — never hand-write font-size again ──────────────────── */
 .t-display {
-  font-size: clamp(3rem, 4.5vw, 3.5rem);
-  line-height: 1.04;
-  letter-spacing: -0.035em;
+  font-size: clamp(2rem, 3vw, 2.5rem);
+  line-height: 1.08;
+  letter-spacing: -0.028em;
   font-weight: 700;
   color: var(--text-1);
   text-wrap: balance;
 }
 .t-h1 {
-  font-size: 1.625rem;
+  font-size: 1.75rem;
   line-height: 1.2;
   letter-spacing: -0.022em;
   font-weight: 650;
   color: var(--text-1);
 }
 .t-h2 {
-  font-size: 1.25rem;
+  font-size: 1.375rem;
   line-height: 1.3;
   letter-spacing: -0.016em;
   font-weight: 620;
   color: var(--text-1);
 }
 .t-h3 {
-  font-size: 1rem;
+  font-size: 1.125rem;
   line-height: 1.35;
   letter-spacing: -0.012em;
   font-weight: 600;
   color: var(--text-1);
 }
 .t-body {
-  font-size: 0.875rem;
+  font-size: 1rem;
   line-height: 1.55;
   letter-spacing: -0.006em;
   color: var(--text-1);
@@ -323,7 +323,7 @@ select:focus {
 }
 
 /* Legacy aliases (pre-V1 pages) — remapped onto tokens so they follow dark mode */
-.text-display { font-size: clamp(1.9rem, 2.6vw, 2.45rem); line-height: 1.08; letter-spacing: -0.032em; font-weight: 700; color: var(--text-1); text-wrap: balance; }
+.text-display { font-size: clamp(1.75rem, 2.4vw, 2.25rem); line-height: 1.1; letter-spacing: -0.028em; font-weight: 700; color: var(--text-1); text-wrap: balance; }
 .text-hero { font-size: clamp(2.35rem, 3.6vw, 3.05rem); line-height: 1.04; letter-spacing: -0.038em; font-weight: 730; color: var(--text-1); text-wrap: balance; }
 .text-title { font-size: 1.05rem; line-height: 1.3; letter-spacing: -0.015em; font-weight: 620; color: var(--text-1); }
 .text-caption { font-size: 0.72rem; line-height: 1.4; letter-spacing: 0.001em; color: var(--text-3); }
@@ -459,11 +459,11 @@ select:focus {
 .reader-text .word:hover {
   background: var(--accent-quiet);
 }
-.reader-text .word-advanced {
-  border-bottom: 2px dotted color-mix(in srgb, var(--text-2) 55%, transparent);
-}
+/* V4: the article reads like an article — tier marks carry no default
+ * decoration; hover + tap are the only affordances. */
+.reader-text .word-advanced,
 .reader-text .word-rare {
-  border-bottom: 2px dotted color-mix(in srgb, var(--warning) 80%, transparent);
+  border-bottom: none;
 }
 /* study+ phases: tier tint stays, tap affordance gone */
 .reader-text .word-readonly {

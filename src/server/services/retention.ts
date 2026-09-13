@@ -4,6 +4,7 @@ import { retrievalItems, reviewHistory, chunks, errors, vocabularies } from "@/d
 import { holisticStrength } from "@/lib/retrieval-engine";
 import { CHUNK_DETECT } from "@/lib/chunk-detect";
 import { recordEvent } from "@/server/services/progress";
+import { plural } from "@/lib/plural";
 import { logChunkEvent, markChunkActivated } from "@/server/services/events";
 import { gradeRetrieval } from "@/lib/grading";
 import type { GradeTarget } from "@/lib/grading";
@@ -207,13 +208,13 @@ export async function generateReviewQueue(
       reasonDetail = "Forgetting detected: previously successful, now failing.";
     } else if (item.itemType === "error" && item.failCount >= 1) {
       category = "recurring_error";
-      reasonDetail = `Error with ${item.failCount} retrieval failures.`;
+      reasonDetail = `Error with ${plural(item.failCount, "retrieval failure")}`;
     } else if (isOverdue && overdueDays >= 1) {
       category = "overdue";
       reasonDetail = `${overdueDays} day${overdueDays > 1 ? "s" : ""} overdue for spaced review.`;
     } else if (failRate > 0.4 && totalAttempts >= 3) {
       category = "weak_retrieval";
-      reasonDetail = `High failure rate (${Math.round(failRate * 100)}%) across ${totalAttempts} attempts.`;
+      reasonDetail = `High failure rate (${Math.round(failRate * 100)}%) across ${plural(totalAttempts, "attempt")}.`;
     } else if (isAlmostDue) {
       category = "overdue";
       reasonDetail = "Due within 24 hours.";

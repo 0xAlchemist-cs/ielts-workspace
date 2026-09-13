@@ -44,9 +44,12 @@ export async function takeDailySnapshot(userId: number): Promise<LearningSnapsho
     ["retrieval_success", "generation_pass", "context_transfer", "speaking_use", "ielts_use"].includes(e.type)
   ).length;
 
-  // Skill scores from full profile (average of sub-dimensions)
-  const avgDims = (dims: { score: number }[]) =>
-    dims.length ? Math.round(dims.reduce((a, d) => a + d.score, 0) / dims.length) : 0;
+  // Skill scores from full profile (average of VERIFIED sub-dimensions only —
+  // null "developing" dims neither inflate nor drag the trend)
+  const avgDims = (dims: { score: number | null }[]) => {
+    const nums = dims.map((d) => d.score).filter((s): s is number => typeof s === "number");
+    return nums.length ? Math.round(nums.reduce((a, b) => a + b, 0) / nums.length) : 0;
+  };
 
   const snapshot: LearningSnapshot = {
     date: todayKey(),

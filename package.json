@@ -39,6 +39,9 @@
     "test:writing-gate": "tsx scripts/verify-writing-gate.ts",
     "test:input-gates": "tsx scripts/verify-input-gates.ts",
     "test:security": "tsx scripts/verify-security.ts",
+    "test:data": "tsx scripts/verify-data-integrity.ts",
+    "inspect:item": "tsx scripts/inspect-item.ts",
+    "verify:product": "npm run test:engine && npm run test:rotation && npm run test:loop && npm run test:writing-gate",
     "verify:all": "npm run lint && tsc --noEmit && npm run test:smoke && npm run test:pm && npm run test:engine && npm run test:rotation && npm run test:loop && npm run test:writing-gate && npm run test:input-gates"
   },
   "dependencies": {

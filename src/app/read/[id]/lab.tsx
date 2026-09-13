@@ -10,8 +10,9 @@ import { ChineseReveal } from "@/components/learn";
 import { ArticlePhase, AnalysisSkeleton, type AdHocTarget, type RailTarget, type HighlightTarget } from "./reader";
 import { useSpeechRecognition } from "@/hooks/speech";
 import { speakingPromptByChunk, transferPromptFor, ieltsQuestionFor } from "@/lib/banks";
-import { BookOpen, Clock, Crosshair, Headphones, Maximize2, Minimize2 } from "lucide-react";
+import { ChevronLeft, Crosshair, Headphones, Maximize2, Minimize2 } from "lucide-react";
 import { CHUNK_DETECT } from "@/lib/chunk-detect";
+import { plural } from "@/lib/plural";
 import type { SentenceAnalysis, SpeakingFeedback } from "@/lib/types";
 
 /* ── Active Reading Lab — the 8-step guided session ─────────────────────────
@@ -31,12 +32,13 @@ export interface LabTarget extends RailTarget {
 
 type Phase = "read" | "study" | "recall" | "transfer" | "done";
 
-const PHASE_LABEL: Record<Phase, [string, string]> = {
-  read: ["①② Read & Notice", "阅读与注意"],
-  study: ["③④ Deep Processing & Generation", "深度加工与生成"],
-  recall: ["⑤⑥ Retrieval & Transfer", "闭卷提取与换境迁移"],
-  transfer: ["⑦⑧ Speaking & IELTS", "口语与雅思迁移"],
-  done: ["Session Complete", "本节完成"],
+/* one quiet word per phase — the internal 8-step numbering stays internal */
+const PHASE_NAME: Record<Phase, [string, string]> = {
+  read: ["Reading", "阅读"],
+  study: ["Study", "精研"],
+  recall: ["Recall", "提取"],
+  transfer: ["Speak", "口语"],
+  done: ["Done", "完成"],
 };
 
 export function ActiveReadingLab({
@@ -78,24 +80,10 @@ export function ActiveReadingLab({
   );
   const [seconds, setSeconds] = useState(0);
   const articleRef = useRef<HTMLDivElement>(null);
-  const [scrollPct, setScrollPct] = useState(0);
 
   useEffect(() => {
     const t = setInterval(() => setSeconds((s) => s + 1), 1000);
     return () => clearInterval(t);
-  }, []);
-
-  useEffect(() => {
-    const onScroll = () => {
-      const el = articleRef.current;
-      if (!el) return;
-      const rect = el.getBoundingClientRect();
-      const total = rect.height - window.innerHeight + 200;
-      const done = Math.min(Math.max(-rect.top + 120, 0), Math.max(total, 1));
-      setScrollPct(Math.round((done / Math.max(total, 1)) * 100));
-    };
-    window.addEventListener("scroll", onScroll, { passive: true });
-    return () => window.removeEventListener("scroll", onScroll);
   }, []);
 
   const chosen = useMemo(() => allTargets.filter((t) => selected.has(t.chunkId)), [allTargets, selected]);
@@ -162,9 +150,7 @@ export function ActiveReadingLab({
       return next;
     });
 
-  /* 4-node progress rail — read → study → recall → speak (transfer) */
-  const bilingual = useBilingual();
-
+  /* session phases — 4 quiet steps the hairline indicator counts through */
   const PHASE_NODES: { key: Phase; en: string; zh: string }[] = [
     { key: "read", en: "Read", zh: "阅读" },
     { key: "study", en: "Study", zh: "精研" },
@@ -177,36 +163,11 @@ export function ActiveReadingLab({
     setChunkToOpen({ ...(c as unknown as RailTarget) });
   };
 
-  /* the right-panel content per phase (desktop: side panel; mobile: below) */
+  /* the learning panel per phase (desktop: side panel; mobile: below).
+   * In the READ phase there is no side panel at all — the article is the
+   * page; targets live in a compact section after the last paragraph. */
   const panel =
-    phase === "read" ? (
-      <TargetsRail
-        targets={allTargets}
-        selectedIds={selected}
-        onToggleTarget={toggleTarget}
-        onOpenChunk={openChunk}
-        onLocate={locateTarget}
-        objective={
-          <div className="flex items-center justify-between gap-2">
-            <span className="text-[12px] text-ink-3">
-              <T
-                en={<>Objective: notice & activate <b className="text-ink">{chosen.length}</b> expressions</>}
-                zh={<>目标：留意并激活 <b className="text-ink">{chosen.length}</b> 个表达</>}
-              />
-            </span>
-          </div>
-        }
-        start={
-          <button
-            onClick={() => chosen.length >= 1 && setPhase("study")}
-            disabled={chosen.length < 1}
-            className={`${btn.primary} w-full`}
-          >
-            <T en="Start Study Session →" zh="开始精研 →" />
-          </button>
-        }
-      />
-    ) : phase === "study" ? (
+    phase === "study" ? (
       <StudyPhase targets={chosen} onDone={() => setPhase("recall")} />
     ) : phase === "recall" ? (
       <RecallPhase targets={chosen} onDone={() => setPhase("transfer")} />
@@ -235,82 +196,66 @@ export function ActiveReadingLab({
         </div>
       </header>
 
-      {/* sticky session bar */}
-      <div className="material-header sticky top-[64px] z-20 -mx-4 mb-6 flex flex-wrap items-center justify-between gap-x-4 gap-y-2 border-b border-line px-4 py-2.5 sm:-mx-7 sm:px-7">
-        <div className="flex min-w-0 flex-wrap items-center gap-2.5 text-[12px]">
-          <Badge tone="accent">{PHASE_LABEL[phase][0]} {bilingual && <span className="opacity-70">{PHASE_LABEL[phase][1]}</span>}</Badge>
-          {/* 4-phase stepper: labelled nodes so the session arc is actually readable */}
-          <div className="flex items-center gap-1">
-            {PHASE_NODES.map((n, i) => {
-              const nodeIdx = PHASE_NODES.findIndex((x) => x.key === phase);
-              const state = phase === "done" || i < nodeIdx ? "done" : i === nodeIdx ? "current" : "todo";
-              return (
-                <span key={n.key} className="flex items-center gap-1">
-                  {i > 0 && <span className={`h-px w-4 ${state !== "todo" ? "bg-accent/40" : "bg-line"}`} />}
-                  <span className="flex items-center gap-1.5" title={bilingual ? `${n.en} ${n.zh}` : n.en}>
-                    <span
-                      className={`h-[8px] w-[8px] rounded-full transition-colors ${
-                        state === "done"
-                          ? "bg-accent"
-                          : state === "current"
-                            ? "bg-accent shadow-[0_0_0_3px_var(--accent-quiet)]"
-                            : "bg-line-strong"
-                      }`}
-                    />
-                    <span
-                      className={`hidden text-[11px] leading-none transition-colors sm:inline ${
-                        state === "current"
-                          ? "font-semibold text-ink"
-                          : state === "done"
-                            ? "text-ink-3"
-                            : "text-ink-3/70"
-                      }`}
-                    >
-                      {n.en}
-                    </span>
-                  </span>
-                </span>
-              );
-            })}
-          </div>
-          <span className="flex items-center gap-1 font-mono tabular-nums text-ink-3"><Clock size={11} strokeWidth={1.9} />{mmss}</span>
-          {phase === "read" && (
-            <span className="flex items-center gap-1 font-mono tabular-nums text-ink-3"><BookOpen size={11} strokeWidth={1.9} />{scrollPct}%</span>
-          )}
-        </div>
-        <div className="flex items-center gap-2.5">
-          {phase !== "read" && phase !== "done" && (
-            <button
-              onClick={() => setPhase(phase === "study" ? "read" : phase === "recall" ? "study" : "recall")}
-              className={btn.ghost}
-            >
-              <T en="← back" zh="← 返回上一步" />
-            </button>
-          )}
+      {/* slim session indicator — phase · hairline · n/4 · time · focus.
+       * One quiet line, never a control panel. */}
+      <div className="material-header sticky top-[64px] z-20 -mx-4 mb-8 flex items-center gap-3 border-b border-line px-4 py-2.5 sm:-mx-7 sm:px-7">
+        {phase !== "read" && phase !== "done" && (
           <button
-            onClick={() => setFocus((f) => !f)}
-            title={focus ? "Exit focus mode (Esc)" : "Focus reading mode — hides all chrome (Esc to exit)"}
-            className={btn.ghost}
+            onClick={() => setPhase(phase === "study" ? "read" : phase === "recall" ? "study" : "recall")}
+            title="Back to previous step 返回上一步"
+            aria-label="Back to previous step"
+            className="press flex h-7 w-7 shrink-0 items-center justify-center rounded-md text-ink-3 nav-hover hover:text-ink"
           >
-            {focus ? <Minimize2 size={13} strokeWidth={1.9} /> : <Maximize2 size={13} strokeWidth={1.9} />}
-            <span className="hidden sm:inline">
-              <T en={focus ? "Exit focus" : "Focus"} zh={focus ? "退出专注" : "专注"} />
-            </span>
+            <ChevronLeft size={15} strokeWidth={1.9} />
           </button>
-        </div>
+        )}
+        <span className="shrink-0 text-[13px] font-medium text-ink">
+          <T en={PHASE_NAME[phase][0]} zh={PHASE_NAME[phase][1]} />
+        </span>
+        {(() => {
+          const idx = phase === "done" ? PHASE_NODES.length : PHASE_NODES.findIndex((n) => n.key === phase);
+          return (
+            <>
+              <div className="h-[2px] max-w-[220px] flex-1 overflow-hidden rounded-full bg-line">
+                <div
+                  className="h-full rounded-full bg-accent/50 transition-[width] duration-300 ease-out"
+                  style={{ width: `${(idx / PHASE_NODES.length) * 100}%` }}
+                />
+              </div>
+              <span className="shrink-0 font-mono text-[11px] tabular-nums text-ink-3">
+                {Math.min(idx + 1, PHASE_NODES.length)}/{PHASE_NODES.length}
+              </span>
+            </>
+          );
+        })()}
+        <span className="ml-auto shrink-0 font-mono text-[11px] tabular-nums text-ink-3">{mmss}</span>
+        <button
+          onClick={() => setFocus((f) => !f)}
+          title={focus ? "Exit focus mode (Esc)" : "Focus reading mode — hides all chrome (Esc to exit)"}
+          aria-label={focus ? "Exit focus mode" : "Focus reading mode"}
+          className="press ml-1 flex h-7 w-7 shrink-0 items-center justify-center rounded-md text-ink-3 nav-hover hover:text-ink"
+        >
+          {focus ? <Minimize2 size={14} strokeWidth={1.9} /> : <Maximize2 size={14} strokeWidth={1.9} />}
+        </button>
       </div>
 
       {phase === "done" ? (
         <DoneSummary targets={chosen} minutes={Math.round(seconds / 60)} />
       ) : (
-        /* ── Content-first dual column: article stays on the left through every
-         * phase; the learning panel flows on the right (below on mobile).
-         * Columns pack as one group (672 + 48 + 360) and center together —
-         * keeps the reader measure at ~65ch without a dead 200px gutter. ── */
+        /* ── Article-first: during READ the article is the only column —
+         * centered measure, no rail competing for attention; today's targets
+         * follow the last paragraph as a compact section. Study+ keeps the
+         * dual view (article as context left, working panel right) so scroll
+         * position and reference survive the phase switch. ── */
         <div className="flex flex-col gap-8 lg:flex-row lg:justify-center lg:gap-12">
           <div
             ref={articleRef}
-            className={"min-w-0 lg:flex-none " + (phase === "read" ? "" : "hidden lg:block")}
+            className={
+              "min-w-0 " +
+              (phase === "read"
+                ? "mx-auto w-full max-w-[42rem]"
+                : "hidden lg:block lg:flex-none")
+            }
             style={{ minHeight: 200 }}
           >
             <ArticlePhase
@@ -322,21 +267,38 @@ export function ActiveReadingLab({
               onAddTarget={addAdHocTarget}
               chunkToOpen={chunkToOpen}
               highlightTargets={highlightTargets}
-            >
-              {phase === "read" && (
-                <div className="mt-4 rounded-2xl bg-[#0071e3]/[0.05] px-5 py-4 text-center lg:hidden">
-                  <p className="text-[12.5px] text-ink-2">
-                    <T
-                      en={<>Selected <b className="text-ink">{chosen.length}</b> / 5 target expressions</>}
-                      zh={<>已选 <b className="text-ink">{chosen.length}</b> / 5 个靶表达</>}
-                    />
-                  </p>
-                </div>
-              )}
-            </ArticlePhase>
+            />
+            {phase === "read" && (
+              <div className="mt-12 border-t border-line pt-8">
+                <TargetsRail
+                  targets={allTargets}
+                  selectedIds={selected}
+                  onToggleTarget={toggleTarget}
+                  onOpenChunk={openChunk}
+                  onLocate={locateTarget}
+                  objective={
+                    <span className="text-[12px] text-ink-3">
+                      <T
+                        en={<>Objective: notice & activate <b className="text-ink">{chosen.length}</b> expressions</>}
+                        zh={<>目标：留意并激活 <b className="text-ink">{chosen.length}</b> 个表达</>}
+                      />
+                    </span>
+                  }
+                  start={
+                    <button
+                      onClick={() => chosen.length >= 1 && setPhase("study")}
+                      disabled={chosen.length < 1}
+                      className={`${btn.primary} w-full`}
+                    >
+                      <T en="Start Study Session →" zh="开始精研 →" />
+                    </button>
+                  }
+                />
+              </div>
+            )}
           </div>
 
-          <aside className={"w-full shrink-0 lg:block lg:w-[360px] " + (phase === "read" || focus ? "hidden" : "")}>
+          <aside className={"w-full shrink-0 lg:w-[360px] " + (phase === "read" || focus ? "hidden" : "")}>
             <div className="lg:sticky lg:top-[120px] lg:max-h-[calc(100vh-160px)] lg:overflow-y-auto lg:pr-1">
               {panel}
             </div>
@@ -932,7 +894,7 @@ function DoneSummary({ targets, minutes }: { targets: LabTarget[]; minutes: numb
         <h3 className="text-[19px] font-semibold tracking-[-0.02em] text-ink">Session complete · 本节完成</h3>
         <p className="mt-1.5 text-[13px] text-ink-2">
           <T
-            en={`${minutes} min · ${targets.length} expressions went through Notice → Deep Processing → Generation → Retrieval → Transfer.`}
+            en={`${minutes} min · ${plural(targets.length, "expression")} went through Notice → Deep Processing → Generation → Retrieval → Transfer.`}
             zh={`${minutes} 分钟 · ${targets.length} 个表达完整走过 注意 → 深度加工 → 造句生成 → 闭卷提取 → 迁移。`}
           />
         </p>
