@@ -46,7 +46,7 @@ export function ExternalCoachView({
 
       {/* Coach Card — one GPT link, one card (speaking + listening are ways to
        * use the same coach, not two products) */}
-      <div className="stagger max-w-xl">
+      <div className="stagger mx-auto max-w-xl">
         {coaches.map((coach) => (
           <div key={coach.id} className="card-specular card-lift rounded-2xl bg-white p-6">
             <div className="flex items-start justify-between gap-3">
