@@ -50,12 +50,12 @@ export default async function WelcomeLoopPage() {
   if (!pick) {
     // degenerate corpus — still never a dead end
     return (
-      <main className="mx-auto flex min-h-screen w-full max-w-[520px] flex-col justify-center px-6">
+      <div className="mx-auto flex min-h-screen w-full max-w-[520px] flex-col justify-center px-6">
         <h1 className="text-[26px] font-semibold tracking-[-0.02em] text-ink">Let&apos;s build your English ability.</h1>
         <Link href="/" className="text-[14px] font-medium text-accent-text">
           Go to Today →
         </Link>
-      </main>
+      </div>
     );
   }
 

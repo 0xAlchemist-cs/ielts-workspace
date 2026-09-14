@@ -83,7 +83,7 @@ export function WelcomeFlow({ material }: { material: WelcomeMaterial }) {
   };
 
   return (
-    <main className="mx-auto flex min-h-screen w-full max-w-[560px] flex-col justify-center px-6 py-16">
+    <div className="mx-auto flex min-h-screen w-full max-w-[560px] flex-col justify-center px-6 py-16">
       {/* step dots — 5 marks, no labels */}
       {step > 0 && step < 5 && (
         <div className="mb-10 flex items-center gap-1.5">
@@ -319,6 +319,6 @@ export function WelcomeFlow({ material }: { material: WelcomeMaterial }) {
           </Link>
         </div>
       )}
-    </main>
+    </div>
   );
 }

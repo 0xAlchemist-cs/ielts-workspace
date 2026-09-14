@@ -100,7 +100,9 @@ export function WelcomeTour() {
   };
 
   return (
-    <main className="mx-auto flex min-h-screen w-full max-w-[560px] flex-col justify-center px-6 py-16">
+    // div, not main: AppShell already owns the page's <main> — nesting a
+    // second one is an a11y violation flagged in the V5 regression pass
+    <div className="mx-auto flex min-h-screen w-full max-w-[560px] flex-col justify-center px-6 py-16">
       {step > 0 && (
         <div className="mb-10 flex items-center gap-1.5">
           {Array.from({ length: TOTAL }, (_, i) => (
@@ -207,6 +209,6 @@ export function WelcomeTour() {
           </p>
         </div>
       )}
-    </main>
+    </div>
   );
 }
