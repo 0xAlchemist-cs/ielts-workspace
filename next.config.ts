@@ -29,7 +29,10 @@ const SECURITY_HEADERS = [
 ];
 
 const nextConfig: NextConfig = {
-  serverExternalPackages: ["better-sqlite3"],
+  // native/loader-heavy parsers must stay external to the server bundle —
+  // bundling breaks tesseract's worker+wasm resolution and pdf-parse's
+  // test-file hack
+  serverExternalPackages: ["better-sqlite3", "tesseract.js", "pdf-parse", "mammoth"],
   poweredByHeader: false,
   async headers() {
     return [{ source: "/:path*", headers: SECURITY_HEADERS }];

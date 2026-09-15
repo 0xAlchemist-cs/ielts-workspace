@@ -7,6 +7,7 @@ import { Badge, btn, inputCls } from "@/components/ui";
 import { Segmented, toast } from "@/components/motion";
 import { T, useBilingual } from "@/components/i18n";
 import { importContentAction, assessDifficultyAction } from "@/app/actions";
+import { FileImport } from "./import-panel";
 
 interface Item {
   id: number;
@@ -178,8 +179,7 @@ export function LibraryView({ contents }: { contents: Item[] }) {
 }
 
 function AddContentPanel({ onImported }: { onImported: (id: number) => void }) {
-  const [text, setText] = useState("");
-  const [analysis, setAnalysis] = useState<AnalysisResult | null>(null);
+  const [text, setText] = useState("");  const [analysis, setAnalysis] = useState<AnalysisResult | null>(null);
   const [analyzing, setAnalyzing] = useState(false);
   const [importing, setImporting] = useState(false);
   const [error, setError] = useState("");
@@ -227,6 +227,7 @@ function AddContentPanel({ onImported }: { onImported: (id: number) => void }) {
 
   return (
     <div className="space-y-5">
+      <FileImport />
       <div className="card-specular rounded-2xl bg-surface p-6">
         <h3 className="mb-1 text-[15px] font-semibold tracking-[-0.015em] text-ink">
           <T en="Paste any English text" zh="粘贴任意英文文章" />

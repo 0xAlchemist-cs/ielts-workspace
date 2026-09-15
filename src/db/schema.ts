@@ -79,11 +79,41 @@ export const contents = sqliteTable(
   (t) => [index("idx_contents_type").on(t.type)],
 );
 
+// ── Local import system (V6): every uploaded file, its fate, and its content ─
+
+export const importedResources = sqliteTable(
+  "imported_resources",
+  {
+    id: integer("id").primaryKey({ autoIncrement: true }),
+    userId: integer("user_id").notNull(),
+    fileName: text("file_name").notNull(), // display only — never a path
+    resourceType: text("resource_type").$type<"document" | "subtitle" | "image" | "audio" | "video">().notNull(),
+    format: text("format").notNull(), // pdf|docx|txt|md|png|jpg|webp|srt|vtt|mp3|wav|m4a|mp4
+    mimeType: text("mime_type").notNull().default(""),
+    fileSize: integer("file_size").notNull(),
+    contentHash: text("content_hash").notNull(), // sha256 of raw bytes — file-level dedup
+    storageKey: text("storage_key").notNull(), // generated uuid name inside data/uploads
+    status: text("status")
+      .$type<"ready" | "duplicate" | "needs_attention" | "needs_transcription" | "failed">()
+      .notNull(),
+    error: text("error"),
+    contentId: integer("content_id"), // resulting contents row, when ready
+    meta: text("meta", { mode: "json" })
+      .$type<{ pages?: number; durationMs?: number; ocrConfidence?: number; cues?: number }>()
+      .notNull()
+      .default({}),
+    createdAt: integer("created_at").notNull().$defaultFn(() => Date.now()),
+  },
+  (t) => [
+    uniqueIndex("uq_imported_hash").on(t.userId, t.contentHash),
+    index("idx_imported_user").on(t.userId),
+  ],
+);
+
 /** Content rotation history — drives selectNextContent cooldown/rotation:
  *  what was used, when, how often, and whether it reached completion. */
 export const contentHistory = sqliteTable(
-  "content_history",
-  {
+  "content_history",  {
     id: integer("id").primaryKey({ autoIncrement: true }),
     userId: integer("user_id").notNull(),
     contentId: integer("content_id").notNull(),
