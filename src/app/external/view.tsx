@@ -126,7 +126,7 @@ export function ExternalCoachView({
       <div className="mt-8 rounded-xl bg-[#ff9f0a]/[0.06] px-5 py-4">
         <p className="text-[12px] leading-relaxed text-ink-2">
           <T
-            en="Self-assessment is auxiliary data only. It does NOT increase any score or strength metric — only practice you actually do inside the Workspace (recalling, writing, using what you learned) moves the real numbers."
+            en="Self-assessment is auxiliary data only. It does NOT increase any score or progress metric — only practice you actually do inside the Workspace (recalling, writing, using what you learned) moves the real numbers."
             zh="自评仅作为辅助数据，不会增加任何分数或强度指标——只有在 Workspace 里真实完成的练习（回忆、写作、用上学过的表达）才会推动真实数字。"
           />
         </p>

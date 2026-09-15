@@ -83,8 +83,8 @@ export function ChunkBankView({
           </h1>
           <p className="mt-1.5 text-[13px] text-ink-2">
             <T
-              en="The unit of learning is the expression, not the word. Strength grows only when you retrieve and use them — never by re-reading."
-              zh="学习的基本单位是表达，不是单词。强度只能通过提取和使用增长——重复阅读永远不算。"
+              en="You learn expressions, not single words. They get solid when you recall and use them — re-reading doesn't count."
+              zh="你学的是表达，不是单个词。回忆并用出来才算数——光重读不算。"
             />
           </p>
         </div>

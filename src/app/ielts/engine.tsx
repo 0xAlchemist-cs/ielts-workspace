@@ -164,12 +164,12 @@ export function IeltsEngineView({ targetBand }: { targetBand: number }) {
       <header className="mb-5 flex flex-wrap items-end justify-between gap-3">
         <div>
           <h1 className="text-display">
-            <T en="IELTS Engine" zh="雅思引擎" />
+            <T en="IELTS Practice" zh="雅思练习" />
           </h1>
           <p className="mt-1.5 text-[13px] text-ink-2">
             <T
-              en="Measurement + transfer. Your language ability is tested in real IELTS conditions — never by asking you to 'use expression X'."
-              zh="测量 + 迁移。语言能力在真实雅思场景中测试——绝不要求'请使用表达 X'。"
+              en="Real IELTS questions under real conditions — your English gets measured, not your memory of hints."
+              zh="真实雅思考题、真实考试条件——测的是你的英语，不是对提示的记忆。"
             />
           </p>
         </div>
@@ -197,8 +197,8 @@ export function IeltsEngineView({ targetBand }: { targetBand: number }) {
           <Card title={<T en="Adaptive Task Selection" zh="自适应选题" />}>
             <p className="text-[13px] leading-relaxed text-ink-2">
               <T
-                en="The engine reads your Weakest Link, Error Bank, Retrieval Queue, and LanguageItem strength to pick the most valuable task right now."
-                zh="引擎读取你的最弱环节、错误银行、复习队列和语言项强度，选出当前最有价值的任务。"
+                en="Picked for you based on what you've been getting wrong and what you haven't practiced lately."
+                zh="根据你最近错过什么、久未练什么，为你挑选的题目。"
               />
             </p>
             <button onClick={() => fetchTask(mode)} disabled={loading} className={`${btn.primary} mt-4 w-full`}>

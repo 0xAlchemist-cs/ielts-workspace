@@ -41,7 +41,7 @@ const STAGES: { key: Stage; en: string; zh: string }[] = [
   { key: "write", en: "Write", zh: "写作" },
   { key: "feedback", en: "Feedback", zh: "反馈" },
   { key: "rewrite", en: "Rewrite", zh: "重写" },
-  { key: "transfer", en: "Transfer", zh: "迁移" },
+  { key: "transfer", en: "Use it again", zh: "再用一次" },
 ];
 
 const TYPE_TITLE: Record<Exclude<TaskType, "paraphrase">, { en: string; zh: string; words: number }> = {
@@ -227,7 +227,7 @@ function LabHeader() {
         <T en="Writing" zh="写作" />
       </h1>
       <p className="mt-1.5 text-[13px] text-ink-2">
-        <T en="Write meaningful English → get diagnosis → rewrite → transfer." zh="写出有内容的英语 → 获得诊断 → 重写 → 迁移。" />
+        <T en="Write meaningful English → get feedback → rewrite it yourself → use it on a new question." zh="写出有内容的英语 → 获得反馈 → 自己重写 → 用到新题目上。" />
       </p>
     </header>
   );
@@ -848,10 +848,10 @@ function EssayFlow({
     return (
       <div className="enter mt-12 max-w-2xl">
         <h2 className="text-[20px] font-semibold tracking-[-0.015em] text-ink">
-          <T en="Transfer" zh="迁移" />
+          <T en="Use it again — new question" zh="再用一次——新题目" />
         </h2>
         <p className="mt-1.5 text-[12.5px] text-ink-3">
-          <T en="Prove it travels — same skills, new context." zh="证明它能迁移——同样的能力，新的语境。" />
+          <T en="Same skills, a fresh context — that's how you know they're real." zh="同样的能力，新的语境——这才知道是真的会了。" />
         </p>
 
         {transferTask && (

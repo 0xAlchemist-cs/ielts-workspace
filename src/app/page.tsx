@@ -153,7 +153,7 @@ export default async function HomePage() {
             </span>
             {(() => {
               const whyHere: Record<string, { en: string; zh: string }> = {
-                overdue: { en: "Due for retrieval", zh: "到期待提取" },
+                overdue: { en: "Time to review", zh: "该复习了" },
                 at_risk: { en: "Starting to slip", zh: "开始生疏" },
                 retention_check: { en: "Long-term memory check", zh: "长期保持检查" },
                 weak_retrieval: { en: "Often forgotten", zh: "经常想不起来" },
