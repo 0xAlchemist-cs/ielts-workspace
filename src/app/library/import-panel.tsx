@@ -97,8 +97,8 @@ export function FileImport() {
       </h3>
       <p className="mb-4 text-[13px] leading-relaxed text-ink-2">
         <T
-          en="PDF, Word, text, subtitles, images, audio, video — we'll turn it into something you can learn from."
-          zh="PDF、Word、文本、字幕、图片、音频、视频——我们会把它变成能学的东西。"
+          en="PDF, Word, text and subtitles become reading & listening material; images are read with on-device OCR. Audio and video are saved for listening practice (no auto-transcription yet)."
+          zh="PDF、Word、文本、字幕会变成阅读/听力材料；图片用本机 OCR 识别。音频和视频会存档用于听力练习（暂不支持自动转写）。"
         />
       </p>
 
