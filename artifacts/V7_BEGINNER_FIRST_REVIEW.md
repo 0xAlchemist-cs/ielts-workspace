@@ -35,6 +35,14 @@ V5/V6 had already shipped most of the spec (4-link nav, one-card Today, Prompt�
 
 `verify:all` (lint 0 errors · tsc · smoke 25 · pm 27 · engine 18 · rotation 9 · loop 25 · writing-gate · input-gates · **import 23**) ✓ · `verify:product` ✓ · `test:data` OK (2 known historical advisories) ✓ · `test:security` 3/3 ✓ · production `build` ✓. V6 import pipeline, dedupe, OCR/PDF/DOCX/audio paths untouched and re-tested.
 
+## 4b. Terminology machine re-scan (post-sweep commit d4b5b32)
+
+Full-site visible-text scan (11 routes × 13-term dictionary): every route **CLEAN**. Fixes in the sweep: "IELTS Engine"→"IELTS Practice", the "engine reads your Weakest Link, Error Bank, Retrieval Queue, and LanguageItem strength" sentence→"picked for you based on what you've been getting wrong…", chunk-bank header, writing "Transfer/迁移" stage→"Use it again 再用一次", home expression tag "Due for retrieval"→"Time to review 该复习了". Deliberately kept: CEFR in the profile baseline form (user config, not surfaced learning state).
+
+## 4c. Fresh-user 9-step pass (final build)
+
+welcome chooser → loop entry → Today (1 primary button, human tags) → Library ＋Import → open material (/read/1) → Practice item renders — all ✓, 0 console errors.
+
 ## 5. Remaining complexity (deliberate)
 
 - `/chunks` and `/library` show many cards — that's the learner's own material volume, not UI noise.
