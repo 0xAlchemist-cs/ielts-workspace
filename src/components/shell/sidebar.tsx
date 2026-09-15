@@ -2,7 +2,6 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { useEffect, useState } from "react";
 import {
   BookOpen,
   CircleAlert,
@@ -66,29 +65,7 @@ export function Sidebar({
   mobileOpen: boolean;
   onNavigate: () => void;
 }) {
-  const pathname = usePathname();
-  // folded by default — a first-time visitor sees exactly four destinations;
-  // opening it once persists across sessions
-  const [moreOpen, setMoreOpen] = useState(false);
-
-  useEffect(() => {
-    const saved = localStorage.getItem("sb-more");
-    if (saved === "1") {
-      // eslint-disable-next-line react-hooks/set-state-in-effect -- hydrate persisted fold state once
-      setMoreOpen(true);
-    }
-  }, []);
-
-  const toggleMore = () => {
-    setMoreOpen((o) => {
-      try {
-        localStorage.setItem("sb-more", o ? "0" : "1");
-      } catch {
-        /* ignore */
-      }
-      return !o;
-    });
-  };  const itemCls = (active: boolean, secondary: boolean) =>
+  const pathname = usePathname();  const itemCls = (active: boolean, secondary: boolean) =>
     `press mb-0.5 flex items-center gap-3 rounded-[11px] transition-colors duration-150 ${
       collapsed ? "justify-center px-0 py-[12px]" : "px-3 py-[10px]"
     } ${secondary ? "text-[13px]" : "text-[14px]"} ${
@@ -116,8 +93,6 @@ export function Sidebar({
       </Link>
     );
   };
-
-  const moreActive = MORE.some((m) => isActive(pathname, m.href));
 
   return (
     <>
@@ -168,39 +143,17 @@ export function Sidebar({
           )}
         </div>
 
-        {/* nav — four primary destinations + one folded capability group */}
+        {/* nav — four primary destinations, then capabilities listed plainly */}
         <nav className="flex-1 overflow-y-auto overflow-x-hidden px-3 py-5">
           {PRIMARY.map((item) => renderItem(item, false))}
 
           <div className="mt-7">
             {collapsed ? (
-              <>
-                <div className="mx-auto mb-3 h-px w-6 bg-line" />
-                {MORE.map((item) => renderItem(item, true))}
-              </>
+              <div className="mx-auto mb-3 h-px w-6 bg-line" />
             ) : (
-              <>
-                <button
-                  type="button"
-                  onClick={toggleMore}
-                  aria-expanded={moreOpen}
-                  className="group mb-1.5 flex w-full items-center gap-1.5 px-3 pb-1 text-[10px] font-semibold uppercase tracking-[0.12em] text-ink-3/80 transition-colors duration-150 hover:text-ink-2"
-                >
-                  <T en="More" zh="更多" />
-                  {moreActive && !moreOpen && <span className="h-1 w-1 rounded-full bg-accent" />}
-                  <svg
-                    viewBox="0 0 12 12"
-                    className={`ml-auto h-2.5 w-2.5 transition-transform duration-150 ${moreOpen ? "" : "-rotate-90"}`}
-                    fill="none"
-                    stroke="currentColor"
-                    strokeWidth={1.8}
-                  >
-                    <path d="M3 4.5 6 7.5 9 4.5" />
-                  </svg>
-                </button>
-                {moreOpen && MORE.map((item) => renderItem(item, true))}
-              </>
+              <div className="mx-3 mb-2 h-px bg-line" />
             )}
+            {MORE.map((item) => renderItem(item, true))}
           </div>
         </nav>
 
