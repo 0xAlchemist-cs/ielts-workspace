@@ -103,6 +103,25 @@ export function ProfileView({
   const [listeningW, setListeningW] = useState(new Set(profile.listeningWeaknesses));
   const [saved, setSaved] = useState(false);
   const [drillDown, setDrillDown] = useState<string | null>(null);
+  // numbers disclosure — statements & focus stay visible; charts/metrics open
+  // only when asked (persisted, so a data-curious learner never re-opens twice)
+  const [showNumbers, setShowNumbers] = useState(false);
+  useEffect(() => {
+    if (localStorage.getItem("pf-numbers") === "1") {
+      // eslint-disable-next-line react-hooks/set-state-in-effect -- hydrate persisted disclosure state once
+      setShowNumbers(true);
+    }
+  }, []);
+  const toggleNumbers = () => {
+    setShowNumbers((v) => {
+      try {
+        localStorage.setItem("pf-numbers", v ? "0" : "1");
+      } catch {
+        /* ignore */
+      }
+      return !v;
+    });
+  };
 
   // Sidebar "Progress" lands on /profile#trajectory — Next doesn't reliably
   // scroll to the anchor on cross-page navigation, so do it once on mount.
@@ -132,12 +151,16 @@ export function ProfileView({
           <a href="/api/export" className={btn.secondary} download>
             <T en="Export my data (JSON)" zh="导出学习数据" />
           </a>
+          <button type="button" onClick={toggleNumbers} className={`${btn.ghost} ml-2`}>
+            <T en={showNumbers ? "Fewer numbers" : "Show the numbers"} zh={showNumbers ? "收起数字" : "显示数字"} />
+          </button>
         </div>
       </header>
 
       {/* Today — the evidence layer that used to live on the homepage:
-       * real counts from real events, plus the honest funnel. */}
-      {(() => {
+       * real counts from real events, plus the honest funnel. (inside the
+       * numbers disclosure: statements + focus stay above it) */}
+      {showNumbers && (() => {
         const lines: { en: string; zh: string }[] = [];
         if (evidence.activated > 0)
           lines.push({ en: `Activated ${plural(evidence.activated, "expression")} — passive → active`, zh: `激活 ${evidence.activated} 个表达 — 被动 → 主动` });
@@ -239,7 +262,9 @@ export function ProfileView({
         </div>
       )}
 
-      {/* Overall metrics */}
+      {/* Overall metrics — first block of the numbers disclosure */}
+      {showNumbers && (
+        <>
       <div className="mb-6 grid grid-cols-2 gap-2.5 sm:grid-cols-3 lg:grid-cols-5">
         <Stat label="Active Vocab" labelZh="主动词汇" value={stats.activeVocabulary} tone="accent" sub={`+${stats.passiveVocabulary} passive`} />
         <Stat label="Active Chunks" labelZh="主动语块" value={stats.activeChunks} sub={bilingual ? `强度 ${stats.averageStrength}` : `avg strength ${stats.averageStrength}`} />
@@ -422,6 +447,8 @@ export function ProfileView({
           npm run start -- -H 0.0.0.0
         </code>
       </Card>
+        </>
+      )}
 
       {/* Edit profile form */}
       <form

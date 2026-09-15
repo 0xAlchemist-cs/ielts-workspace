@@ -86,12 +86,12 @@ export function LibraryView({ contents }: { contents: Item[] }) {
       <header className="mb-6 flex flex-wrap items-end justify-between gap-3">
         <div>
           <h1 className="text-display">
-            <T en="Content & Input" zh="内容与输入" />
+            <T en="Library" zh="内容库" />
           </h1>
           <p className="mt-1.5 text-[13px] text-ink-2">
             <T
-              en="Real English input → analysis → LanguageItems → Retrieval. Every article becomes a learning session."
-              zh="真实英语输入 → 分析 → 语言项 → 提取。每篇文章都变成一次学习。"
+              en="Bring your English materials — we'll turn them into learning."
+              zh="带上你的英语材料——我们把它变成能学的东西。"
             />
           </p>
         </div>
@@ -99,8 +99,8 @@ export function LibraryView({ contents }: { contents: Item[] }) {
           value={tab}
           onChange={setTab}
           options={[
-            { value: "library", label: <T en="📚 My Content" zh="我的内容" /> },
-            { value: "add", label: <T en="＋ Add Content" zh="＋ 添加内容" /> },
+            { value: "library", label: <T en="My materials" zh="我的材料" /> },
+            { value: "add", label: <T en="＋ Import" zh="＋ 导入" /> },
           ]}
         />
       </header>

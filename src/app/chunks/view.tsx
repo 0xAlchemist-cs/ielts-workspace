@@ -8,6 +8,7 @@ import { Badge, Card, EmptyState, ProgressBar, btn, inputCls } from "@/component
 import { Drawer, Segmented, toast } from "@/components/motion";
 import { ChineseReveal, SaveChunkButton } from "@/components/learn";
 import { T } from "@/components/i18n";
+import { plural } from "@/lib/plural";
 
 interface MyChunk {
   id: number;
@@ -107,35 +108,41 @@ export function ChunkBankView({
             />
           ) : (
             <div className="stagger grid gap-3 sm:grid-cols-2">
-              {myChunks.map((c) => (
-                <button
-                  key={c.id}
-                  onClick={() => setDetail(c)}
-                  className="press rounded-2xl bg-white p-4 text-left shadow-[0_0_0_0.5px_rgba(0,0,0,0.06),0_2px_8px_rgba(0,0,0,0.04)] transition-shadow duration-200 hover:shadow-[0_0_0_0.5px_rgba(0,0,0,0.06),0_8px_28px_rgba(0,0,0,0.09)]"
-                >
-                  <div className="flex items-start justify-between gap-2">
-                    <span className="text-[14px] font-semibold tracking-[-0.01em] text-ink">{c.text}</span>
-                    <Badge tone={c.strength >= 70 ? "success" : c.strength >= 40 ? "accent" : "neutral"}>
-                      {c.strength}
-                    </Badge>
-                  </div>
-                  <p className="mt-1 line-clamp-2 text-[12px] leading-relaxed text-ink-2">{c.meaningEn}</p>
-                  <div className="mt-3">
-                    <ProgressBar value={c.strength} />
-                  </div>
-                  {c.mySentences.length > 0 && (
-                    <p className="mt-2 text-[12px] text-ink-3">✍ {c.mySentences.length} of your own sentences</p>
-                  )}
-                </button>
-              ))}
+              {myChunks.map((c) => {
+                // strength number → human state; the score stays in the backend
+                const state =
+                  c.strength >= 70
+                    ? { label: "Ready to use", zh: "可以用了", tone: "success" as const }
+                    : c.strength >= 40
+                      ? { label: "Getting stronger", zh: "越来越熟", tone: "accent" as const }
+                      : { label: "Needs practice", zh: "需要练习", tone: "neutral" as const };
+                return (
+                  <button
+                    key={c.id}
+                    onClick={() => setDetail(c)}
+                    className="press rounded-2xl bg-white p-4 text-left shadow-[0_0_0_0.5px_rgba(0,0,0,0.06),0_2px_8px_rgba(0,0,0,0.04)] transition-shadow duration-200 hover:shadow-[0_0_0_0.5px_rgba(0,0,0,0.06),0_8px_28px_rgba(0,0,0,0.09)]"
+                  >
+                    <div className="flex items-start justify-between gap-2">
+                      <span className="text-[14px] font-semibold tracking-[-0.01em] text-ink">{c.text}</span>
+                      <Badge tone={state.tone}>
+                        <T en={state.label} zh={state.zh} />
+                      </Badge>
+                    </div>
+                    <p className="mt-1 line-clamp-2 text-[12px] leading-relaxed text-ink-2">{c.meaningEn}</p>
+                    {c.mySentences.length > 0 && (
+                      <p className="mt-2 text-[12px] text-ink-3">✍ {c.mySentences.length} of your own sentences</p>
+                    )}
+                  </button>
+                );
+              })}
             </div>
           )}
           <div className="mt-4 flex items-center gap-3">
             <Link href="/review" className={btn.primary}>
-              <T en="Retrieval session" zh="提取练习" />
+              <T en="Practice" zh="练习" />
             </Link>
             <span className="text-[12px] text-ink-3">
-              {myChunks.length} chunks · strength is earned by producing them, not by looking
+              <T en={`${plural(myChunks.length, "expression")} — the more you use them, the more solid they get`} zh={`共 ${myChunks.length} 个表达——用得越多越牢`} />
             </span>
           </div>
         </>
@@ -329,7 +336,7 @@ function ChunkDetail({ chunk }: { chunk: MyChunk }) {
       </div>
 
       <div>
-        <ProgressBar value={chunk.strength} label="Retrieval strength" />
+        <ProgressBar value={chunk.strength} label="How well you know it" />
         <p className="mt-2 text-[12px] text-ink-3">
           {chunk.lastReviewAt
             ? `Last reviewed ${new Date(chunk.lastReviewAt).toLocaleDateString("en-US")}`

@@ -182,7 +182,7 @@ export function ActiveReadingLab({
         <div className="mb-1 flex flex-wrap items-center gap-2 text-[12px] text-ink-3">
           <Link href="/library" className="hover:text-ink"><T en="← Library" zh="← 素材库" /></Link>
           <span>·</span>
-          <span>{topic} · {cefr} · {"●".repeat(difficulty)}{"○".repeat(5 - difficulty)}</span>
+          <span>{topic}</span>
         </div>
         <div className="flex flex-wrap items-end justify-between gap-x-6 gap-y-2">
           <h1 className="text-display">{title}</h1>

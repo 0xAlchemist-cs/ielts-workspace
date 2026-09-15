@@ -1,10 +1,10 @@
-import { WelcomeTour } from "./tour";
+import { WelcomeChooser } from "./chooser";
 
 export const dynamic = "force-dynamic";
 
-/* The first-run tour: meet every category before doing any work. User
- * bootstrap happens on tour completion (completeTourAction); the optional
- * guided first loop lives at /welcome/loop. */
+/* First-run entry: a chooser — guided first session (default), the category
+ * tour, or skip straight into Today. User bootstrap happens on any completion
+ * (completeTourAction); the loop page also ensures the user exists. */
 export default function WelcomePage() {
-  return <WelcomeTour />;
+  return <WelcomeChooser />;
 }
