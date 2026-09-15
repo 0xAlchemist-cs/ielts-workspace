@@ -8,6 +8,7 @@ import { Segmented, toast } from "@/components/motion";
 import { T, useBilingual } from "@/components/i18n";
 import { importContentAction, assessDifficultyAction } from "@/app/actions";
 import { FileImport } from "./import-panel";
+import { ImportsManager } from "./imports-manager";
 
 interface Item {
   id: number;
@@ -53,7 +54,15 @@ const TOPIC_ZH: Record<string, string> = {
   general: "综合",
 };
 
-export function LibraryView({ contents }: { contents: Item[] }) {
+export function LibraryView({
+  contents,
+  imports,
+  importSummary,
+}: {
+  contents: Item[];
+  imports: import("./imports-manager").ImportRow[];
+  importSummary: { total: number; ready: number; needsAttention: number };
+}) {
   const bilingual = useBilingual();
   const [tab, setTab] = useState<Tab>("library");
   const [filter, setFilter] = useState<FilterType>("all");
@@ -173,12 +182,22 @@ export function LibraryView({ contents }: { contents: Item[] }) {
         </>
       )}
 
-      {tab === "add" && <AddContentPanel onImported={(id) => router.push(`/read/${id}`)} />}
+      {tab === "add" && (
+        <AddContentPanel onImported={(id) => router.push(`/read/${id}`)} imports={imports} importSummary={importSummary} />
+      )}
     </div>
   );
 }
 
-function AddContentPanel({ onImported }: { onImported: (id: number) => void }) {
+function AddContentPanel({
+  onImported,
+  imports,
+  importSummary,
+}: {
+  onImported: (id: number) => void;
+  imports: import("./imports-manager").ImportRow[];
+  importSummary: { total: number; ready: number; needsAttention: number };
+}) {
   const [text, setText] = useState("");  const [analysis, setAnalysis] = useState<AnalysisResult | null>(null);
   const [analyzing, setAnalyzing] = useState(false);
   const [importing, setImporting] = useState(false);
@@ -228,6 +247,7 @@ function AddContentPanel({ onImported }: { onImported: (id: number) => void }) {
   return (
     <div className="space-y-5">
       <FileImport />
+      <ImportsManager rows={imports} summary={importSummary} />
       <div className="card-specular rounded-2xl bg-surface p-6">
         <h3 className="mb-1 text-[15px] font-semibold tracking-[-0.015em] text-ink">
           <T en="Paste any English text" zh="粘贴任意英文文章" />

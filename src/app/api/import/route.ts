@@ -34,12 +34,15 @@ export async function POST(req: Request) {
   const rawDuration = form.get("durationMs");
   const durationMs =
     typeof rawDuration === "string" && /^\d{1,9}$/.test(rawDuration) ? Number(rawDuration) : undefined;
+  const relPathRaw = form.get("relPath");
+  const relPath = typeof relPathRaw === "string" ? relPathRaw.slice(0, 300) : undefined;
 
   const buf = Buffer.from(await file.arrayBuffer());
   const result = await importFile(userId, {
     fileName: file.name || "upload",
     buf,
     durationMs,
+    relPath,
   });
   return NextResponse.json(result, { status: result.ok ? 200 : 400 });
 }

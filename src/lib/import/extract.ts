@@ -110,7 +110,7 @@ export function sniffFormat(buf: Buffer, fileName: string): ImportFormat | null 
 export interface NormalizedText {
   title: string;
   body: string; // paragraph-separated plain text
-  meta: { pages?: number; cues?: number; ocrConfidence?: number };
+  meta: { pages?: number; cues?: number; ocrConfidence?: number; folder?: string };
 }
 
 function firstTitleLine(text: string): string {

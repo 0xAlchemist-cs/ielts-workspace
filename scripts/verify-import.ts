@@ -7,7 +7,7 @@ import path from "node:path";
 import { and, eq, inArray } from "drizzle-orm";
 import { db } from "../src/db";
 import { contents as contentsT, importedResources, learningProfiles, users } from "../src/db/schema";
-import { importFile, readUpload } from "../src/server/services/import-resource";
+import { importFile, readUpload, listImports, importSummary, deleteAllImports } from "../src/server/services/import-resource";
 import { sniffFormat } from "../src/lib/import/extract";
 
 const FX = path.join(process.cwd(), "data", "test-fixtures");
@@ -111,6 +111,49 @@ async function main() {
     const bigBuf = Buffer.alloc(21 * 1024 * 1024, 0x20);
     const big = await importFile(userId, { fileName: "big.txt", buf: bigBuf });
     check("oversize rejected", !big.ok && big.status === "rejected");
+
+    // 16 · folder import: relPath preserved + sanitized (fresh bytes so it
+    // takes the text-duplicate path — that branch must also record folder)
+    const reflowed2 = Buffer.from((await fx("essay.txt")).toString("utf-8") + "\n\nvia folder import\n", "utf-8");
+    const folderImport = await importFile(userId, {
+      fileName: "article2.txt",
+      buf: reflowed2,
+      relPath: "English Materials/../Reading/..\\evil/article2.txt",
+    });
+    if (folderImport.resourceId) madeResourceIds.push(folderImport.resourceId);
+    check("folder import ok", folderImport.ok);
+    const [folderRow] = folderImport.resourceId
+      ? await db.select().from(importedResources).where(eq(importedResources.id, folderImport.resourceId))
+      : [];
+    check("relPath sanitized (no traversal)", (folderRow?.meta as { folder?: string })?.folder === "English Materials/Reading/evil/article2.txt", JSON.stringify((folderRow?.meta as { folder?: string })?.folder));
+
+    // 17 · listImports + summary reflect reality
+    const list = await listImports(userId);
+    const summary = await importSummary(userId);
+    check("listImports returns rows with status", list.length >= 5 && list.every((r) => "status" in r && "fileName" in r));
+    check("summary counts add up", summary.total === list.length && summary.ready + summary.needsAttention === summary.total);
+
+    // 18 · delete-all: removes registry + created contents + files, leaves seeded corpus
+    const seededBefore = await db.select({ n: contentsT.id }).from(contentsT);
+    const before = seededBefore.length;
+    const del = await deleteAllImports(userId);
+    check("deleteAllImports reports counts", del.files === summary.total && del.contents >= 1, JSON.stringify(del));
+    const after = await importSummary(userId);
+    check("registry empty after delete-all", after.total === 0);
+    const seededAfter = await db.select({ n: contentsT.id }).from(contentsT);
+    check("seeded corpus untouched (only imported contents removed)", seededAfter.length === before - del.contents, `${before} → ${seededAfter.length}, del.contents=${del.contents}`);
+    const uploadsLeft = await readdir(UPLOAD_DIR).catch(() => [] as string[]);
+    check("upload files removed", uploadsLeft.filter((f) => /^[a-f0-9-]{36}/.test(f)).length === 0, uploadsLeft.join(","));
+
+    // 19 · re-import after delete → fresh success (dedup only blocks duplicates)
+    const again = await importFile(userId, { fileName: "essay.txt", buf: await fx("essay.txt") });
+    if (again.resourceId) madeResourceIds.push(again.resourceId);
+    if (again.contentId) madeContentIds.push(again.contentId);
+    check("re-import after delete succeeds", again.ok && again.status === "ready");
+
+    // 20 · delete-all is idempotent
+    const del2 = await deleteAllImports(userId);
+    check("delete-all idempotent", del2.files === 1);
 
     console.log(`\n${pass} passed, ${fail} failed`);
   } finally {

@@ -99,7 +99,7 @@ export const importedResources = sqliteTable(
     error: text("error"),
     contentId: integer("content_id"), // resulting contents row, when ready
     meta: text("meta", { mode: "json" })
-      .$type<{ pages?: number; durationMs?: number; ocrConfidence?: number; cues?: number }>()
+      .$type<{ pages?: number; durationMs?: number; ocrConfidence?: number; cues?: number; folder?: string }>()
       .notNull()
       .default({}),
     createdAt: integer("created_at").notNull().$defaultFn(() => Date.now()),
