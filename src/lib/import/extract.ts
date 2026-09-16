@@ -210,10 +210,15 @@ export function extractPlainText(text: string, isMd: boolean): NormalizedText {
   return { title, body, meta: {} };
 }
 
-/** Subtitle files → listening transcript. */
+/** Subtitle files → listening transcript. Title = the first short sentence of
+ * the first cue (a whole subtitle line makes an unwieldy title); falls back
+ * to the file name at the service layer. */
 export function extractSubtitles(text: string): NormalizedText & { cues: number } {
   const { body, cues } = parseSubtitles(text);
-  return { title: firstTitleLine(body) || "Transcript", body, meta: { cues }, cues };
+  const firstLine = body.split("\n")[0] ?? "";
+  const firstSentence = (firstLine.match(/^[\s\S]{0,60}?[.!?]/)?.[0] ?? "").trim();
+  const title = firstSentence.length >= 12 ? firstSentence : "";
+  return { title, body, meta: { cues }, cues };
 }
 
 /** Image OCR — local tesseract (WASM). Confidence travels with the result so

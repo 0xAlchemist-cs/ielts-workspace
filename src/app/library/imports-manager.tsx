@@ -42,6 +42,15 @@ export function ImportsManager({
     filter === "all" ? true : filter === "ready" ? r.status === "ready" || r.status === "duplicate" : r.status !== "ready" && r.status !== "duplicate",
   );
 
+  // status → human words; the snake_case never reaches the learner
+  const statusHuman: Record<ImportRow["status"], string> = {
+    ready: "Ready to learn",
+    duplicate: "Already in your library",
+    needs_attention: "Needs attention",
+    needs_transcription: "Ready to listen",
+    failed: "Couldn't import",
+  };
+
   const doDelete = () => {
     start(async () => {
       await deleteAllImportsAction();
@@ -87,7 +96,7 @@ export function ImportsManager({
               </span>
               {r.status === "ready" || r.status === "duplicate" ? (
                 <span className="text-[11px] text-ink-3">
-                  <T en={r.format.toUpperCase()} zh={r.format.toUpperCase()} />
+                  {r.format.toUpperCase()}
                   {r.status === "duplicate" ? <T en=" · already in your library" zh=" · 已在库中" /> : null}
                 </span>
               ) : (
@@ -95,22 +104,20 @@ export function ImportsManager({
                   {r.status === "needs_transcription" || r.status === "needs_attention" ? (
                     <AlertTriangle size={11} strokeWidth={2} className="shrink-0 text-warn-text" />
                   ) : null}
-                  {r.error ?? r.status}
+                  {r.error ?? statusHuman[r.status]}
                 </span>
               )}
             </span>
-            {(r.status === "ready" || r.status === "duplicate") && (
+            {r.contentId != null && (
               <>
-                <Check size={13} strokeWidth={2.4} className="shrink-0 text-ok-text" />
-                {r.contentId != null && (
-                  <button
-                    type="button"
-                    onClick={() => router.push(r.resourceType === "subtitle" || r.resourceType === "audio" || r.resourceType === "video" ? `/listen/${r.contentId}` : `/read/${r.contentId}`)}
-                    className="press text-[12px] font-medium text-accent-text hover:underline"
-                  >
-                    <T en="Open" zh="打开" />
-                  </button>
-                )}
+                {(r.status === "ready" || r.status === "duplicate") && <Check size={13} strokeWidth={2.4} className="shrink-0 text-ok-text" />}
+                <button
+                  type="button"
+                  onClick={() => router.push(r.resourceType === "subtitle" || r.resourceType === "audio" || r.resourceType === "video" ? `/listen/${r.contentId}` : `/read/${r.contentId}`)}
+                  className="press text-[12px] font-medium text-accent-text hover:underline"
+                >
+                  <T en="Open" zh="打开" />
+                </button>
               </>
             )}
           </div>
