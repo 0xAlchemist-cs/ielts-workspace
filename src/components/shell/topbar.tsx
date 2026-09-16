@@ -183,25 +183,28 @@ export function Topbar({
           className={`mr-1 hidden h-1.5 w-1.5 rounded-full md:block ${aiLive ? "bg-ok" : "bg-warn"}`}
         />
 
-        <div
-          className="flex h-[30px] items-center gap-2 rounded-md px-1.5 transition-colors duration-150 nav-hover"
-          title="Text size 字号（90%–145%）"
-        >
+        {/* text size — discrete preset pills, same visual grammar as the
+         * language switcher next to it */}
+        <div className="flex h-[30px] items-center gap-1.5" title="Text size 字号（90%–145%）">
           <span className="text-[13px] font-bold text-ink-3">Aa</span>
-          <input
-            type="range"
-            min={0}
-            max={FONT_ZOOM_STEPS.length - 1}
-            step={1}
-            value={zoomIndex}
-            onChange={(e) => setZoomStep(Number(e.target.value))}
-            aria-label="Text size 字号"
-            className="h-1 w-16 cursor-pointer"
-            style={{ accentColor: "var(--accent)" }}
-          />
-          <span className="w-[34px] text-right text-[11px] font-semibold tabular-nums text-ink-3">
-            {Math.round(zoom * 100)}%
-          </span>
+          <div className="flex items-center rounded-lg bg-surface-2 p-0.5">
+            {FONT_ZOOM_STEPS.map((s, i) => (
+              <button
+                key={s}
+                type="button"
+                onClick={() => setZoomStep(i)}
+                aria-pressed={zoomIndex === i}
+                aria-label={`Text size ${Math.round(s * 100)}%`}
+                className={`press rounded-md px-[7px] py-[3px] text-[11px] font-semibold tabular-nums transition-colors duration-150 ${
+                  zoomIndex === i
+                    ? "bg-surface text-ink shadow-sm"
+                    : "text-ink-3 hover:text-ink"
+                }`}
+              >
+                {Math.round(s * 100)}
+              </button>
+            ))}
+          </div>
         </div>
 
         <span className="mx-0.5 hidden h-4 w-px bg-line sm:block" />
