@@ -16,6 +16,8 @@ interface Item {
   title: string;
   topic: string;
   cefr: string;
+  /** V9 honesty gate: false = imported but never difficulty-analyzed */
+  showLevel: boolean;
   difficulty: number;
   vocabDensity: number;
   ieltsRelevance: number;
@@ -155,7 +157,9 @@ export function LibraryView({
                 <div className="min-w-0 flex-1">
                   <div className="flex flex-wrap items-center gap-1.5">
                     <h3 className="text-[14px] font-semibold tracking-[-0.01em] text-ink group-hover:text-[#0068d0]">{c.title}</h3>
-                    <Badge tone="neutral">{c.cefr}</Badge>
+                    {/* V9 honesty: imported-but-unanalyzed material shows no level
+                     * badge — the internal estimate never reaches the display */}
+                    {c.showLevel && <Badge tone="neutral">{c.cefr}</Badge>}
                     <Badge tone="neutral">{c.topic}</Badge>
                     {c.ieltsRelevance >= 4 && <Badge tone="accent">IELTS {c.ieltsRelevance}/5</Badge>}
                   </div>

@@ -20,6 +20,10 @@ export default async function LibraryPage() {
         (isReadableContent(c) || (c.type === "listening" && !!c.audioUrl && c.audioUrl.startsWith("/api/uploads/"))),
     );
   const [imports, summary] = await Promise.all([listImports(cu.user.id), importSummary(cu.user.id)]);
+  // V9 honesty: imported material whose level was never AI-analyzed hides its
+  // badge (the ranking-only heuristic must not reach the display); seeded
+  // corpus annotations and analyzed imports show theirs
+  const importedContentIds = new Set(imports.filter((r) => r.contentId).map((r) => r.contentId as number));
   return (
     <LibraryView
       contents={all.map((c) => ({
@@ -28,6 +32,7 @@ export default async function LibraryPage() {
         title: c.title,
         topic: c.topic,
         cefr: c.cefr,
+        showLevel: !importedContentIds.has(c.id) || Object.keys(c.cefrMeta ?? {}).length > 0,
         difficulty: c.difficulty,
         vocabDensity: c.vocabDensity,
         ieltsRelevance: c.ieltsRelevance,

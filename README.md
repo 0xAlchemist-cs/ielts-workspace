@@ -49,7 +49,7 @@ Progress is the honest funnel, and a number only moves down when you produce Eng
 
 ## Bring your own materials
 
-Your English isn't only in Cambridge books — it's in PDFs you saved, podcast episodes, interview recordings, articles in Word. Drop any of it into the Library: PDF, Word, text, Markdown, subtitles, a photo of a page, an MP3 you recorded. It becomes a real learning resource — analysed, deduped, and wired straight into the same daily loop as the built-in corpus. Everything runs locally on your machine; nothing is uploaded anywhere.
+Your English isn't only in Cambridge books — it's in PDFs you saved, podcast episodes, interview recordings, articles in Word. Drop any of it into the Library: PDF, Word, text, Markdown, subtitles, a photo of a page, an MP3 you recorded. It becomes a real learning resource — analysed, deduped, and wired straight into the same daily loop as the built-in corpus. Everything runs locally on your machine; nothing is uploaded anywhere. Imported reading gets an honest difficulty level (AI-analysed, or explicitly "not analyzed yet" — never a guess), and material a little above your level says so instead of hiding it.
 
 ## The environments
 
