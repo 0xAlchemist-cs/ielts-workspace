@@ -112,7 +112,7 @@ export function Sidebar({
       />
 
       <aside
-        className={`app-sidebar fixed inset-y-0 left-0 z-50 flex h-full flex-col border-r border-line transition-[width,transform] duration-200 ease-out lg:sticky lg:top-0 lg:translate-x-0 ${
+        className={`app-sidebar fixed inset-y-0 left-0 z-50 flex h-full flex-col border-r border-line transition-[width,transform] duration-200 ease-out lg:sticky lg:top-0 lg:h-auto lg:translate-x-0 lg:self-stretch ${
           mobileOpen ? "translate-x-0" : "-translate-x-full"
         } ${collapsed ? "w-[68px]" : "w-[240px]"}`}
       >
