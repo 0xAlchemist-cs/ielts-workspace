@@ -78,8 +78,14 @@ export function Sidebar({
       active ? "nav-selected font-semibold text-ink" : "nav-hover text-ink-2 hover:text-ink"
     }`;
 
+  // longest-match wins: on /ielts/mock only the mock entry lights up, not
+  // its /ielts prefix sibling
+  const activeHref = [...PRIMARY, ...more]
+    .filter((it) => isActive(pathname, it.href))
+    .sort((a, b) => b.href.length - a.href.length)[0]?.href;
+
   const renderItem = (item: Item, secondary: boolean) => {
-    const active = isActive(pathname, item.href);
+    const active = item.href === activeHref;
     const Icon = item.icon;
     return (
       <Link
@@ -111,11 +117,15 @@ export function Sidebar({
         }`}
       />
 
+      {/* the aside is a full-height track (border line reaches the page
+       * bottom); its content column is viewport-tall and sticky, so Settings
+       * stays pinned at the screen bottom regardless of page length */}
       <aside
-        className={`app-sidebar fixed inset-y-0 left-0 z-50 flex h-full flex-col border-r border-line transition-[width,transform] duration-200 ease-out lg:sticky lg:top-0 lg:h-auto lg:translate-x-0 lg:self-stretch ${
+        className={`app-sidebar fixed inset-y-0 left-0 z-50 border-r border-line transition-[width,transform] duration-200 ease-out lg:sticky lg:top-0 lg:translate-x-0 lg:self-stretch ${
           mobileOpen ? "translate-x-0" : "-translate-x-full"
         } ${collapsed ? "w-[68px]" : "w-[240px]"}`}
       >
+        <div className="flex h-full flex-col lg:h-screen lg:sticky lg:top-0">
         {/* header — collapsed: one centred expand button; expanded: brand + collapse */}
         <div className="flex h-[56px] shrink-0 items-center px-3.5">
           {collapsed ? (
@@ -192,6 +202,7 @@ export function Sidebar({
               <span className="truncate text-[12px] text-ink-3">{userName ?? "Single-user mode"}</span>
             </div>
           )}
+        </div>
         </div>
       </aside>
     </>
