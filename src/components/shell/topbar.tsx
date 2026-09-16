@@ -6,7 +6,7 @@ import { useEffect, useRef, useState, useTransition } from "react";
 import { Menu, Settings, User } from "lucide-react";
 import { setExamProfileAction, setImmersionLevelAction } from "@/app/actions";
 import { T, useImmersion } from "@/components/i18n";
-import { ThemeToggle, applyFontZoom, nextFontZoom } from "@/components/theme";
+import { ThemeToggle, applyFontZoom, FONT_ZOOM_STEPS } from "@/components/theme";
 import { EXAM_PROFILES, type ExamProfile } from "@/lib/exam-profiles";
 
 /* ── Top Bar — one line of wayfinding; chrome, not content ───────────────────
@@ -105,10 +105,18 @@ export function Topbar({
 
   const section = SECTION_MAP.find((s) => s.match(pathname) && !(s.ieltsOnly && examProfile !== "ielts"));
 
-  const cycleZoom = () => {
-    const next = nextFontZoom(zoom);
-    setZoom(next);
-    applyFontZoom(next);
+  // slider position = nearest preset step; dragging previews live, snaps to step
+  const zoomIndex = (() => {
+    let best = 0;
+    FONT_ZOOM_STEPS.forEach((s, i) => {
+      if (Math.abs(s - zoom) <= Math.abs(FONT_ZOOM_STEPS[best] - zoom)) best = i;
+    });
+    return best;
+  })();
+  const setZoomStep = (i: number) => {
+    const step = FONT_ZOOM_STEPS[i] ?? 1;
+    setZoom(step);
+    applyFontZoom(step);
   };
 
   return (
@@ -175,16 +183,26 @@ export function Topbar({
           className={`mr-1 hidden h-1.5 w-1.5 rounded-full md:block ${aiLive ? "bg-ok" : "bg-warn"}`}
         />
 
-        <button
-          type="button"
-          onClick={cycleZoom}
+        <div
+          className="flex h-[30px] items-center gap-2 rounded-md px-1.5 transition-colors duration-150 nav-hover"
           title="Text size 字号（90%–145%）"
-          aria-label={`Text size ${Math.round(zoom * 100)}%`}
-          className="press flex h-[30px] items-center gap-1 rounded-md px-2 text-[12px] font-semibold text-ink-3 tabular-nums transition-colors duration-150 nav-hover hover:text-ink"
         >
-          <span className="text-[13px] font-bold">Aa</span>
-          <span className="hidden sm:inline">{Math.round(zoom * 100)}%</span>
-        </button>
+          <span className="text-[13px] font-bold text-ink-3">Aa</span>
+          <input
+            type="range"
+            min={0}
+            max={FONT_ZOOM_STEPS.length - 1}
+            step={1}
+            value={zoomIndex}
+            onChange={(e) => setZoomStep(Number(e.target.value))}
+            aria-label="Text size 字号"
+            className="h-1 w-16 cursor-pointer"
+            style={{ accentColor: "var(--accent)" }}
+          />
+          <span className="w-[34px] text-right text-[11px] font-semibold tabular-nums text-ink-3">
+            {Math.round(zoom * 100)}%
+          </span>
+        </div>
 
         <span className="mx-0.5 hidden h-4 w-px bg-line sm:block" />
 
