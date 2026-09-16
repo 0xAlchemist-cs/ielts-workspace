@@ -4,6 +4,7 @@ import path from "node:path";
 import { and, eq, inArray } from "drizzle-orm";
 import { db } from "@/db";
 import { chunks, contents as contentsT, contentHistory, importedResources, sentences } from "@/db/schema";
+import { getActiveExam } from "@/server/current-user";
 import { contentFingerprint } from "@/server/services/content-selection";
 import { analyzeContent } from "@/server/services/content-analysis";
 import {
@@ -77,6 +78,7 @@ async function toContent(input: {
   minutes: number;
   audioUrl?: string;
   fingerprint: string | null;
+  examProfile: "ielts" | "cet4" | "cet6";
 }): Promise<number> {
   const [row] = await db
     .insert(contentsT)
@@ -90,6 +92,7 @@ async function toContent(input: {
       minutes: input.minutes,
       audioUrl: input.audioUrl ?? null,
       fingerprint: input.fingerprint,
+      examProfile: input.examProfile,
     })
     .returning({ id: contentsT.id });
   return row.id;
@@ -115,6 +118,8 @@ async function importFileInner(
   const buf = input.buf;
   const folder = sanitizeRelPath(input.relPath);
   const baseMeta = folder ? { folder } : {};
+  // the material belongs to the exam goal that is active RIGHT NOW (V8)
+  const exam = await getActiveExam();
 
   if (buf.length === 0) return { ok: false, status: "rejected", error: "Empty file." };
   const format = sniffFormat(buf, fileName);
@@ -157,7 +162,8 @@ async function importFileInner(
   const fail = async (status: ImportStatus, error: string, meta: ImportResult["meta"] = {}): Promise<ImportResult> => {
     await db.insert(importedResources).values({
       userId, fileName, resourceType: kind, format, mimeType: MIME_OF[format],
-        fileSize: buf.length, contentHash: hash, storageKey, status, error, meta: { ...baseMeta, ...meta },
+        fileSize: buf.length, contentHash: hash, storageKey, status, error, examProfile: exam,
+        meta: { ...baseMeta, ...meta },
     });
     return { ok: status !== "failed", status, error, format, kind, meta };
   };
@@ -174,6 +180,7 @@ async function importFileInner(
         .values({
           userId, fileName, resourceType: kind, format, mimeType: MIME_OF[format],
           fileSize: buf.length, contentHash: hash, storageKey, status: "needs_transcription",
+          examProfile: exam,
           meta: { ...baseMeta, ...(durationMs ? { durationMs } : {}) },
         })
         .returning({ id: importedResources.id });
@@ -187,6 +194,7 @@ async function importFileInner(
         minutes,
         audioUrl: `/api/uploads/${row.id}`,
         fingerprint: null, // media dedupes by file hash, not text
+        examProfile: exam,
       });
       await db.update(importedResources).set({ contentId }).where(eq(importedResources.id, row.id));
       return {
@@ -226,18 +234,20 @@ async function importFileInner(
       );
     }
 
-    // ── text-level dedupe: same text as an earlier import/paste → open it ──
+    // ── text-level dedupe: same text as an earlier import/paste in THIS
+    // exam's corpus → open it (the same text in another exam is a different
+    // goal's material, not a duplicate — V8) ─────────────────────────────────
     const fingerprint = contentFingerprint(normalized.body);
     const [dupContent] = await db
       .select({ id: contentsT.id })
       .from(contentsT)
-      .where(eq(contentsT.fingerprint, fingerprint))
+      .where(and(eq(contentsT.fingerprint, fingerprint), eq(contentsT.examProfile, exam)))
       .limit(1);
     if (dupContent) {
       await db.insert(importedResources).values({
         userId, fileName, resourceType: kind, format, mimeType: MIME_OF[format],
         fileSize: buf.length, contentHash: hash, storageKey, status: "duplicate",
-        contentId: dupContent.id, meta: { ...baseMeta, ...normalized.meta },
+        contentId: dupContent.id, examProfile: exam, meta: { ...baseMeta, ...normalized.meta },
       });
       return {
         ok: true, status: "duplicate", contentId: dupContent.id, duplicate: true,
@@ -255,6 +265,7 @@ async function importFileInner(
       .values({
         userId, fileName, resourceType: kind, format, mimeType: MIME_OF[format],
         fileSize: buf.length, contentHash: hash, storageKey, status: "ready",
+        examProfile: exam,
         meta: { ...baseMeta, ...normalized.meta },
       })
       .returning({ id: importedResources.id });
@@ -267,6 +278,7 @@ async function importFileInner(
       difficulty: analysis.difficulty,
       minutes,
       fingerprint,
+      examProfile: exam,
     });
     await db.update(importedResources).set({ contentId }).where(eq(importedResources.id, row.id));
 

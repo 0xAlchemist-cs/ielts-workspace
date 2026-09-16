@@ -18,6 +18,8 @@ import {
 } from "@/lib/ai/tasks";
 import type { AIProvider } from "@/lib/ai/provider";
 import type { DrillSet, ParaphraseFeedback, RetrievalGrade, SentenceAnalysis, SpeakingFeedback, TutorReply, WordAnalysis, WritingFeedback } from "@/lib/types";
+import { getActiveExam } from "@/server/current-user";
+import { examPromptProfile } from "@/lib/ai/prompts";
 
 type TaskName =
   | "word"
@@ -38,6 +40,18 @@ const PROMPTS: Record<TaskName, string> = {
   paraphrase: PARAPHRASE_PROMPT,
   tutor: TUTOR_PROMPT,
   drills: DRILL_PROMPT,
+};
+
+/* Coaching/analysis tasks learn the learner's exam goal (V8) so selection
+ * priorities match; grading/drilling tasks stay exam-neutral (their output
+ * shape is fixed and objective). */
+const EXAM_AWARE: Partial<Record<TaskName, boolean>> = {
+  word: true,
+  sentence: true,
+  tutor: true,
+  paraphrase: true,
+  speaking: true,
+  writing: true,
 };
 
 /** Long-JSON tasks (sentence 8-dim, full essay marking) regularly exceed the
@@ -61,6 +75,11 @@ export class OpenAICompatProvider implements AIProvider {
   ) {}
 
   private async chatJSON(task: TaskName, payload: unknown): Promise<unknown> {
+    let system = PROMPTS[task];
+    if (EXAM_AWARE[task]) {
+      const exam = await getActiveExam();
+      system = `${system}\n\n---\n${examPromptProfile(exam)}`;
+    }
     const url = `${this.baseUrl.replace(/\/+$/, "")}/chat/completions`;
     const res = await fetch(url, {
       method: "POST",
@@ -73,7 +92,7 @@ export class OpenAICompatProvider implements AIProvider {
         temperature: 0.4,
         response_format: { type: "json_object" },
         messages: [
-          { role: "system", content: PROMPTS[task] },
+          { role: "system", content: system },
           { role: "user", content: JSON.stringify(payload) },
         ],
       }),

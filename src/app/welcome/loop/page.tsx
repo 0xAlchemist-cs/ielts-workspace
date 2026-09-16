@@ -2,6 +2,7 @@ import { and, eq, isNull, ne, sql } from "drizzle-orm";
 import Link from "next/link";
 import { db } from "@/db";
 import { chunks as chunksT, contents as contentsT } from "@/db/schema";
+import { getActiveExam } from "@/server/current-user";
 import { ensureWelcomeUser } from "../actions";
 import { WelcomeFlow, type WelcomeMaterial } from "../flow";
 
@@ -22,7 +23,10 @@ export default async function WelcomeLoopPage() {
   await ensureWelcomeUser();
 
   /* Loop material: a short, readable passage that already has a corpus
-   * chunk attached (meaning + example guaranteed coherent with the text). */
+   * chunk attached (meaning + example guaranteed coherent with the text).
+   * Exam-aware: a fresh CET profile has no corpus yet → falls back to the
+   * "Go to Today" dead-end-free view below. */
+  const exam = await getActiveExam();
   const rows = await db
     .select({
       title: contentsT.title,
@@ -40,6 +44,7 @@ export default async function WelcomeLoopPage() {
         isNull(chunksT.userId),
         ne(chunksT.meaningZh, ""),
         sql`${contentsT.topic} is not 'archive'`,
+        sql`${contentsT.examProfile} = ${exam}`,
         sql`length(${contentsT.body}) between 500 and 1800`,
       ),
     )

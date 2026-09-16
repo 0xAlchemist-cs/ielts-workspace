@@ -16,7 +16,7 @@ import {
   appConfig,
   retrievalItems,
 } from "@/db/schema";
-import { getCurrentUser } from "@/server/current-user";
+import { getActiveExam, getCurrentUser, setActiveExam } from "@/server/current-user";
 import { generateTodayMission, getTodayMission, markStepDone, toggleTodayLite } from "@/server/services/mission";
 import { contentFingerprint, markContentCompleted, markContentUsed } from "@/server/services/content-selection";
 import { recordEvent } from "@/server/services/progress";
@@ -38,6 +38,12 @@ import { checkPublicHttpUrl } from "@/lib/url-guard";
 import type { CEFR, ErrorCategory } from "@/lib/types";
 
 // ── Immersion level (topbar quick switch) ──────────────────────────────────
+
+export async function setExamProfileAction(exam: string): Promise<void> {
+  if (exam !== "ielts" && exam !== "cet4" && exam !== "cet6") return;
+  await setActiveExam(exam);
+  revalidatePath("/", "layout");
+}
 
 export async function setImmersionLevelAction(level: number): Promise<void> {
   const cu = await getCurrentUser();
@@ -69,7 +75,8 @@ export async function quickStartAction(): Promise<void> {
   if (existing) {
     redirect("/");
   }
-  const [u] = await db.insert(users).values({ name: "Learner" }).returning();
+  const exam = await getActiveExam();
+  const [u] = await db.insert(users).values({ name: "Learner", examProfile: exam }).returning();
   await db.insert(learningProfiles).values({
     userId: u.id,
     cefr: "B1",
@@ -113,7 +120,8 @@ export async function onboardAction(formData: FormData): Promise<void> {
       .set({ ...profile, updatedAt: Date.now() })
       .where(eq(learningProfiles.userId, userId));
   } else {
-    const [u] = await db.insert(users).values({ name }).returning();
+    const exam = await getActiveExam();
+    const [u] = await db.insert(users).values({ name, examProfile: exam }).returning();
     userId = u.id;
     await db.insert(learningProfiles).values({ userId, ...profile });
   }
@@ -484,11 +492,14 @@ export async function importContentAction(input: {
 
   const cefr = (["A2", "B1", "B2", "C1"].includes(input.cefr ?? "") ? input.cefr : "B2") as CEFR;
   // Dedup guard: the same body never enters the library twice.
+  // exam-aware: pasted text joins the ACTIVE exam's corpus; identical text in
+  // another exam's corpus is that goal's material, not a duplicate (V8)
+  const exam = cu.user.examProfile;
   const fingerprint = contentFingerprint(body);
   const [dup] = await db
     .select({ id: contents.id })
     .from(contents)
-    .where(eq(contents.fingerprint, fingerprint))
+    .where(and(eq(contents.fingerprint, fingerprint), eq(contents.examProfile, exam)))
     .limit(1);
   if (dup) return { ok: true, id: dup.id, duplicate: true };
 
@@ -507,6 +518,7 @@ export async function importContentAction(input: {
       body,
       minutes: Math.max(2, Math.ceil(words / 180)),
       fingerprint,
+      examProfile: exam,
     })
     .returning({ id: contents.id });
 

@@ -2,23 +2,26 @@
 
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import { useTransition } from "react";
+import { useEffect, useRef, useState, useTransition } from "react";
 import { Menu, Settings, User } from "lucide-react";
-import { setImmersionLevelAction } from "@/app/actions";
+import { setExamProfileAction, setImmersionLevelAction } from "@/app/actions";
 import { T, useImmersion } from "@/components/i18n";
-import { ThemeToggle } from "@/components/theme";
+import { ThemeToggle, applyFontZoom, nextFontZoom } from "@/components/theme";
+import { EXAM_PROFILES, type ExamProfile } from "@/lib/exam-profiles";
 
-/* ── Top Bar — one line of wayfinding; chrome, not content ─────────────────── */
+/* ── Top Bar — one line of wayfinding; chrome, not content ───────────────────
+ * The active exam goal always sits at the left: switching it switches the
+ * whole workspace (corpus, memory, missions) — it must never be hidden. */
 
-const SECTION_MAP: { match: (p: string) => boolean; en: string; zh: string }[] = [
+const SECTION_MAP: { match: (p: string) => boolean; en: string; zh: string; ieltsOnly?: boolean }[] = [
   { match: (p) => p === "/", en: "Today", zh: "今日" },
   { match: (p) => p.startsWith("/welcome"), en: "Welcome", zh: "开始" },
   { match: (p) => p.startsWith("/library"), en: "Library", zh: "内容库" },
   { match: (p) => p.startsWith("/read"), en: "Reading", zh: "阅读" },
   { match: (p) => p.startsWith("/listen"), en: "Listening", zh: "听力" },
-  { match: (p) => p.startsWith("/writing"), en: "Writing", zh: "写作" },
-  { match: (p) => p.startsWith("/ielts/mock"), en: "Mock exam", zh: "全真模考" },
-  { match: (p) => p.startsWith("/ielts"), en: "IELTS", zh: "雅思" },
+  { match: (p) => p.startsWith("/writing"), en: "Writing", zh: "写作", ieltsOnly: true },
+  { match: (p) => p.startsWith("/ielts/mock"), en: "Mock exam", zh: "全真模考", ieltsOnly: true },
+  { match: (p) => p.startsWith("/ielts"), en: "IELTS", zh: "雅思练习", ieltsOnly: true },
   { match: (p) => p.startsWith("/review"), en: "Practice", zh: "练习" },
   { match: (p) => p.startsWith("/chunks"), en: "Language", zh: "语言库" },
   { match: (p) => p.startsWith("/lab"), en: "AI Lab", zh: "AI 实验室" },
@@ -29,7 +32,7 @@ const SECTION_MAP: { match: (p: string) => boolean; en: string; zh: string }[] =
 ];
 
 /* Two language display modes, stored as legacy immersion levels in the DB:
- * 中英 = bilingual (levels 1–2) · 沉浸 = English only (levels 3–4) */
+ *  中英 = bilingual (levels 1–2) · 沉浸 = English only (levels 3–4) */
 const LANG_MODES: { value: number; label: string; title: string }[] = [
   { value: 1, label: "中英", title: "Bilingual — English + Chinese assistance 中英辅助" },
   { value: 4, label: "沉浸", title: "Immersion — English only 纯英文环境" },
@@ -60,17 +63,57 @@ function IconLink({
   );
 }
 
-export function Topbar({ aiLive, onOpenMobileNav }: { aiLive: boolean; onOpenMobileNav: () => void }) {
+export function Topbar({
+  aiLive,
+  examProfile,
+  onOpenMobileNav,
+}: {
+  aiLive: boolean;
+  examProfile: ExamProfile;
+  onOpenMobileNav: () => void;
+}) {
   const pathname = usePathname();
   const router = useRouter();
-  const level = useImmersion();
   const [pending, start] = useTransition();
+  const level = useImmersion();
+  const [examOpen, setExamOpen] = useState(false);
+  const examRef = useRef<HTMLDivElement | null>(null);
+  const [zoom, setZoom] = useState(1);
 
-  const section = SECTION_MAP.find((s) => s.match(pathname));
+  useEffect(() => {
+    const saved = parseFloat(localStorage.getItem("fs-zoom") ?? "1");
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- hydrate persisted zoom once
+    if (Number.isFinite(saved) && saved > 0.5) setZoom(saved);
+  }, []);
+
+  useEffect(() => {
+    const close = (e: MouseEvent) => {
+      if (examRef.current && !examRef.current.contains(e.target as Node)) setExamOpen(false);
+    };
+    document.addEventListener("mousedown", close);
+    return () => document.removeEventListener("mousedown", close);
+  }, []);
+
+  const switchExam = (exam: ExamProfile) => {
+    setExamOpen(false);
+    if (exam === examProfile) return;
+    start(async () => {
+      await setExamProfileAction(exam);
+      router.refresh();
+    });
+  };
+
+  const section = SECTION_MAP.find((s) => s.match(pathname) && !(s.ieltsOnly && examProfile !== "ielts"));
+
+  const cycleZoom = () => {
+    const next = nextFontZoom(zoom);
+    setZoom(next);
+    applyFontZoom(next);
+  };
 
   return (
     <header className="app-topbar material-header sticky top-0 z-30 flex h-[56px] shrink-0 items-center justify-between gap-3 border-b border-line px-4 sm:px-6">
-      {/* left — mobile nav + page title */}
+      {/* left — mobile nav + exam switcher + page title */}
       <div className="flex min-w-0 items-center gap-2.5">
         <button
           type="button"
@@ -80,18 +123,70 @@ export function Topbar({ aiLive, onOpenMobileNav }: { aiLive: boolean; onOpenMob
         >
           <Menu size={16} strokeWidth={1.8} />
         </button>
-        <span className="truncate text-[13.5px] font-semibold tracking-[-0.012em] text-ink">
+
+        {/* active exam — always visible; feels like choosing a goal, not a db */}
+        <div ref={examRef} className="relative">
+          <button
+            type="button"
+            onClick={() => setExamOpen((o) => !o)}
+            aria-haspopup="menu"
+            aria-expanded={examOpen}
+            title="Current exam 当前考试目标"
+            className={`press flex h-[30px] items-center gap-1.5 rounded-lg px-2.5 text-[12.5px] font-semibold transition-colors duration-150 ${
+              examOpen ? "nav-selected text-ink" : "text-ink-2 nav-hover hover:text-ink"
+            }`}
+          >
+            {EXAM_PROFILES.find((p) => p.value === examProfile)?.label}
+            <svg viewBox="0 0 12 12" className={`h-2.5 w-2.5 transition-transform duration-150 ${examOpen ? "rotate-180" : ""}`} fill="none" stroke="currentColor" strokeWidth={1.8}>
+              <path d="M3 4.5 6 7.5 9 4.5" />
+            </svg>
+          </button>
+          {examOpen && (
+            <div role="menu" className="enter absolute left-0 top-[38px] z-50 w-[180px] rounded-xl border border-line bg-surface p-1.5 shadow-xl">
+              {EXAM_PROFILES.map((p) => (
+                <button
+                  key={p.value}
+                  type="button"
+                  role="menuitem"
+                  onClick={() => switchExam(p.value)}
+          disabled={pending}
+                  className={`press flex w-full items-center justify-between rounded-lg px-3 py-2 text-[13px] font-medium transition-colors duration-150 ${
+                    p.value === examProfile ? "bg-accent/[0.08] text-accent-text" : "text-ink-2 nav-hover hover:text-ink"
+                  }`}
+                >
+                  <span>{p.label}</span>
+                  <span className="text-[11px] font-normal text-ink-3">{p.zh}</span>
+                </button>
+              ))}
+            </div>
+          )}
+        </div>
+
+        <span className="hidden truncate text-[13px] font-medium text-ink-3 sm:inline">
           {section ? <T en={section.en} zh={section.zh} /> : "…"}
         </span>
       </div>
 
-      {/* right — AI status dot · Language · Appearance · Profile · Settings */}
+      {/* right — AI dot · Font zoom · Language · Appearance · Profile · Settings */}
       <div className="flex shrink-0 items-center gap-1.5">
         <span
           title={aiLive ? "Live AI provider connected" : "Offline Mock AI — set AI_BASE_URL + AI_API_KEY in .env.local to upgrade"}
           aria-label={aiLive ? "AI live" : "Mock AI"}
           className={`mr-1 hidden h-1.5 w-1.5 rounded-full md:block ${aiLive ? "bg-ok" : "bg-warn"}`}
         />
+
+        <button
+          type="button"
+          onClick={cycleZoom}
+          title="Text size 字号（90%–145%）"
+          aria-label={`Text size ${Math.round(zoom * 100)}%`}
+          className="press flex h-[30px] items-center gap-1 rounded-md px-2 text-[12px] font-semibold text-ink-3 tabular-nums transition-colors duration-150 nav-hover hover:text-ink"
+        >
+          <span className="text-[13px] font-bold">Aa</span>
+          <span className="hidden sm:inline">{Math.round(zoom * 100)}%</span>
+        </button>
+
+        <span className="mx-0.5 hidden h-4 w-px bg-line sm:block" />
 
         <div
           className={`hidden items-center rounded-lg bg-surface-2 p-0.5 transition-opacity duration-150 sm:flex ${

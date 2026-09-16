@@ -1,6 +1,7 @@
 import { createHash } from "node:crypto";
 import { and, eq, inArray } from "drizzle-orm";
 import { db } from "@/db";
+import { getActiveExam } from "@/server/current-user";
 import {
   chunks as chunksT,
   contentHistory,
@@ -116,7 +117,10 @@ export async function markContentCompleted(userId: number, contentId: number): P
 export async function selectNextContent(input: SelectionInput): Promise<SelectedContent | null> {
   const { userId, skill } = input;
 
+  // exam-profile pool: the mission never crosses corpus namespaces (V8)
+  const exam = await getActiveExam();
   const pool = (await db.select().from(contents).where(eq(contents.type, skill)))
+    .filter((c) => c.examProfile === exam)
     .filter(isReadableContent)
     .filter((c) => (input.restrictToIds ? input.restrictToIds.includes(c.id) : true))
     .filter((c) => !input.excludeContentIds?.includes(c.id));

@@ -4,19 +4,20 @@ import { and, eq } from "drizzle-orm";
 import { cookies } from "next/headers";
 import { db } from "@/db";
 import { retrievalItems, users, learningProfiles } from "@/db/schema";
-import { getCurrentUser, getUserIdOrNull } from "@/server/current-user";
+import { getActiveExam, getCurrentUser, getUserIdOrNull } from "@/server/current-user";
 import { saveCorpusChunk } from "@/server/services/bank";
 import { generateTodayMission } from "@/server/services/mission";
 
-/* Idempotent bootstrap of the single user with quick-start defaults — safe
- * from page rendering (GET). Cookie writes are NOT allowed there, so the
+/* Idempotent bootstrap of the ACTIVE exam's user with quick-start defaults —
+ * safe from page rendering (GET). Cookie writes are NOT allowed there, so the
  * tour-done marker lives in completeTourAction only. */
 export async function ensureWelcomeUser(): Promise<void> {
   const existing = await getCurrentUser();
   if (existing) return;
-  const rows = await db.select().from(users).limit(1);
+  const exam = await getActiveExam();
+  const rows = await db.select().from(users).where(eq(users.examProfile, exam)).limit(1);
   let u = rows[0];
-  if (!u) [u] = await db.insert(users).values({ name: "Learner" }).returning();
+  if (!u) [u] = await db.insert(users).values({ name: "Learner", examProfile: exam }).returning();
   const profile = await db
     .select({ userId: learningProfiles.userId })
     .from(learningProfiles)

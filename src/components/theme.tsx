@@ -9,6 +9,29 @@ import { Moon, Sun } from "lucide-react";
 
 export const THEME_SCRIPT = `(function(){try{var t=localStorage.getItem("theme");var d=t?t==="dark":window.matchMedia("(prefers-color-scheme: dark)").matches;if(d)document.documentElement.classList.add("dark");}catch(e){}})();`;
 
+/* ── Font size: global zoom steps, persisted, applied pre-paint ──────────────
+ * The app sizes text in px utility classes, so rem scaling would be a no-op;
+ * `zoom` on <body> scales the whole layout coherently (supported in every
+ * modern engine) without breaking dialogs or reading measure. */
+export const FONT_ZOOM_STEPS = [0.9, 1, 1.15, 1.3, 1.45] as const;
+export type FontZoom = (typeof FONT_ZOOM_STEPS)[number];
+
+export const FONT_ZOOM_SCRIPT = `(function(){try{var z=parseFloat(localStorage.getItem("fs-zoom"));if(z>0.5&&Math.abs(z-1)>0.001)document.body.style.zoom=z;}catch(e){}})();`;
+
+export function applyFontZoom(z: FontZoom) {
+  document.body.style.zoom = Math.abs(z - 1) > 0.001 ? String(z) : "";
+  try {
+    localStorage.setItem("fs-zoom", String(z));
+  } catch {
+    /* private mode */
+  }
+}
+
+export function nextFontZoom(current: number): FontZoom {
+  const idx = FONT_ZOOM_STEPS.findIndex((s) => s >= current - 0.001);
+  return FONT_ZOOM_STEPS[(idx + 1) % FONT_ZOOM_STEPS.length];
+}
+
 export function applyTheme(dark: boolean) {
   document.documentElement.classList.toggle("dark", dark);
   try {

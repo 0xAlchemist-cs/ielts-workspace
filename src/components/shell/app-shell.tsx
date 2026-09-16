@@ -9,10 +9,12 @@ import { Topbar } from "@/components/shell/topbar";
 export function AppShell({
   userName,
   aiLive,
+  examProfile,
   children,
 }: {
   userName?: string;
   aiLive: boolean;
+  examProfile: "ielts" | "cet4" | "cet6";
   children: React.ReactNode;
 }) {
   const [collapsed, setCollapsed] = useState(false);
@@ -38,13 +40,14 @@ export function AppShell({
     <div className="flex min-h-screen">
       <Sidebar
         userName={userName}
+        examProfile={examProfile}
         collapsed={collapsed}
         onToggleCollapsed={toggleCollapsed}
         mobileOpen={mobileOpen}
         onNavigate={() => setMobileOpen(false)}
       />
       <div className="flex min-w-0 flex-1 flex-col">
-        <Topbar aiLive={aiLive} onOpenMobileNav={() => setMobileOpen(true)} />
+        <Topbar aiLive={aiLive} examProfile={examProfile} onOpenMobileNav={() => setMobileOpen(true)} />
         <main className="flex-1">
           {/* Page width is opt-out: labs that benefit from a wider canvas
            * (Reading/Listening/Writing/IELTS) wrap their content in

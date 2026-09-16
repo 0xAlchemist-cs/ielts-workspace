@@ -19,6 +19,9 @@ import type {
 export const users = sqliteTable("users", {
   id: integer("id").primaryKey({ autoIncrement: true }),
   name: text("name").notNull(),
+  // V8: each exam goal (ielts|cet4|cet6) is its own learning-memory namespace —
+  // one row per profile, selected by the active exam in app_config
+  examProfile: text("exam_profile").$type<"ielts" | "cet4" | "cet6">().notNull().default("ielts"),
   createdAt: integer("created_at").notNull().$defaultFn(() => Date.now()),
 });
 
@@ -74,9 +77,12 @@ export const contents = sqliteTable(
     audioUrl: text("audio_url"), // real recording (e.g. Cambridge MP3) — whole-content playback
     minutes: integer("minutes").notNull().default(10),
     fingerprint: text("fingerprint"), // sha256 of normalized body — import dedup guard
+    // V8: corpus namespace — imported material belongs to the exam that was
+    // active at import time; seeded Cambridge corpus is ielts
+    examProfile: text("exam_profile").$type<"ielts" | "cet4" | "cet6">().notNull().default("ielts"),
     createdAt: integer("created_at").notNull().$defaultFn(() => Date.now()),
   },
-  (t) => [index("idx_contents_type").on(t.type)],
+  (t) => [index("idx_contents_type").on(t.type), index("idx_contents_exam").on(t.examProfile)],
 );
 
 // ── Local import system (V6): every uploaded file, its fate, and its content ─
@@ -96,6 +102,7 @@ export const importedResources = sqliteTable(
     status: text("status")
       .$type<"ready" | "duplicate" | "needs_attention" | "needs_transcription" | "failed">()
       .notNull(),
+    examProfile: text("exam_profile").$type<"ielts" | "cet4" | "cet6">().notNull().default("ielts"),
     error: text("error"),
     contentId: integer("content_id"), // resulting contents row, when ready
     meta: text("meta", { mode: "json" })

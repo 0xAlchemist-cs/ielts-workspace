@@ -7,13 +7,15 @@ import { LibraryView } from "./view";
 
 export default async function LibraryPage() {
   const cu = await requireUser();
+  const exam = cu.user.examProfile;
   const all = (await db.select().from(contents))
     .sort((a, b) => a.id - b.id)
-    // "archive" = unreadable residue (CJK appendices, stubs) — not library
-    // material. Imported audio/video has no transcript by design: it's real
-    // listening material as long as it has a playable file.
+    // exam-profile corpus: only this goal's material is visible (V8);
+    // "archive" = unreadable residue; imported audio/video has no transcript
+    // by design — it's real listening material with a playable file
     .filter(
       (c) =>
+        c.examProfile === exam &&
         c.topic !== "archive" &&
         (isReadableContent(c) || (c.type === "listening" && !!c.audioUrl && c.audioUrl.startsWith("/api/uploads/"))),
     );

@@ -36,11 +36,11 @@ const PRIMARY: Item[] = [
   { href: "/profile", en: "Progress", zh: "进步", icon: TrendingUp },
 ];
 
-const MORE: Item[] = [
-  { href: "/writing", en: "Writing", zh: "写作", icon: PenLine },
+const MORE: (Item & { ieltsOnly?: boolean })[] = [
+  { href: "/writing", en: "Writing", zh: "写作", icon: PenLine, ieltsOnly: true },
   { href: "/external", en: "Speaking", zh: "口语", icon: Mic },
-  { href: "/ielts", en: "IELTS", zh: "雅思练习", icon: GraduationCap },
-  { href: "/ielts/mock", en: "Mock exam", zh: "全真模考", icon: ClipboardCheck },
+  { href: "/ielts", en: "IELTS", zh: "雅思练习", icon: GraduationCap, ieltsOnly: true },
+  { href: "/ielts/mock", en: "Mock exam", zh: "全真模考", icon: ClipboardCheck, ieltsOnly: true },
   { href: "/errors", en: "Mistakes", zh: "惯犯错误", icon: CircleAlert },
   { href: "/chunks", en: "Language", zh: "语言库", icon: Layers },
   { href: "/lab", en: "AI Lab", zh: "AI 实验室", icon: Sparkles },
@@ -54,18 +54,24 @@ function isActive(pathname: string, href: string): boolean {
 
 export function Sidebar({
   userName,
+  examProfile,
   collapsed,
   onToggleCollapsed,
   mobileOpen,
   onNavigate,
 }: {
   userName?: string;
+  examProfile: "ielts" | "cet4" | "cet6";
   collapsed: boolean;
   onToggleCollapsed: () => void;
   mobileOpen: boolean;
   onNavigate: () => void;
 }) {
-  const pathname = usePathname();  const itemCls = (active: boolean, secondary: boolean) =>
+  const pathname = usePathname();
+  // IELTS-format engines (writing tasks, IELTS practice, mock) have no CET
+  // counterpart yet — hiding beats faking. Reading/Listening/Practice/Language
+  // are exam-agnostic environments fed by the active profile's corpus.
+  const more = MORE.filter((m) => !m.ieltsOnly || examProfile === "ielts");  const itemCls = (active: boolean, secondary: boolean) =>
     `press mb-0.5 flex items-center gap-3 rounded-[11px] transition-colors duration-150 ${
       collapsed ? "justify-center px-0 py-[12px]" : "px-3 py-[10px]"
     } ${secondary ? "text-[13px]" : "text-[14px]"} ${
@@ -153,7 +159,7 @@ export function Sidebar({
             ) : (
               <div className="mx-3 mb-2 h-px bg-line" />
             )}
-            {MORE.map((item) => renderItem(item, true))}
+            {more.map((item) => renderItem(item, true))}
           </div>
         </nav>
 
