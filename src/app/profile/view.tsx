@@ -223,12 +223,9 @@ export function ProfileView({
             });
           }
         }
-        if ((fullProfile.weakestLink.score ?? 0) > 0) {
-          stmts.push({
-            en: `Deepest weakness: ${fullProfile.weakestLink.subSkill} in ${fullProfile.weakestLink.skill.toLowerCase()} — ${fullProfile.weakestLink.evidence}`,
-            zh: `最深层的弱点：${fullProfile.weakestLink.skill}中的${fullProfile.weakestLink.subSkill}——${fullProfile.weakestLink.evidence}`,
-          });
-        }
+        // the raw weakest-link evidence ("1 word in personal vocabulary")
+        // reads like engine output — the actionable version already lives in
+        // the "What to focus on" card below, so it is not repeated here
         if (!stmts.length) return null;
         return (
           <div className="mb-6 rounded-2xl bg-surface px-6 py-5">
