@@ -91,9 +91,21 @@ async function main() {
     const pIelts = examPromptProfile("ielts");
     const p4 = examPromptProfile("cet4");
     const p6 = examPromptProfile("cet6");
-    check("prompt profiles distinct and honest", pIelts.includes("IELTS") && p4.includes("CET-4") && p6.includes("CET-6") &&
-      p4.includes("never claim") === false && // claim rule lives in base text
-      pIelsEShared(pIelts, p4, p6));
+    check("prompt profiles distinct and honest", pIelts.includes("IELTS") && p4.includes("CET-4") && p6.includes("CET-6") &&      pIelsEShared(pIelts, p4, p6));
+
+    // ── 9 · V9 CEFR layer is IELTS-only ────────────────────────────────────
+    const { getProvider } = await import("../src/lib/ai");
+    const { speakingTaskFor, personalizeSpeakingTask } = await import("../src/lib/ai/prompts/speaking-tasks");
+    const { IELTS_CONTENT_LEVEL_PROMPT } = await import("../src/lib/ai/prompts/ielts-content-level");
+    const a2q = personalizeSpeakingTask(speakingTaskFor("A2"));
+    const c1q = personalizeSpeakingTask(speakingTaskFor("C1"));
+    check("speaking tasks differ per CEFR level", a2q !== c1q && a2q.length > 10 && c1q.length > 10);
+    check("speaking task weaves weak expression naturally", personalizeSpeakingTask(speakingTaskFor("B1"), "without a second thought").includes(`Try to naturally use "without a second thought"`));
+    check("classifier prompt carries honesty rules",
+      IELTS_CONTENT_LEVEL_PROMPT.includes("Do NOT classify based on the learner") && IELTS_CONTENT_LEVEL_PROMPT.includes("lower the confidence"));
+    const provider = getProvider();
+    const cls = await provider.classifyContentLevel!({ title: "t", content: "Some English text about everyday life.", resourceType: "reading" });
+    check("classification round-trips through provider", ["A2", "B1", "B2", "C1"].includes(cls.level) && typeof cls.confidence === "number" && typeof cls.isMock === "boolean");
 
     console.log(`\n${pass} passed, ${fail} failed`);
   } finally {

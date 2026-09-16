@@ -58,10 +58,12 @@ export function LibraryView({
   contents,
   imports,
   importSummary,
+  userLevel,
 }: {
   contents: Item[];
   imports: import("./imports-manager").ImportRow[];
   importSummary: { total: number; ready: number; needsAttention: number };
+  userLevel?: string; // V9: IELTS-only difficulty layer
 }) {
   const bilingual = useBilingual();
   const [tab, setTab] = useState<Tab>("library");
@@ -183,7 +185,12 @@ export function LibraryView({
       )}
 
       {tab === "add" && (
-        <AddContentPanel onImported={(id) => router.push(`/read/${id}`)} imports={imports} importSummary={importSummary} />
+        <AddContentPanel
+          onImported={(id) => router.push(`/read/${id}`)}
+          imports={imports}
+          importSummary={importSummary}
+          userLevel={userLevel}
+        />
       )}
     </div>
   );
@@ -193,10 +200,12 @@ function AddContentPanel({
   onImported,
   imports,
   importSummary,
+  userLevel,
 }: {
   onImported: (id: number) => void;
   imports: import("./imports-manager").ImportRow[];
   importSummary: { total: number; ready: number; needsAttention: number };
+  userLevel?: string; // V9: set only for the IELTS profile (difficulty layer)
 }) {
   const [text, setText] = useState("");  const [analysis, setAnalysis] = useState<AnalysisResult | null>(null);
   const [analyzing, setAnalyzing] = useState(false);
@@ -246,7 +255,7 @@ function AddContentPanel({
 
   return (
     <div className="space-y-5">
-      <FileImport />
+      <FileImport userLevel={userLevel} />
       <ImportsManager rows={imports} summary={importSummary} />
       <div className="card-specular rounded-2xl bg-surface p-6">
         <h3 className="mb-1 text-[15px] font-semibold tracking-[-0.015em] text-ink">

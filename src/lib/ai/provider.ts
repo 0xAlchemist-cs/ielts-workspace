@@ -62,6 +62,20 @@ export interface TutorInput {
   goal?: string;
 }
 
+export interface ContentLevelInput {
+  title: string;
+  content: string;
+  resourceType: string;
+  currentUserLevel?: string;
+}
+
+export interface ContentLevelResult {
+  level: "A2" | "B1" | "B2" | "C1";
+  confidence: number;
+  summary: string;
+  isMock: boolean;
+}
+
 export interface AIProvider {
   readonly name: string;
   readonly isMock: boolean;
@@ -72,6 +86,8 @@ export interface AIProvider {
   writing(input: WritingInput): Promise<WritingFeedback>;
   paraphrase(input: ParaphraseInput): Promise<ParaphraseFeedback>;
   tutor(input: TutorInput): Promise<TutorReply>;
+  /** IELTS-only: classify a whole material's language difficulty (V9) */
+  classifyContentLevel?(input: ContentLevelInput): Promise<ContentLevelResult>;
   /** optional — providers without live drill generation fall back to mock frames */
   drills?(input: DrillInput): Promise<DrillSet>;
 }

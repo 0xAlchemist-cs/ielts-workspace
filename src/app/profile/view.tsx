@@ -96,7 +96,6 @@ export function ProfileView({
   };
 }) {
   const bilingual = useBilingual();
-  const [cefr, setCefr] = useState(profile.cefr);
   const [immersion, setImmersion] = useState(profile.immersionLevel);
   const [grammar, setGrammar] = useState(new Set(profile.grammarWeaknesses));
   const [speakingW, setSpeakingW] = useState(new Set(profile.speakingWeaknesses));
@@ -476,17 +475,17 @@ export function ProfileView({
             ))}
           </div>
           <div className="mt-4 flex flex-wrap items-center gap-6">
+            {/* V9: CEFR is configured in Settings, not here — keep the form
+             * field (the action expects it) but render it read-only */}
             <div>
-              <span className="mb-1.5 block text-[12px] font-medium text-ink-2">CEFR</span>
-              <div className="inline-flex rounded-xl bg-black/[0.05] p-1">
-                {(["A2", "B1", "B2", "C1"] as const).map((c) => (
-                  <button type="button" key={c} onClick={() => setCefr(c)}
-                    className={`press rounded-lg px-4 py-1.5 text-[12.5px] font-medium transition-all duration-200 ${
-                      cefr === c ? "bg-white text-ink shadow-[0_1px_3px_rgba(0,0,0,0.15)]" : "text-ink-2 hover:text-ink"
-                    }`}>{c}</button>
-                ))}
-              </div>
-              <input type="hidden" name="cefr" value={cefr} />
+              <span className="mb-1.5 block text-[12px] font-medium text-ink-2">
+                <T en="Learning level" zh="学习水平" />
+              </span>
+              <span className="text-[13.5px] font-semibold text-ink">{profile.cefr}</span>
+              <span className="ml-2 text-[11.5px] text-ink-3">
+                <T en="· change it in Settings" zh="· 在设置中修改" />
+              </span>
+              <input type="hidden" name="cefr" value={profile.cefr} />
             </div>
             <label className="block">
               <span className="mb-1.5 block text-[12px] font-medium text-ink-2">Daily minutes</span>

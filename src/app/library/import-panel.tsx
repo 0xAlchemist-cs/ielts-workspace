@@ -20,6 +20,7 @@ interface ImportResponse {
   title?: string;
   format?: string;
   kind?: string;
+  level?: string; // V9: AI difficulty classification (IELTS imports, live AI)
   meta?: { pages?: number; durationMs?: number; ocrConfidence?: number; cues?: number; folder?: string };
   error?: string;
 }
@@ -29,6 +30,8 @@ interface BatchItem {
   relPath?: string;
   result: ImportResponse | null;
 }
+
+const LEVEL_ORDER = ["A2", "B1", "B2", "C1"];
 
 const AUDIOISH = /\.(mp3|wav|m4a|mp4)$/i;
 
@@ -49,7 +52,7 @@ function probeDuration(file: File): Promise<number | undefined> {
   });
 }
 
-export function FileImport() {
+export function FileImport({ userLevel }: { userLevel?: string }) {
   const fileRef = useRef<HTMLInputElement | null>(null);
   const folderRef = useRef<HTMLInputElement | null>(null);
   const retryRef = useRef<HTMLInputElement | null>(null);
@@ -58,7 +61,31 @@ export function FileImport() {
   const [items, setItems] = useState<BatchItem[]>([]);
   const [openGroup, setOpenGroup] = useState<string | null>(null);
   const [dragOver, setDragOver] = useState(false);
+  const [analyzing, setAnalyzing] = useState<number | null>(null);
   const router = useRouter();
+
+  // V9: on-demand difficulty analysis for an imported-but-unanalyzed item
+  const analyze = async (index: number, contentId: number) => {
+    if (analyzing != null) return;
+    setAnalyzing(contentId);
+    try {
+      const res = await fetch("/api/ai/classify-content-level", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ contentId }),
+      });
+      const data = await res.json();
+      if (data.level) {
+        setItems((prev) =>
+          prev.map((it, j) =>
+            j === index && it.result ? { ...it, result: { ...it.result, level: data.level } } : it,
+          ),
+        );
+      }
+    } finally {
+      setAnalyzing(null);
+    }
+  };
 
   const processFiles = async (files: File[]) => {
     if (running || files.length === 0) return;
@@ -232,12 +259,42 @@ export function FileImport() {
                     <div className="enter mt-1 space-y-1.5 pl-6">
                       {groups[g].map((it, i) => {
                         const r = it.result!;
+                        const aboveLevel =
+                          userLevel && r.level
+                            ? LEVEL_ORDER.indexOf(r.level) - LEVEL_ORDER.indexOf(userLevel) >= 2
+                            : false;
                         return (
                           <div key={i} className="flex flex-wrap items-center gap-x-3 gap-y-1 rounded-lg bg-white/70 px-3 py-2">
                             <span className="min-w-0 flex-1 truncate text-[12.5px] font-medium text-ink">
                               {it.relPath?.includes("/") ? `${it.relPath.split("/").slice(0, -1).join("/")}/` : ""}
                               {it.name}
                             </span>
+                            {r.status === "ready" && userLevel && (
+                              <span className="text-[11px] font-medium text-ink-3">
+                                {r.level ? (
+                                  <>
+                                    {r.level} · {r.kind === "subtitle" ? "Listening" : r.kind === "audio" || r.kind === "video" ? "Listening" : "Reading"}
+                                    {aboveLevel && (
+                                      <span className="ml-1.5 text-warn-text">
+                                        <T en="· a little above your level" zh="· 略高于你的水平" />
+                                      </span>
+                                    )}
+                                  </>
+                                ) : (
+                                  <T en="Level not analyzed yet" zh="难度未分析" />
+                                )}
+                              </span>
+                            )}
+                            {r.status === "ready" && !r.level && userLevel && r.contentId != null && (
+                              <button
+                                type="button"
+                                onClick={() => analyze(i, r.contentId!)}
+                                disabled={analyzing === r.contentId}
+                                className="press text-[12px] font-medium text-accent-text hover:underline disabled:opacity-50"
+                              >
+                                <T en={analyzing === r.contentId ? "Analyzing…" : "Analyze with AI"} zh={analyzing === r.contentId ? "分析中…" : "AI 分析难度"} />
+                              </button>
+                            )}
                             {r.status === "ready" && r.contentId != null ? (
                               <button
                                 type="button"

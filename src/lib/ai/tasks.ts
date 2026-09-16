@@ -186,6 +186,14 @@ export const drillSchema = z.object({
     .max(6),
 });
 
+/** V9: IELTS content difficulty classification (raw wire shape — the
+ * provider maps it to ContentLevelResult). */
+export const contentLevelSchema = z.object({
+  level: z.enum(["A2", "B1", "B2", "C1"]),
+  confidence: z.number().min(0).max(1),
+  summary: z.string(),
+});
+
 export const DRILL_PROMPT = `You create parallel drills for ONE learner error — new contexts that re-test the same pattern. Given the wrong form, the correct form and a note, write THREE fill-in sentences in three DIFFERENT everyday or IELTS contexts (e.g. workplace, travel, study, daily life). Each sentence contains exactly one blank "____" placed exactly where the correct form belongs and naturally eliciting it (inflections allowed); the sentence must NOT contain the wrong form. Vary subject and tense. Reply with STRICT JSON only:
 { "items": [ { "context": "sentence with ____", "answer": "the expected correct form", "scene": "e.g. 'at the airport'" } ] }`;
 

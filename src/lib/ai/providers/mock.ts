@@ -482,4 +482,10 @@ export const mockProvider: AIProvider = {
   writing: mockWriting,
   paraphrase: mockParaphrase,
   tutor: mockTutor,
+  classifyContentLevel: async () => ({
+    level: "B1",
+    confidence: 0.5,
+    summary: "Offline mode — connect an AI provider for a real difficulty analysis.",
+    isMock: true,
+  }),
 };

@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useTransition } from "react";
-import { Mic } from "lucide-react";
+import { Copy, Mic } from "lucide-react";
 import { logExternalSessionAction } from "@/app/actions";
 import { Badge, Card, btn, inputCls } from "@/components/ui";
 import { toast } from "@/components/motion";
@@ -18,17 +18,37 @@ interface SessionLog {
   createdAt: number;
 }
 
+export interface SpeakingTaskProps {
+  level: string;
+  focusEn: string;
+  focusZh: string;
+  prompt: string;
+  weakExpression: string | null;
+}
+
 export function ExternalCoachView({
   coaches,
   missionId,
   sessions,
+  speaking,
 }: {
   coaches: ExternalCoach[];
   missionId: number;
   sessions: SessionLog[];
+  speaking: SpeakingTaskProps | null;
 }) {
   const [showLog, setShowLog] = useState(false);
   const bilingual = useBilingual();
+
+  const copyPrompt = async () => {
+    if (!speaking) return;
+    try {
+      await navigator.clipboard.writeText(speaking.prompt);
+      toast("Prompt copied — paste it to your coach", "success");
+    } catch {
+      toast("Couldn't copy — select the text manually", "warn");
+    }
+  };
 
   return (
     <div>
@@ -43,6 +63,42 @@ export function ExternalCoachView({
           />
         </p>
       </header>
+
+      {/* V9: today's speaking task — IELTS profiles only, at the learner's
+       * level, woven with their current weak expression */}
+      {speaking && (
+        <div className="mb-6 rounded-card bg-surface p-6">
+          <div className="flex items-center justify-between gap-3">
+            <span className="t-caption">
+              <T en="Today's speaking practice" zh="今日口语练习" />
+            </span>
+            <Badge tone="accent">{speaking.level}</Badge>
+          </div>
+          <p className="mt-2 text-[13px] text-ink-3">
+            <T en={speaking.focusEn} zh={speaking.focusZh} />
+          </p>
+          <p className="mt-3 whitespace-pre-line text-[16.5px] font-medium leading-relaxed tracking-[-0.01em] text-ink text-pretty">
+            {speaking.prompt}
+          </p>
+          {speaking.weakExpression && (
+            <p className="mt-2 text-[12px] text-ink-3">
+              <T
+                en={`“${speaking.weakExpression}” comes from your own practice — it needs another turn.`}
+                zh={`“${speaking.weakExpression}” 来自你自己的练习——它需要再出场一次。`}
+              />
+            </p>
+          )}
+          <div className="mt-5 flex flex-wrap gap-2.5">
+            <button type="button" onClick={copyPrompt} className={`${btn.primary} h-10 px-5`}>
+              <Copy size={13} strokeWidth={2} className="mr-1.5" />
+              <T en="Copy prompt" zh="复制提示词" />
+            </button>
+            <a href={coaches[0]?.url} target="_blank" rel="noopener noreferrer" className={`${btn.secondary} h-10 px-5`}>
+              <T en="Open Speaking Coach →" zh="打开口语教练 →" />
+            </a>
+          </div>
+        </div>
+      )}
 
       {/* Coach Card — one GPT link, one card (speaking + listening are ways to
        * use the same coach, not two products) */}

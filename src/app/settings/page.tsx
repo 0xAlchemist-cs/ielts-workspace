@@ -12,6 +12,7 @@ export default async function SettingsPage() {
       immersionLevel={cu.profile.immersionLevel}
       dailyMinutes={cu.profile.dailyMinutes}
       aiStatus={getAIProviderStatus()}
+      learningLevel={cu.user.examProfile === "ielts" ? cu.profile.cefr : undefined}
     />
   );
 }

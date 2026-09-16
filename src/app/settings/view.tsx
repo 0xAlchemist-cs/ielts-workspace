@@ -8,6 +8,7 @@ import {
   saveAIProviderConfigAction,
   setDailyMinutesAction,
   setImmersionLevelAction,
+  setLearningLevelAction,
   testAIProviderConfigAction,
 } from "@/app/actions";
 import { T } from "@/components/i18n";
@@ -280,11 +281,13 @@ export function SettingsView({
   immersionLevel,
   dailyMinutes,
   aiStatus,
+  learningLevel,
 }: {
   userName: string;
   immersionLevel: number;
   dailyMinutes: number;
   aiStatus: AIStatus;
+  learningLevel?: string; // V9: present only for the IELTS profile
 }) {
   const router = useRouter();
   const [pending, start] = useTransition();
@@ -305,6 +308,7 @@ export function SettingsView({
           <T en="Tune the workspace to your habits." zh="按你的习惯调整工作台。" />
         </p>
       </header>
+      {learningLevel && <LearningLevelCard level={learningLevel} />}
       <section className="card-specular rounded-card bg-surface">
         <div className="border-b border-line px-6 py-4">
           <span className="t-overline">
@@ -407,5 +411,92 @@ export function SettingsView({
         {userName} · IELTS Workspace · <T en="Learning Science > Feature Quantity" zh="学习科学 > 功能数量" />
       </p>
     </div>
+  );
+}
+
+/* ── V9: Learning level (IELTS profile only) ──────────────────────────────
+ * CEFR lives here, not in Progress. Changing it adapts recommendations and
+ * speaking prompts — never deletes learning history. Deliberate confirm. */
+
+const LEVELS: { value: string; en: string; zh: string }[] = [
+  { value: "A2", en: "A2 · Elementary — everyday basics, simple sentences", zh: "A2 · 基础——日常简单表达" },
+  { value: "B1", en: "B1 · Intermediate — opinions, experiences, reasons", zh: "B1 · 中级——表达观点、经历、理由" },
+  { value: "B2", en: "B2 · Upper-intermediate — nuanced discussion", zh: "B2 · 中高级——较深入的讨论" },
+  { value: "C1", en: "C1 · Advanced — precise, natural, abstract", zh: "C1 · 高级——准确、自然、抽象" },
+];
+
+function LearningLevelCard({ level }: { level: string }) {
+  const router = useRouter();
+  const [pending, start] = useTransition();
+  const [choosing, setChoosing] = useState(false);
+  const [picked, setPicked] = useState<string | null>(null);
+
+  const confirmChange = () => {
+    if (!picked || picked === level) return;
+    start(async () => {
+      await setLearningLevelAction(picked);
+      setChoosing(false);
+      setPicked(null);
+      router.refresh();
+    });
+  };
+
+  return (
+    <section className="card-specular rounded-card bg-surface">
+      <div className="border-b border-line px-6 py-4">
+        <span className="t-overline">
+          <T en="Learning level" zh="学习水平" />
+        </span>
+      </div>
+      <Row
+        titleEn="Current level"
+        titleZh="当前水平"
+        descEn="Your level affects the reading materials we recommend and the speaking practice we prepare for you. Changing it never deletes your learning history."
+        descZh="你的水平影响我们推荐的阅读材料和为你准备的口语练习。修改不会删除学习历史。"
+      >
+        <button type="button" onClick={() => setChoosing((c) => !c)} className={btn.secondary}>
+          <T en={`Change level · ${level}`} zh={`修改水平 · ${level}`} />
+        </button>
+      </Row>
+      {choosing && (
+        <div className="enter space-y-2 px-6 pb-6">
+          {LEVELS.map((l) => (
+            <button
+              key={l.value}
+              type="button"
+              onClick={() => setPicked(l.value)}
+              className={`press block w-full rounded-xl px-4 py-3 text-left text-[13px] transition-colors duration-150 ${
+                picked === l.value
+                  ? "bg-accent/[0.08] font-semibold text-accent-text"
+                  : l.value === level
+                    ? "bg-surface-2 text-ink-2"
+                    : "bg-surface-2 text-ink-2 hover:text-ink"
+              }`}
+            >
+              <T en={l.en} zh={l.zh} />
+              {l.value === level && <span className="ml-2 text-[11px] text-ink-3"><T en="(current)" zh="（当前）" /></span>}
+            </button>
+          ))}
+          {picked && picked !== level && (
+            <div className="enter rounded-xl bg-[#ff9f0a]/[0.06] px-4 py-3">
+              <p className="text-[12.5px] leading-relaxed text-ink-2">
+                <T
+                  en={`Change your level to ${picked}? The materials we recommend and the speaking practice we prepare will adapt. Your learning history stays exactly as it is.`}
+                  zh={`把水平改为 ${picked}？我们推荐的材料和口语练习会随之调整。学习历史保持不变。`}
+                />
+              </p>
+              <div className="mt-3 flex gap-2.5">
+                <button type="button" onClick={() => setPicked(null)} className={btn.secondary}>
+                  <T en={`Keep ${level}`} zh={`保持 ${level}`} />
+                </button>
+                <button type="button" onClick={confirmChange} disabled={pending} className={btn.primary}>
+                  <T en={pending ? "Changing…" : `Change to ${picked}`} zh={pending ? "修改中…" : `改为 ${picked}`} />
+                </button>
+              </div>
+            </div>
+          )}
+        </div>
+      )}
+    </section>
   );
 }

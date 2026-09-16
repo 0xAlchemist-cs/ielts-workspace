@@ -14,12 +14,14 @@ import {
   wordSchema,
   writingSchema,
   drillSchema,
+  contentLevelSchema,
   DRILL_PROMPT,
 } from "@/lib/ai/tasks";
-import type { AIProvider } from "@/lib/ai/provider";
+import type { AIProvider, ContentLevelInput, ContentLevelResult } from "@/lib/ai/provider";
 import type { DrillSet, ParaphraseFeedback, RetrievalGrade, SentenceAnalysis, SpeakingFeedback, TutorReply, WordAnalysis, WritingFeedback } from "@/lib/types";
 import { getActiveExam } from "@/server/current-user";
 import { examPromptProfile } from "@/lib/ai/prompts";
+import { IELTS_CONTENT_LEVEL_PROMPT } from "@/lib/ai/prompts/ielts-content-level";
 
 type TaskName =
   | "word"
@@ -29,7 +31,8 @@ type TaskName =
   | "writing"
   | "paraphrase"
   | "tutor"
-  | "drills";
+  | "drills"
+  | "classifyContentLevel";
 
 const PROMPTS: Record<TaskName, string> = {
   word: WORD_PROMPT,
@@ -40,6 +43,7 @@ const PROMPTS: Record<TaskName, string> = {
   paraphrase: PARAPHRASE_PROMPT,
   tutor: TUTOR_PROMPT,
   drills: DRILL_PROMPT,
+  classifyContentLevel: IELTS_CONTENT_LEVEL_PROMPT,
 };
 
 /* Coaching/analysis tasks learn the learner's exam goal (V8) so selection
@@ -178,5 +182,25 @@ export class OpenAICompatProvider implements AIProvider {
   async drills(input: Parameters<NonNullable<AIProvider["drills"]>>[0]): Promise<DrillSet> {
     const raw = drillSchema.parse(await this.chatJSON("drills", input));
     return { items: raw.items, isMock: false };
+  }
+
+  /** IELTS-only task — classification must never bend to the learner's level,
+   * so this task stays out of EXAM_AWARE injection; its master prompt carries
+   * its own context rules. */
+  async classifyContentLevel(input: ContentLevelInput): Promise<ContentLevelResult> {
+    const raw = contentLevelSchema.parse(
+      await this.chatJSON("classifyContentLevel", {
+        title: input.title,
+        content: input.content.slice(0, 8000),
+        resourceType: input.resourceType,
+        currentUserLevel: input.currentUserLevel,
+      }),
+    );
+    return {
+      level: raw.level,
+      confidence: raw.confidence,
+      summary: raw.summary,
+      isMock: false,
+    };
   }
 }

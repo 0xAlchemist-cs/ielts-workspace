@@ -57,6 +57,12 @@ class FallbackProvider implements AIProvider {
   tutor(i: Parameters<AIProvider["tutor"]>[0]): Promise<TutorReply> {
     return this.run(() => this.live.tutor(i), () => mockProvider.tutor(i));
   }
+  classifyContentLevel(i: Parameters<NonNullable<AIProvider["classifyContentLevel"]>>[0]) {
+    return this.run(
+      () => this.live.classifyContentLevel!(i),
+      () => mockProvider.classifyContentLevel!(i),
+    );
+  }
 }
 
 // ── Provider config: Settings-saved (DB) first, .env.local fallback ─────────

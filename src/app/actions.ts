@@ -68,6 +68,19 @@ export async function setDailyMinutesAction(minutes: number): Promise<void> {
   revalidatePath("/");
 }
 
+/** V9: learning level (CEFR) — adapts recommendations & speaking prompts;
+ * never touches history. IELTS-profile surface, but harmless if called. */
+export async function setLearningLevelAction(level: string): Promise<void> {
+  if (level !== "A2" && level !== "B1" && level !== "B2" && level !== "C1") return;
+  const cu = await getCurrentUser();
+  if (!cu) return;
+  await db
+    .update(learningProfiles)
+    .set({ cefr: level, updatedAt: Date.now() })
+    .where(eq(learningProfiles.userId, cu.user.id));
+  revalidatePath("/", "layout");
+}
+
 // ── Onboarding ──────────────────────────────────────────────────────────────
 
 export async function quickStartAction(): Promise<void> {

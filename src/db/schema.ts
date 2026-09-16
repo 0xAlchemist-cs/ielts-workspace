@@ -68,6 +68,13 @@ export const contents = sqliteTable(
     title: text("title").notNull(),
     topic: text("topic").notNull(),
     cefr: text("cefr").$type<CEFR>().notNull(),
+    // V9: AI difficulty classification evidence (confidence + one-line reason).
+    // Empty = never AI-classified; the cefr column itself may hold pre-existing
+    // corpus annotations or an AI result — never a silent local guess.
+    cefrMeta: text("cefr_meta", { mode: "json" })
+      .$type<{ confidence?: number; summary?: string }>()
+      .notNull()
+      .default({}),
     difficulty: integer("difficulty").notNull().default(3), // 1-5
     vocabDensity: real("vocab_density").notNull().default(0.5), // 0-1
     grammarComplexity: integer("grammar_complexity").notNull().default(3), // 1-5

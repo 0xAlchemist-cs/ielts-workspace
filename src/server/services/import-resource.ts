@@ -5,6 +5,7 @@ import { and, eq, inArray } from "drizzle-orm";
 import { db } from "@/db";
 import { chunks, contents as contentsT, contentHistory, importedResources, sentences } from "@/db/schema";
 import { getActiveExam } from "@/server/current-user";
+import { getProvider, isLiveConfigured } from "@/lib/ai";
 import { contentFingerprint } from "@/server/services/content-selection";
 import { analyzeContent } from "@/server/services/content-analysis";
 import {
@@ -41,6 +42,8 @@ export interface ImportResult {
   format?: ImportFormat;
   kind?: string;
   meta?: { pages?: number; durationMs?: number; ocrConfidence?: number; cues?: number; folder?: string };
+  /** V9: AI-analyzed difficulty level (only set for IELTS imports with live AI) */
+  level?: string;
   error?: string;
 }
 
@@ -282,9 +285,34 @@ async function importFileInner(
     });
     await db.update(importedResources).set({ contentId }).where(eq(importedResources.id, row.id));
 
+    // ── V9 (IELTS only): AI difficulty classification — one call per new
+    // content; failure degrades to "not analyzed yet", never blocks import.
+    // The local heuristic estimate below (analysis.cefr) participates in
+    // ranking ONLY — the UI never displays an unanalyzed level. ────────────
+    let level: string | undefined;
+    if (exam === "ielts" && isLiveConfigured()) {
+      try {
+        const provider = getProvider();
+        if (provider.classifyContentLevel) {
+          const cls = await provider.classifyContentLevel({
+            title: normalized.title || fileName,
+            content: normalized.body,
+            resourceType: type,
+          });
+          await db
+            .update(contentsT)
+            .set({ cefr: cls.level, cefrMeta: { confidence: cls.confidence, summary: cls.summary } })
+            .where(eq(contentsT.id, contentId));
+          level = cls.level;
+        }
+      } catch {
+        /* classification is best-effort — content stays at unknown-for-display */
+      }
+    }
+
     return {
       ok: true, status: "ready", resourceId: row.id, contentId,
-      title: normalized.title || fileName, format, kind, meta: { ...baseMeta, ...normalized.meta },
+      title: normalized.title || fileName, format, kind, level, meta: { ...baseMeta, ...normalized.meta },
     };
   } catch (e) {
     // last-resort: never silently swallow, never leave an orphan file behind

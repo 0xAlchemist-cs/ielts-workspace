@@ -36,6 +36,7 @@ export default async function LibraryPage() {
       }))}
       imports={imports}
       importSummary={summary}
+      userLevel={cu.user.examProfile === "ielts" ? cu.profile.cefr : undefined}
     />
   );
 }
