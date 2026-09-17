@@ -108,8 +108,12 @@ export default async function HomePage() {
       : { en: "Read something new", zh: "读点新东西" };
 
   // ONE why line — recent activity, not engine rationale
-  const whyLine =
-    returning.length > 0
+  // V10: the planner's data-backed balance line leads; fall back to the
+  // generic returning-items line, then the weakest-link detail
+  const planWhy = plan.rationale?.planWhy;
+  const whyLine = planWhy
+    ? { en: planWhy.en, zh: planWhy.zh }
+    : returning.length > 0
       ? {
           en: "These need more practice based on your recent activity.",
           zh: "根据你最近的学习情况，这些表达需要再练。",

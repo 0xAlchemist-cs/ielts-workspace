@@ -264,6 +264,8 @@ export interface MissionRationale {
   primaryFocus: { skill: string; subSkill: string; score: number };
   diversityNote?: string;
   urgentItems: string[];
+  /** V10 planner: one data-backed line about today's balance + mode */
+  planWhy?: { mode: string; en: string; zh: string };
 }
 
 export interface MissionOutcome {

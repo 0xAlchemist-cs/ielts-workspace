@@ -245,11 +245,15 @@ export async function generateReviewQueue(
 
   // Sort by priority (descending)
   entries.sort((a, b) => b.priority - a.priority);
-  const top = entries.slice(0, limit);
+  // buildEntry drops items whose source row was deleted (historical orphans
+  // can dominate the top of the priority order) — over-fetch and fill so the
+  // learner always gets their real quota of reviews (V10 P25)
+  const top = entries.slice(0, limit * 3);
 
   // Build queue entries with prompts
   const queue: ReviewQueueEntry[] = [];
   for (const e of top) {
+    if (queue.length >= limit) break;
     const qi = await buildEntry(e.item, e.mode, e.category, e.priority, e.reasonDetail);
     if (qi) queue.push(qi);
   }

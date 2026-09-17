@@ -66,11 +66,17 @@ const CATEGORY_TEXT: Record<string, { en: string; zh: string }> = {
 };
 
 export function ReviewSession({
-  overdueCount, atRiskCount,
+  overdueCount, atRiskCount, tomorrow,
 }: {
   accuracy30d: number;
   overdueCount: number;
   atRiskCount: number;
+  tomorrow?: {
+    successCount: number;
+    struggleCount: number;
+    successLine: { en: string; zh: string };
+    struggleLine: { en: string; zh: string };
+  };
 }) {
   const [mode, setMode] = useState<SessionMode>("standard");
   const [optionsOpen, setOptionsOpen] = useState(false);
@@ -87,10 +93,12 @@ export function ReviewSession({
   const { speak } = useSpeech();
   const bilingual = useBilingual();
 
-  const load = useCallback(async (m: SessionMode) => {
+  const load = useCallback(async (m: SessionMode, opts?: { keepStats?: boolean }) => {
     setLoading(true);
     setQueue([]); setIdx(0); setResult(null); setResponse("");
-    setSessionStats({ done: 0, hit: 0 });
+    // a mode switch starts a fresh session; a batch rollover keeps the tally
+    // so the end-of-session panel reflects everything answered today (V10)
+    if (!opts?.keepStats) setSessionStats({ done: 0, hit: 0 });
     const res = await fetch(`/api/review/queue?mode=${m}`);
     const data = await res.json();
     setQueue(data.queue ?? []);
@@ -132,7 +140,7 @@ export function ReviewSession({
 
   const next = () => {
     setResult(null); setResponse(""); setRetried(false);
-    if (idx + 1 >= queue.length) { markStepAction("retrieval"); load(mode); }
+    if (idx + 1 >= queue.length) { markStepAction("retrieval"); load(mode, { keepStats: true }); }
     else setIdx(idx + 1);
   };
 
@@ -218,6 +226,27 @@ export function ReviewSession({
               zh="当前没有到期项。新的学习不会被复习积压挤掉。"
             />
           </p>
+          {/* V10: end-of-session evidence — scheduled + tomorrow, human words */}
+          {sessionStats.done > 0 && (
+            <div className="enter mt-5 rounded-xl bg-surface-2 px-5 py-4">
+              <p className="text-[13px] font-medium text-ink">
+                <T
+                  en={`${sessionStats.done} answered · ${sessionStats.hit} recalled successfully.`}
+                  zh={`完成 ${sessionStats.done} 项 · 成功回忆 ${sessionStats.hit} 项。`}
+                />
+              </p>
+              <p className="mt-1 text-[12.5px] text-ink-3">
+                <T en="Your next review has been scheduled." zh="你的下次复习已排好。" />
+              </p>
+              {tomorrow && (
+                <p className="mt-2 text-[12px] leading-relaxed text-ink-3">
+                  <T en={tomorrow.successLine.en} zh={tomorrow.successLine.zh} />
+                  <br />
+                  <T en={tomorrow.struggleLine.en} zh={tomorrow.struggleLine.zh} />
+                </p>
+              )}
+            </div>
+          )}
         </div>
       )}
 

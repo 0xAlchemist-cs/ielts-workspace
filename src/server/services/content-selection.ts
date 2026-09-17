@@ -31,7 +31,10 @@ export interface SelectedContent {
   score: number;
   /** 0 = no relaxation needed; each +1 means the anti-repeat window shrank. */
   fallbackLevel: number;
+  /** developer-facing factor summary (observability, V10 P23) */
   reason: string;
+  /** learner-facing why-this (V10 P24) — data-backed, bilingual */
+  reasonHuman: { en: string; zh: string };
 }
 
 export interface SelectionInput {
@@ -227,5 +230,21 @@ export async function selectNextContent(input: SelectionInput): Promise<Selected
         ? "completed, re-queued by rotation"
         : "in progress, continuing rotation";
 
-  return { content: pick.c, status, score: Math.round(pick.score * 1000) / 1000, fallbackLevel, reason };
+  // human why-this (V10 P24): built from the same real factors, never invented
+  const d = Math.abs((CEFR_LEVEL[pick.c.cefr] ?? 4) - myLevel);
+  const reasonHuman: { en: string; zh: string } = weak > 0
+    ? {
+        en: `At your level, and it naturally re-uses ${weak} expression${weak > 1 ? "s" : ""} you're still learning.`,
+        zh: `符合你的水平，还能让正在学的 ${weak} 个表达自然地再出现。`,
+      }
+    : !h
+      ? {
+          en: `New to you${d === 0 ? " and right at your level" : d === 1 ? ", one gentle step from your level" : ""}.`,
+          zh: `你还没读过${d === 0 ? "，而且正合你的水平" : d === 1 ? "，难度只差一步" : ""}。`,
+        }
+      : h.completionStatus === "completed"
+        ? { en: "You finished it before — a second pass cements it.", zh: "你之前读完过——再过一遍会更牢。" }
+        : { en: "You started it — a natural place to continue.", zh: "你读到一半——正好接着读。" };
+
+  return { content: pick.c, status, score: Math.round(pick.score * 1000) / 1000, fallbackLevel, reason, reasonHuman };
 }

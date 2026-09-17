@@ -57,6 +57,13 @@ export async function generateTodayMission(userId: number, liteOverride?: boolea
   const { computeMissionDecision } = await import("@/server/services/priority-engine");
   const decision = await computeMissionDecision(userId);
 
+  // ── V10 planner: time budget + memory pressure shape the day's volume ────
+  const { allocateBudget } = await import("@/server/services/planner");
+  const { readMemoryPressure } = await import("@/server/services/planner");
+  const { pressure, dailyMinutes } = await readMemoryPressure(userId);
+  const budget = allocateBudget(dailyMinutes, pressure);
+  if (budget.mode === "rescue") lite = true; // missed days → small plan
+
   // Map engine's recommended length to our lite/full system
   const recommendedLength = decision.recommendedLength;
   const actualLite = lite ?? recommendedLength === "quick";
@@ -83,10 +90,12 @@ export async function generateTodayMission(userId: number, liteOverride?: boolea
     ? noticeIds.filter((id) => decision.targetChunkIds.includes(id)).slice(0, 2)
     : (actualLite ? [] : noticeIds.slice(0, 2));
 
-  // ── Retrieval: engine-selected items override default queue ─────────────
-  const retrievalItemIds = decision.retrievalItemIds.length > 0
+  // ── Retrieval: engine-selected items override default queue; the planner's
+  // budget caps the batch so a backlog never floods the day (V10 P6) ────────
+  const retrievalItemIds = (decision.retrievalItemIds.length > 0
     ? decision.retrievalItemIds
-    : (await getReviewQueue(userId, actualLite ? 6 : 8)).map((q) => q.retrievalItemId);
+    : (await getReviewQueue(userId, actualLite ? 6 : Math.max(6, budget.reviewCount))).map((q) => q.retrievalItemId)
+  ).slice(0, budget.reviewCount);
 
   const firstChunk = noticeRows[0];
   const speakingPrompt = firstChunk
@@ -102,7 +111,10 @@ export async function generateTodayMission(userId: number, liteOverride?: boolea
   const plan: MissionPlan = {
     lite: actualLite,
     length: recommendedLength,
-    rationale: decision.rationale,
+    rationale: {
+      ...decision.rationale,
+      planWhy: { mode: budget.mode, en: budget.whyEn, zh: budget.whyZh },
+    },
     reading: reading
       ? {
           contentId: reading.id,
