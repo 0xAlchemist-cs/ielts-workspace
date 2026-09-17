@@ -136,6 +136,11 @@ async function main() {
     // 18 · delete-all: removes registry + created contents + files, leaves seeded corpus
     const seededBefore = await db.select({ n: contentsT.id }).from(contentsT);
     const before = seededBefore.length;
+    // snapshot this run's storage keys BEFORE deleting (the upload dir is shared —
+    // a concurrent verify run's in-flight file must not fail our cleanup check)
+    const myKeys = (
+      await db.select({ k: importedResources.storageKey }).from(importedResources).where(eq(importedResources.userId, userId))
+    ).map((r) => r.k);
     const del = await deleteAllImports(userId);
     check("deleteAllImports reports counts", del.files === summary.total && del.contents >= 1, JSON.stringify(del));
     const after = await importSummary(userId);
@@ -143,7 +148,8 @@ async function main() {
     const seededAfter = await db.select({ n: contentsT.id }).from(contentsT);
     check("seeded corpus untouched (only imported contents removed)", seededAfter.length === before - del.contents, `${before} → ${seededAfter.length}, del.contents=${del.contents}`);
     const uploadsLeft = await readdir(UPLOAD_DIR).catch(() => [] as string[]);
-    check("upload files removed", uploadsLeft.filter((f) => /^[a-f0-9-]{36}/.test(f)).length === 0, uploadsLeft.join(","));
+    const mineLeft = uploadsLeft.filter((f) => myKeys.some((k) => f === k || k.endsWith(`/${f}`)));
+    check("upload files removed", mineLeft.length === 0, mineLeft.join(","));
 
     // 19 · re-import after delete → fresh success (dedup only blocks duplicates)
     const again = await importFile(userId, { fileName: "essay.txt", buf: await fx("essay.txt") });
