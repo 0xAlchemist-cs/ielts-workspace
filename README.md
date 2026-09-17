@@ -84,7 +84,25 @@ Listening **249 sections / 2267 questions** (Cambridge 5–20, transcript-verifi
 
 ## Tests
 
-`npm run verify:all` — lint + typecheck + 7 suites (smoke 25 / pm 27 / engine 18 / rotation 9 / loop 25 / writing-gate / input-gates), all self-cleaning; pre-push hook installed.
+`npm run verify:all` — lint + typecheck + all suites (smoke / pm / engine / rotation / loop / planner / exam / import / writing-gate / input-gates), all self-cleaning.
+
+## Development workflow (read this before your first push)
+
+**Every `git push` runs the full gate** (`verify:all`, ~3–4 min) via the versioned
+`.githooks/pre-push` hook (`git config core.hooksPath .githooks` — repo-level, binds
+every contributor and agent on this machine). A red gate aborts the push.
+
+- **Push rejected?** Fix the failing suite — don't reach for `--no-verify`. That flag
+  skips the gate; if you use it, you own the breakage it lets through.
+- **One push, one gate run**: push master and tags together
+  (`git push origin master <tag>`) — each push refires the gate.
+- **Commits are not gated** (by design, speed). The gate protects what enters the
+  remote, not the local history — don't let broken work linger unpushed.
+- **The running app is NOT the repo**: `npm run start` serves the last
+  `npm run build`. After changing code, rebuild + restart or you are testing a
+  stale build against fresh tests.
+- **DB importers (`npm run db:*`) write `data/app.db` directly** and are outside the
+  gate — every importer carries its own idempotency/count assertions; keep them true.
 
 ## Security & backup
 
