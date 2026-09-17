@@ -156,20 +156,55 @@ export async function buildReadiness(userId: number, exam: ExamProfile): Promise
       .from(externalSessions)
       .where(eq(externalSessions.userId, userId));
 
+    // V12.2: real CET task evidence — objective sections get accuracy-based
+    // needs_work/on_track/building (NO score conversion, ever)
+    const { cetAttempts: cetAttemptsT } = await import("@/db/schema");
+    const cetRows = await db
+      .select({ section: cetAttemptsT.section, correct: cetAttemptsT.correctCount, total: cetAttemptsT.totalCount })
+      .from(cetAttemptsT)
+      .where(eq(cetAttemptsT.userId, userId));
+    const cetBySection = new Map<string, { attempts: number; correct: number; total: number }>();
+    for (const r of cetRows) {
+      const agg = cetBySection.get(r.section) ?? { attempts: 0, correct: 0, total: 0 };
+      agg.attempts++;
+      if (r.correct != null && r.total != null && r.total > 0) {
+        agg.correct += r.correct;
+        agg.total += r.total;
+      }
+      cetBySection.set(r.section, agg);
+    }
+
     for (const skill of ["reading", "listening", "writing", "translation"] as const) {
+      const cetAgg = cetBySection.get(skill) ?? { attempts: 0, correct: 0, total: 0 };
+      const hasObjective = cetAgg.total > 0;
       const count =
-        skill === "reading" ? (counts.reading ?? 0)
-        : skill === "listening" ? (counts.listening ?? 0)
-        : skill === "writing" ? (writes[0]?.n ?? 0)
-        : 0; // translation: no engine yet — always honest
-      const state: ReadinessState = count >= 5 ? "building" : count >= 1 ? "building" : "none";
-      snapshot.skills.push({
-        skill, label: SKILL_LABEL[skill], state,
-        why: state === "none"
+        skill === "reading" ? (counts.reading ?? 0) + cetAgg.attempts
+        : skill === "listening" ? (counts.listening ?? 0) + cetAgg.attempts
+        : skill === "writing" ? (writes[0]?.n ?? 0) + cetAgg.attempts
+        : cetAgg.attempts;
+      // objective CET evidence with enough volume → accuracy state (honest)
+      let state: ReadinessState;
+      let why: { en: string; zh: string };
+      if (hasObjective && cetAgg.attempts >= 3) {
+        const acc = cetAgg.correct / cetAgg.total;
+        state = acc >= 0.7 ? "on_track" : acc <= 0.5 ? "needs_work" : "building";
+        why = {
+          en: `${cetAgg.correct}/${cetAgg.total} correct across ${cetAgg.attempts} practice task${cetAgg.attempts > 1 ? "s" : ""} — practice performance, not an official score.`,
+          zh: `${cetAgg.attempts} 次练习中答对 ${cetAgg.correct}/${cetAgg.total} —— 练习表现，非官方分数。`,
+        };
+      } else if (hasObjective && cetAgg.attempts >= 1) {
+        state = "building";
+        why = { en: `${cetAgg.correct}/${cetAgg.total} so far — a few more tasks make this reliable.`, zh: `目前 ${cetAgg.correct}/${cetAgg.total}——再多几次就可靠了。` };
+      } else {
+        state = count >= 1 ? "building" : "none";
+        why = state === "none"
           ? { en: "Complete a few sessions to build a clearer picture.", zh: "完成几次练习就能形成更清晰的画像。" }
-          : { en: `${count} session${count > 1 ? "s" : ""} recorded — the picture builds with practice.`, zh: `已记录 ${count} 次练习——画像随练习逐步清晰。` },
+          : { en: `${count} session${count > 1 ? "s" : ""} recorded — the picture builds with practice.`, zh: `已记录 ${count} 次练习——画像随练习逐步清晰。` };
+      }
+      snapshot.skills.push({
+        skill, label: SKILL_LABEL[skill], state, why,
         evidenceCount: count,
-        devExplanation: { evidence: [`sessions: ${count}`], state },
+        devExplanation: { evidence: [`sessions: ${count}`, `cet objective: ${cetAgg.correct}/${cetAgg.total} over ${cetAgg.attempts}`], state },
       });
     }
   }

@@ -558,6 +558,65 @@ export const ieltsTasks = sqliteTable("ielts_tasks", {
   createdAt: integer("created_at").notNull().$defaultFn(() => Date.now()),
 });
 
+// ── V12.2 CET written-test tasks (official structure: 写作|听力|阅读|翻译) ────
+// Shape mirrors ielts_tasks where useful but stays a separate table: the
+// IELTS engine keeps its contract; CET never touches it and vice versa.
+
+export type CetSection = "writing" | "listening" | "reading" | "translation";
+export type CetTaskSource = "official" | "synthetic_test" | "user_imported";
+
+export const cetTasks = sqliteTable(
+  "cet_tasks",
+  {
+    id: integer("id").primaryKey({ autoIncrement: true }),
+    examProfile: text("exam_profile").$type<"cet4" | "cet6">().notNull(),
+    section: text("section").$type<CetSection>().notNull(),
+    /** reading: banked cloze|matching|careful · listening: news|conversation|passage|lecture · writing: essay · translation: passage_cn_to_en */
+    taskType: text("task_type").notNull(),
+    difficulty: integer("difficulty").notNull().default(3),
+    topic: text("topic").notNull().default("general"),
+    /** writing: the essay prompt · translation: the Chinese passage · reading/listening: the instruction line */
+    prompt: text("prompt").notNull(),
+    /** reading: passage text · listening: transcript (learning mode only) · writing/translation: reference answer */
+    content: text("content"),
+    /** objective questions [{question, options[], answer}] — writing/translation: null */
+    questions: text("questions", { mode: "json" }).$type<
+      { question: string; options: string[]; answer: string }[]
+    >(),
+    /** 汉译英 reference translation (translation section) */
+    referenceAnswer: text("reference_answer"),
+    source: text("source").$type<CetTaskSource>().notNull(),
+    audioUrl: text("audio_url"),
+    durationMinutes: integer("duration_minutes").notNull().default(20),
+    createdAt: integer("created_at").notNull().$defaultFn(() => Date.now()),
+  },
+  (t) => [
+    index("idx_cet_tasks_exam_section").on(t.examProfile, t.section),
+    index("idx_cet_tasks_exam").on(t.examProfile),
+  ],
+);
+
+/** V12.2: CET written-test attempt records — real evidence for readiness. */
+export const cetAttempts = sqliteTable(
+  "cet_attempts",
+  {
+    id: integer("id").primaryKey({ autoIncrement: true }),
+    userId: integer("user_id").notNull(),
+    taskId: integer("task_id").notNull(),
+    section: text("section").$type<CetSection>().notNull(),
+    mode: text("mode").$type<"learning" | "exam">().notNull(),
+    responses: text("responses", { mode: "json" }).$type<Record<string, string>>().notNull().default({}),
+    freeText: text("free_text"),
+    correctCount: integer("correct_count"),
+    totalCount: integer("total_count"),
+    createdAt: integer("created_at").notNull().$defaultFn(() => Date.now()),
+  },
+  (t) => [
+    index("idx_cet_attempts_user").on(t.userId),
+    index("idx_cet_attempts_user_section").on(t.userId, t.section),
+  ],
+);
+
 /** One IELTS attempt with full results. */
 export const ieltsAttempts = sqliteTable(
   "ielts_attempts",

@@ -31,6 +31,7 @@
     "db:listening-c5-9": "tsx scripts/import-listening-c5-9.ts",
     "db:cambridgewriting": "tsx scripts/import-cambridge-writing.ts",
     "db:anna": "tsx scripts/import-anna-writing.ts",
+    "db:cetfixtures": "tsx scripts/import-cet-fixtures.ts",
     "test:smoke": "tsx scripts/smoke.ts",
     "test:pm": "tsx scripts/verify-pm.ts",
     "test:engine": "tsx scripts/verify-engine.ts",
@@ -44,12 +45,13 @@
     "test:need": "tsx scripts/verify-learning-need.ts",
     "test:memory": "tsx scripts/verify-memory.ts",
     "test:readiness": "tsx scripts/verify-readiness.ts",
+    "test:cet": "tsx scripts/verify-cet.ts",
     "test:v9v10": "tsx scripts/verify-v9v10.ts",
     "test:security": "tsx scripts/verify-security.ts",
     "test:data": "tsx scripts/verify-data-integrity.ts",
     "inspect:item": "tsx scripts/inspect-item.ts",
     "verify:product": "npm run test:engine && npm run test:rotation && npm run test:loop && npm run test:writing-gate",
-    "verify:all": "npm run lint && tsc --noEmit && npm run test:smoke && npm run test:pm && npm run test:engine && npm run test:rotation && npm run test:loop && npm run test:writing-gate && npm run test:input-gates && npm run test:import && npm run test:exam && npm run test:planner && npm run test:need && npm run test:memory && npm run test:readiness && npm run test:v9v10"
+    "verify:all": "npm run lint && tsc --noEmit && npm run test:smoke && npm run test:pm && npm run test:engine && npm run test:rotation && npm run test:loop && npm run test:writing-gate && npm run test:input-gates && npm run test:import && npm run test:exam && npm run test:planner && npm run test:need && npm run test:memory && npm run test:readiness && npm run test:cet && npm run test:v9v10"
   },
   "dependencies": {
     "better-sqlite3": "^13.0.3",

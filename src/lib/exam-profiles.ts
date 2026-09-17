@@ -30,6 +30,8 @@ export interface ExamConfig {
   hasSpeakingCoach: boolean;
   /** AI difficulty classification on import */
   hasContentClassifier: boolean;
+  /** exam practice route for THIS goal (shown only when active) */
+  practiceRoute: string;
   /** engine routes locked to IELTS until real CET exam engines exist
    * (nav hides them outside IELTS — never faked) */
   examLockedRoutes: string[];
@@ -44,6 +46,7 @@ export const EXAM_CONFIG: Record<ExamProfile, ExamConfig> = {
     hasCefrLayer: true,
     hasSpeakingCoach: true,
     hasContentClassifier: true,
+    practiceRoute: "/ielts",
     examLockedRoutes: ["/writing", "/ielts"],
   },
   cet4: {
@@ -54,6 +57,7 @@ export const EXAM_CONFIG: Record<ExamProfile, ExamConfig> = {
     hasCefrLayer: false,
     hasSpeakingCoach: false,
     hasContentClassifier: false,
+    practiceRoute: "/cet",
     examLockedRoutes: [],
   },
   cet6: {
@@ -64,6 +68,7 @@ export const EXAM_CONFIG: Record<ExamProfile, ExamConfig> = {
     hasCefrLayer: false,
     hasSpeakingCoach: false,
     hasContentClassifier: false,
+    practiceRoute: "/cet",
     examLockedRoutes: [],
   },
 };

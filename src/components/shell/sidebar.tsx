@@ -44,6 +44,7 @@ const MORE: Item[] = [
   { href: "/external", en: "Speaking", zh: "口语", icon: Mic },
   { href: "/ielts", en: "IELTS", zh: "雅思练习", icon: GraduationCap },
   { href: "/ielts/mock", en: "Mock exam", zh: "全真模考", icon: ClipboardCheck },
+  { href: "/cet", en: "CET Practice", zh: "四六级练习", icon: BookOpen },
   { href: "/errors", en: "Mistakes", zh: "惯犯错误", icon: CircleAlert },
   { href: "/chunks", en: "Language", zh: "语言库", icon: Layers },
   { href: "/lab", en: "AI Lab", zh: "AI 实验室", icon: Sparkles },
@@ -72,9 +73,10 @@ export function Sidebar({
 }) {
   const pathname = usePathname();
   // exam-locked engine routes (writing tasks, IELTS practice, mock) have no CET
-  // counterpart yet — hiding beats faking. Reading/Listening/Practice/Language
-  // are exam-agnostic environments fed by the active profile's corpus.
+  // counterpart — hiding beats faking. /cet is the reverse: a CET-only surface
+  // hidden under IELTS. Reading/Listening/Practice/Language stay exam-agnostic.
   const more = MORE.filter((m) => {
+    if (m.href === "/cet") return examProfile === "cet4" || examProfile === "cet6";
     const owner = lockedRouteOwner(m.href);
     return owner === null || owner === examProfile;
   });
