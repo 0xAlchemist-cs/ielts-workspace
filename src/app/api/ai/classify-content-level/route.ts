@@ -41,6 +41,18 @@ export async function POST(req: Request) {
       content: content.body,
       resourceType: content.type,
     });
+    // Confidence floor: a low-confidence result (e.g. non-English text where the
+    // model admits it is returning a placeholder) must never be persisted as a
+    // real level — the honest answer is "unknown", previous cefr stays.
+    if (result.confidence < 0.4) {
+      return NextResponse.json({
+        ok: true,
+        level: "unknown",
+        confidence: result.confidence,
+        summary: result.summary,
+        notPersisted: true,
+      });
+    }
     await db
       .update(contentsT)
       .set({

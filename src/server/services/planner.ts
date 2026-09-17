@@ -74,9 +74,11 @@ export function allocateBudget(dailyMinutes: number, p: MemoryPressure): TimeBud
     reviewShare = 0.9;
   }
 
-  const reviewMin = Math.round(minutes * reviewShare);
-  const transferMin = mode === "rescue" ? 0 : Math.max(5, Math.round(minutes * 0.12));
-  const newMin = Math.max(5, minutes - reviewMin - transferMin);
+  // Floors must compress on small budgets — the plan always fits the minutes
+  // (a 15-min learner under pressure gets 15 min of work, never 19).
+  const reviewMin = Math.min(Math.round(minutes * reviewShare), Math.round(minutes * 0.8));
+  const transferMin = mode === "rescue" ? 0 : Math.min(5, Math.round(minutes * 0.12));
+  const newMin = Math.max(Math.min(5, Math.round(minutes * 0.3)), minutes - reviewMin - transferMin);
   // ~40s per review item, bounded so a huge backlog never floods the day
   const reviewCount = Math.max(3, Math.min(Math.floor(reviewMin / 0.7), 24));
 
