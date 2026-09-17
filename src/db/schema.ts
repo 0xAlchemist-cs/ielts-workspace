@@ -36,6 +36,9 @@ export const learningProfiles = sqliteTable("learning_profiles", {
   cefr: text("cefr").$type<CEFR>().notNull().default("B1"),
   immersionLevel: integer("immersion_level").notNull().default(1),
   dailyMinutes: integer("daily_minutes").notNull().default(45),
+  /** V12.1: IELTS target band (5.0–8.0 in 0.5 steps); null = not set (goal
+   * defaults to baseline overall). CET goals carry no score model — null. */
+  targetBand: real("target_band"),
   grammarWeaknesses: text("grammar_weaknesses", { mode: "json" })
     .$type<string[]>()
     .notNull()

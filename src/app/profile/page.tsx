@@ -5,13 +5,14 @@ import { getUserVocabulary, getUserChunks } from "@/server/services/bank";
 import { retrievalStats } from "@/server/services/retrieval";
 import { getListeningProfile, missStats } from "@/server/services/listening";
 import { getTrajectory, getLearningEfficiency, generateWeeklyReview } from "@/server/services/trajectory";
+import { buildReadiness } from "@/server/services/readiness";
 import { ProfileView } from "./view";
 
 export default async function ProfilePage() {
   const cu = await requireUser();
   const userId = cu.user.id;
 
-  const [fullProfile, trend, vocab, chunks, retrieval, lProfile, lMisses, trajectory, efficiency, weekly, funnel, evidence] =
+  const [fullProfile, trend, vocab, chunks, retrieval, lProfile, lMisses, trajectory, efficiency, weekly, funnel, evidence, readiness] =
     await Promise.all([
       computeFullProfile(userId),
       getTrend14(userId),
@@ -25,6 +26,7 @@ export default async function ProfilePage() {
       generateWeeklyReview(userId),
       getTodayFunnel(userId),
       getTodayEvidence(userId),
+      buildReadiness(userId, cu.user.examProfile),
     ]);
 
   return (
@@ -71,6 +73,7 @@ export default async function ProfilePage() {
         listening: { profile: lProfile, misses: lMisses },
       }}
       funnel={funnel}
+      readiness={readiness}
       evidence={evidence}
     />
   );

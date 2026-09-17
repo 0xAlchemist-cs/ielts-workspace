@@ -9,6 +9,7 @@ import {
 } from "@/lib/banks";
 import { Badge, Card, ProgressBar, Sparkline, Stat, btn, inputCls } from "@/components/ui";
 import { EvidenceFunnel } from "@/components/funnel";
+import { readinessStateText, type ReadinessSnapshot, type SkillReadiness } from "@/lib/readiness-types";
 import { toast } from "@/components/motion";
 import { T, useBilingual } from "@/components/i18n";
 import { plural } from "@/lib/plural";
@@ -63,6 +64,7 @@ export function ProfileView({
   stats,
   funnel,
   evidence,
+  readiness,
 }: {
   profile: ProfileData;
   fullProfile: FullLearningProfile;
@@ -85,6 +87,7 @@ export function ProfileView({
     listening: { profile: Record<string, string>; misses: Record<string, number> };
   };
   funnel: MissionCounters;
+  readiness: ReadinessSnapshot;
   evidence: {
     activated: number;
     usedInOutput: number;
@@ -155,6 +158,42 @@ export function ProfileView({
           </button>
         </div>
       </header>
+
+      {/* ── V12.1: Current goal + readiness — the answer to "how close am I?" ──
+       * lightweight: goal line, per-skill human states with Why, today's
+       * priority. No scores unless band-backed, no dashboard. */}
+      {readiness && (
+        <div className="mb-6 rounded-2xl bg-surface px-6 py-5">
+          <div className="flex flex-wrap items-baseline justify-between gap-2">
+            <p className="t-section">
+              <T en="Current goal" zh="当前目标" />
+            </p>
+            <p className="text-[13px] font-semibold text-ink">
+              {readiness.exam === "ielts" && readiness.targetBand != null
+                ? `IELTS ${readiness.targetBand.toFixed(1)}`
+                : readiness.exam === "ielts"
+                  ? "IELTS"
+                  : readiness.exam === "cet4"
+                    ? "CET-4"
+                    : "CET-6"}
+            </p>
+          </div>
+          <div className="mt-3 grid gap-2 sm:grid-cols-2">
+            {readiness.skills.map((s) => (
+              <ReadinessRow key={s.skill} skill={s} />
+            ))}
+          </div>
+          {readiness.topGap && (
+            <p className="mt-4 text-[13px] text-ink-2">
+              <T en="Today's priority: " zh="今日优先：" />
+              <span className="font-semibold text-ink">
+                <T en={readiness.topGap.label.en} zh={readiness.topGap.label.zh} />
+              </span>
+              <T en=" — today's plan already leans this way." zh=" —— 今日练习已向它倾斜。" />
+            </p>
+          )}
+        </div>
+      )}
 
       {/* Today — the evidence layer that used to live on the homepage:
        * real counts from real events, plus the honest funnel. (inside the
@@ -592,6 +631,40 @@ function SkillCard({
           );
         })}
       </div>
+    </div>
+  );
+}
+
+/* V12.1: one skill's readiness row — human state + Why? drill-down */
+function ReadinessRow({ skill }: { skill: SkillReadiness }) {
+  const [open, setOpen] = useState(false);
+  const stateText = readinessStateText(skill.state);
+  const tone =
+    skill.state === "needs_work" ? "text-warn-text"
+    : skill.state === "on_track" || skill.state === "strong" ? "text-ok-text"
+    : "text-ink-3";
+  return (
+    <div className="rounded-xl bg-surface-2 px-4 py-3">
+      <div className="flex items-baseline justify-between gap-2">
+        <span className="text-[13.5px] font-semibold text-ink">
+          <T en={skill.label.en} zh={skill.label.zh} />
+        </span>
+        <span className={`text-[12.5px] font-medium ${tone}`}>
+          <T en={stateText.en} zh={stateText.zh} />
+        </span>
+      </div>
+      <button
+        type="button"
+        onClick={() => setOpen((o) => !o)}
+        className="press mt-1 text-[12px] font-medium text-accent-text"
+      >
+        <T en="Why?" zh="为什么？" />
+      </button>
+      {open && (
+        <p className="enter mt-1.5 text-[12.5px] leading-relaxed text-ink-2">
+          <T en={skill.why.en} zh={skill.why.zh} />
+        </p>
+      )}
     </div>
   );
 }

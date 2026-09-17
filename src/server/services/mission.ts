@@ -57,6 +57,30 @@ export async function generateTodayMission(userId: number, liteOverride?: boolea
   const { computeMissionDecision } = await import("@/server/services/priority-engine");
   const decision = await computeMissionDecision(userId);
 
+  // ── V12.1: readiness gap biases the primary skill — the engine stays the
+  // single decision-maker; an evidence-backed exam gap outranks its default
+  // rotation when one exists ─────────────────────────────────────────────────
+  let primarySkill = decision.primarySkill;
+  let readinessNote: { en: string; zh: string } | null = null;
+  try {
+    const { buildReadiness } = await import("@/server/services/readiness");
+    const { getActiveExam } = await import("@/server/current-user");
+    const exam = await getActiveExam();
+    const readiness = await buildReadiness(userId, exam);
+    if (readiness.topGap) {
+      const gapSkill = readiness.topGap.skill as typeof primarySkill;
+      if (gapSkill !== primarySkill) {
+        primarySkill = gapSkill;
+        readinessNote = {
+          en: `Your ${readiness.topGap.label.en.toLowerCase()} is the biggest gap vs your target — today leans that way.`,
+          zh: `${readiness.topGap.label.zh}是你离目标最大的差距——今天向它倾斜。`,
+        };
+      }
+    }
+  } catch {
+    /* readiness is an enhancement — never block the mission */
+  }
+
   // ── V10 planner: time budget + memory pressure shape the day's volume ────
   const { allocateBudget } = await import("@/server/services/planner");
   const { readMemoryPressure } = await import("@/server/services/planner");
@@ -69,7 +93,7 @@ export async function generateTodayMission(userId: number, liteOverride?: boolea
   const actualLite = lite ?? recommendedLength === "quick";
 
   // ── Content selection: prefer content matching the primary skill ────────
-  const primaryType = decision.primarySkill === "listening" ? "listening" : "reading";
+  const primaryType = primarySkill === "listening" ? "listening" : "reading";
   const secondaryType = primaryType === "listening" ? "reading" : "listening";
 
   const primaryContent = await pickContent(primaryType, userId);
@@ -113,7 +137,11 @@ export async function generateTodayMission(userId: number, liteOverride?: boolea
     length: recommendedLength,
     rationale: {
       ...decision.rationale,
-      planWhy: { mode: budget.mode, en: budget.whyEn, zh: budget.whyZh },
+      planWhy: {
+        mode: budget.mode,
+        en: readinessNote ? `${budget.whyEn} ${readinessNote.en}` : budget.whyEn,
+        zh: readinessNote ? `${budget.whyZh} ${readinessNote.zh}` : budget.whyZh,
+      },
     },
     reading: reading
       ? {

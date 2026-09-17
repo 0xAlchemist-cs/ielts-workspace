@@ -82,6 +82,17 @@ export async function setLearningLevelAction(level: string): Promise<void> {
   revalidatePath("/", "layout");
 }
 
+/** V12.1: IELTS target band — readiness recalculates against it; history never touched. */
+export async function setTargetBandAction(band: number | null): Promise<void> {
+  const cu = await getCurrentUser();
+  if (!cu) return;
+  const { setTargetBand } = await import("@/server/services/readiness");
+  await setTargetBand(cu.user.id, band);
+  revalidatePath("/settings");
+  revalidatePath("/profile");
+  revalidatePath("/");
+}
+
 // ── Onboarding ──────────────────────────────────────────────────────────────
 
 export async function quickStartAction(): Promise<void> {

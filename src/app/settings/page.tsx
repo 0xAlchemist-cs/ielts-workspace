@@ -14,6 +14,9 @@ export default async function SettingsPage() {
       dailyMinutes={cu.profile.dailyMinutes}
       aiStatus={getAIProviderStatus()}
       learningLevel={examConfig(cu.user.examProfile).hasCefrLayer ? cu.profile.cefr : undefined}
+      examLabel={examConfig(cu.user.examProfile).label}
+      examZh={examConfig(cu.user.examProfile).zh}
+      targetBand={cu.user.examProfile === "ielts" ? cu.profile.targetBand ?? null : null}
     />
   );
 }

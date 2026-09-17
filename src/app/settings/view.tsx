@@ -9,6 +9,7 @@ import {
   setDailyMinutesAction,
   setImmersionLevelAction,
   setLearningLevelAction,
+  setTargetBandAction,
   testAIProviderConfigAction,
 } from "@/app/actions";
 import { T } from "@/components/i18n";
@@ -282,12 +283,18 @@ export function SettingsView({
   dailyMinutes,
   aiStatus,
   learningLevel,
+  examLabel,
+  examZh,
+  targetBand,
 }: {
   userName: string;
   immersionLevel: number;
   dailyMinutes: number;
   aiStatus: AIStatus;
   learningLevel?: string; // V9: present only for the IELTS profile
+  examLabel: string; // V12.1: goal card
+  examZh: string;
+  targetBand: number | null; // IELTS only
 }) {
   const router = useRouter();
   const [pending, start] = useTransition();
@@ -309,6 +316,7 @@ export function SettingsView({
         </p>
       </header>
       {learningLevel && <LearningLevelCard level={learningLevel} />}
+      <GoalCard examLabel={examLabel} examZh={examZh} targetBand={targetBand} hasTarget={targetBand !== null || examLabel === "IELTS"} />
       <section className="card-specular rounded-card bg-surface">
         <div className="border-b border-line px-6 py-4">
           <span className="t-overline">
@@ -424,6 +432,71 @@ const LEVELS: { value: string; en: string; zh: string }[] = [
   { value: "B2", en: "B2 · Upper-intermediate — nuanced discussion", zh: "B2 · 中高级——较深入的讨论" },
   { value: "C1", en: "C1 · Advanced — precise, natural, abstract", zh: "C1 · 高级——准确、自然、抽象" },
 ];
+
+/* ── V12.1: Learning goal — exam + (IELTS) target band ──────────────────── */
+
+const BANDS = [5, 5.5, 6, 6.5, 7, 7.5, 8];
+
+function GoalCard({ examLabel, examZh, targetBand, hasTarget }: { examLabel: string; examZh: string; targetBand: number | null; hasTarget: boolean }) {
+  const router = useRouter();
+  const [pending, start] = useTransition();
+  const [picking, setPicking] = useState(false);
+
+  const pick = (band: number) => {
+    start(async () => {
+      await setTargetBandAction(band);
+      setPicking(false);
+      router.refresh();
+    });
+  };
+
+  return (
+    <section className="card-specular rounded-card bg-surface">
+      <div className="border-b border-line px-6 py-4">
+        <span className="t-overline">
+          <T en="Learning goal" zh="学习目标" />
+        </span>
+      </div>
+      <Row
+        titleEn="Exam"
+        titleZh="考试"
+        descEn="This helps us prioritize the areas that matter most for your target. Switch exams from the top bar."
+        descZh="这帮我们优先安排对你的目标最重要的内容。考试切换在顶栏。"
+      >
+        <span className="text-[15px] font-semibold text-ink">{examLabel} <span className="text-[12px] font-normal text-ink-3">{examZh}</span></span>
+      </Row>
+      {hasTarget && (
+        <Row
+          titleEn="Target band"
+          titleZh="目标分数"
+          descEn="Your readiness is compared against this target. Changing it never deletes your history — priorities just re-aim."
+          descZh="备考状态以这个目标为参照。修改不会删除历史——只是重新瞄准优先级。"
+        >
+          <button type="button" onClick={() => setPicking((p) => !p)} className={btn.secondary}>
+            <T en={targetBand != null ? `Target · ${targetBand.toFixed(1)}` : "Set target"} zh={targetBand != null ? `目标 · ${targetBand.toFixed(1)}` : "设置目标"} />
+          </button>
+        </Row>
+      )}
+      {picking && (
+        <div className="enter flex flex-wrap gap-2 px-6 pb-6">
+          {BANDS.map((b) => (
+            <button
+              key={b}
+              type="button"
+              onClick={() => pick(b)}
+              disabled={pending}
+              className={`press rounded-lg px-3.5 py-2 text-[13px] font-semibold tabular-nums transition-colors duration-150 ${
+                targetBand === b ? "bg-accent/[0.08] text-accent-text" : "bg-surface-2 text-ink-2 hover:text-ink"
+              }`}
+            >
+              {b.toFixed(1)}
+            </button>
+          ))}
+        </div>
+      )}
+    </section>
+  );
+}
 
 function LearningLevelCard({ level }: { level: string }) {
   const router = useRouter();
