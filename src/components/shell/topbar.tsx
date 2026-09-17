@@ -99,7 +99,12 @@ export function Topbar({
     if (exam === examProfile) return;
     start(async () => {
       await setExamProfileAction(exam);
-      router.refresh();
+      // context pages of the OLD exam (an open article, IELTS-only labs)
+      // must not linger after the goal changes — navigating pulls a fresh
+      // tree for the new exam; shell pages refresh in place. (Doing both
+      // raced: refresh could swallow the pending push.)
+      if (/^\/(read|listen|ielts|writing)/.test(pathname)) router.push("/");
+      else router.refresh();
     });
   };
 

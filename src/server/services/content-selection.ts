@@ -6,6 +6,7 @@ import {
   chunks as chunksT,
   contentHistory,
   contents,
+  errors as errorsT,
   learningProfiles,
   retrievalItems,
 } from "@/db/schema";
@@ -153,11 +154,14 @@ export async function selectNextContent(input: SelectionInput): Promise<Selected
   const history = new Map(historyRows.map((h) => [h.contentId, h]));
   const recent = [...historyRows].sort((a, b) => b.lastUsedAt - a.lastUsedAt).map((h) => h.contentId);
 
-  // LanguageItem value: this user's chunks sourced from pool contents whose
-  // retrieval ladder is active but not yet at retention — the §13 resurface
-  // signal (context helps weak items without a full re-read).
+  // LanguageItem value has two complementary signals (V10.1):
+  //  a) provenance — this content SOURCED the learner's mid-ladder items
+  //  b) need-overlap — the learner's live weak expressions / recurring-error
+  //     corrections occur IN THIS TEXT, so reading it reinforces them in a
+  //     fresh context. Either signal can carry the factor; neither alone is
+  //     required.
   const chunkRows = await db
-    .select({ id: chunksT.id, sourceContentId: chunksT.sourceContentId })
+    .select({ id: chunksT.id, sourceContentId: chunksT.sourceContentId, text: chunksT.text })
     .from(chunksT)
     .where(eq(chunksT.userId, userId));
   const itemStates = await db
@@ -166,12 +170,28 @@ export async function selectNextContent(input: SelectionInput): Promise<Selected
     .where(and(eq(retrievalItems.userId, userId), eq(retrievalItems.itemType, "chunk")));
   const stateByChunk = new Map(itemStates.map((s) => [s.itemId, s.learningState]));
   const weakByContent = new Map<number, number>();
+  const weakNeedTexts: string[] = [];
   for (const ch of chunkRows) {
-    if (ch.sourceContentId == null) continue;
     const st = stateByChunk.get(ch.id)?.state;
-    if (!st || st === "exposure" || st === "understanding" || st === "retention") continue;
-    weakByContent.set(ch.sourceContentId, (weakByContent.get(ch.sourceContentId) ?? 0) + 1);
+    const midLadder = st && st !== "exposure" && st !== "understanding" && st !== "retention";
+    if (!midLadder) continue;
+    if (ch.sourceContentId != null) {
+      weakByContent.set(ch.sourceContentId, (weakByContent.get(ch.sourceContentId) ?? 0) + 1);
+    }
+    if (ch.text.length >= 4) weakNeedTexts.push(ch.text);
   }
+  const activeErrors = await db
+    .select({ correctForm: errorsT.correctForm })
+    .from(errorsT)
+    .where(and(eq(errorsT.userId, userId), eq(errorsT.status, "active")));
+  for (const e of activeErrors) {
+    const form = e.correctForm.trim();
+    if (form.length >= 4) weakNeedTexts.push(form); // short forms ("at") would match everywhere
+  }
+  const needHits = (body: string): number => {
+    const lower = body.toLowerCase();
+    return weakNeedTexts.reduce((n, t) => (lower.includes(t.toLowerCase()) ? n + 1 : n), 0);
+  };
 
   // Anti-repeat with graduated relaxation: exclude last-3 → last-2 → last-1 →
   // allow repeat. A single-content pool re-uses that content (never null).
@@ -196,7 +216,9 @@ export async function selectNextContent(input: SelectionInput): Promise<Selected
     const ielts = c.ieltsRelevance / 5;
     const times = history.get(c.id)?.timesUsed ?? 0;
     const novelty = times === 0 ? 1 : times === 1 ? 0.5 : 0.15;
-    const itemValue = Math.min(1, (weakByContent.get(c.id) ?? 0) / 5);
+    // provenance (weakByContent) OR in-text need-overlap — either reinforces
+    const hits = needHits(c.body);
+    const itemValue = Math.min(1, Math.max((weakByContent.get(c.id) ?? 0) / 5, hits / 3));
     const missionRel = input.topics?.includes(c.topic) ? 1 : 0.3;
     let score =
       0.3 * skillMatch + 0.2 * cefrMatch + 0.15 * ielts + 0.15 * novelty + 0.1 * itemValue + 0.1 * missionRel;
@@ -222,8 +244,11 @@ export async function selectNextContent(input: SelectionInput): Promise<Selected
         ? "reviewable"
         : "completed"
       : "in_progress";
+  const pickHits = needHits(pick.c.body);
   const reason = !h
-    ? "fresh content"
+    ? pickHits > 0
+      ? `need overlap — ${pickHits} weak expression${pickHits > 1 ? "s" : ""}/error form${pickHits > 1 ? "s" : ""} occur in this text`
+      : "fresh content"
     : weak > 0
       ? `resurfaced context — ${weak} active item${weak > 1 ? "s" : ""} benefit from it`
       : h.completionStatus === "completed"
@@ -237,14 +262,19 @@ export async function selectNextContent(input: SelectionInput): Promise<Selected
         en: `At your level, and it naturally re-uses ${weak} expression${weak > 1 ? "s" : ""} you're still learning.`,
         zh: `符合你的水平，还能让正在学的 ${weak} 个表达自然地再出现。`,
       }
-    : !h
+    : pickHits > 0
       ? {
-          en: `New to you${d === 0 ? " and right at your level" : d === 1 ? ", one gentle step from your level" : ""}.`,
-          zh: `你还没读过${d === 0 ? "，而且正合你的水平" : d === 1 ? "，难度只差一步" : ""}。`,
+          en: `At your level${d === 0 ? "" : d === 1 ? " (a gentle step)" : ""}, and it contains ${pickHits} expression${pickHits > 1 ? "s" : ""} you're currently weak on.`,
+          zh: `符合你的水平${d === 1 ? "（难度差一步）" : ""}，还包含你正在巩固的 ${pickHits} 个表达。`,
         }
-      : h.completionStatus === "completed"
-        ? { en: "You finished it before — a second pass cements it.", zh: "你之前读完过——再过一遍会更牢。" }
-        : { en: "You started it — a natural place to continue.", zh: "你读到一半——正好接着读。" };
+      : !h
+        ? {
+            en: `New to you${d === 0 ? " and right at your level" : d === 1 ? ", one gentle step from your level" : ""}.`,
+            zh: `你还没读过${d === 0 ? "，而且正合你的水平" : d === 1 ? "，难度只差一步" : ""}。`,
+          }
+        : h.completionStatus === "completed"
+          ? { en: "You finished it before — a second pass cements it.", zh: "你之前读完过——再过一遍会更牢。" }
+          : { en: "You started it — a natural place to continue.", zh: "你读到一半——正好接着读。" };
 
   return { content: pick.c, status, score: Math.round(pick.score * 1000) / 1000, fallbackLevel, reason, reasonHuman };
 }
