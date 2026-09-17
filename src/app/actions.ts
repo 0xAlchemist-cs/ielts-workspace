@@ -17,6 +17,7 @@ import {
   retrievalItems,
 } from "@/db/schema";
 import { getActiveExam, getCurrentUser, setActiveExam } from "@/server/current-user";
+import { isExamProfile } from "@/lib/exam-profiles";
 import { generateTodayMission, getTodayMission, markStepDone, toggleTodayLite } from "@/server/services/mission";
 import { contentFingerprint, markContentCompleted, markContentUsed } from "@/server/services/content-selection";
 import { recordEvent } from "@/server/services/progress";
@@ -40,7 +41,7 @@ import type { CEFR, ErrorCategory } from "@/lib/types";
 // ── Immersion level (topbar quick switch) ──────────────────────────────────
 
 export async function setExamProfileAction(exam: string): Promise<void> {
-  if (exam !== "ielts" && exam !== "cet4" && exam !== "cet6") return;
+  if (!isExamProfile(exam)) return;
   await setActiveExam(exam);
   revalidatePath("/", "layout");
 }

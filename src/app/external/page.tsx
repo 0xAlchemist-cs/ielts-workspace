@@ -6,6 +6,7 @@ import { getOrCreateTodayMission } from "@/server/services/mission";
 import { getTodaysExpression } from "@/server/services/todays-expression";
 import { buildLearningMemory } from "@/server/services/learning-memory";
 import { personalizeSpeakingTask, speakingTaskFor } from "@/lib/ai/prompts/speaking-tasks";
+import { examConfig } from "@/lib/exam-profiles";
 import { EXTERNAL_COACHES } from "@/lib/external-coaches";
 import { ExternalCoachView } from "./view";
 
@@ -24,7 +25,7 @@ export default async function ExternalPage() {
   // level and the learner's current weak expression; V11: learning memory
   // biases the question type (recognise-but-not-produce → reason questions)
   let speaking: { level: string; focusEn: string; focusZh: string; prompt: string; weakExpression: string | null } | null = null;
-  if (cu.user.examProfile === "ielts") {
+  if (examConfig(cu.user.examProfile).hasSpeakingCoach) {
     const [expr, memory] = await Promise.all([
       getTodaysExpression(cu.user.id),
       buildLearningMemory(cu.user.id),

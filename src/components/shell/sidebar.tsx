@@ -20,6 +20,7 @@ import {
   TrendingUp,
 } from "lucide-react";
 import { T } from "@/components/i18n";
+import { lockedRouteOwner } from "@/lib/exam-profiles";
 import type { LucideIcon } from "lucide-react";
 
 /* ── Sidebar — four places, then everything else folded away ────────────────
@@ -30,7 +31,7 @@ import type { LucideIcon } from "lucide-react";
 
 type Item = { href: string; en: string; zh: string; icon: LucideIcon };
 
-const PRIMARY: (Item & { ieltsOnly?: boolean })[] = [
+const PRIMARY: Item[] = [
   { href: "/", en: "Today", zh: "今日", icon: Target },
   { href: "/review", en: "Practice", zh: "练习", icon: RotateCcw },
   { href: "/library", en: "Library", zh: "内容库", icon: BookOpen },
@@ -38,11 +39,11 @@ const PRIMARY: (Item & { ieltsOnly?: boolean })[] = [
   { href: "/profile", en: "Progress", zh: "进步", icon: TrendingUp },
 ];
 
-const MORE: (Item & { ieltsOnly?: boolean })[] = [
-  { href: "/writing", en: "Writing", zh: "写作", icon: PenLine, ieltsOnly: true },
+const MORE: Item[] = [
+  { href: "/writing", en: "Writing", zh: "写作", icon: PenLine },
   { href: "/external", en: "Speaking", zh: "口语", icon: Mic },
-  { href: "/ielts", en: "IELTS", zh: "雅思练习", icon: GraduationCap, ieltsOnly: true },
-  { href: "/ielts/mock", en: "Mock exam", zh: "全真模考", icon: ClipboardCheck, ieltsOnly: true },
+  { href: "/ielts", en: "IELTS", zh: "雅思练习", icon: GraduationCap },
+  { href: "/ielts/mock", en: "Mock exam", zh: "全真模考", icon: ClipboardCheck },
   { href: "/errors", en: "Mistakes", zh: "惯犯错误", icon: CircleAlert },
   { href: "/chunks", en: "Language", zh: "语言库", icon: Layers },
   { href: "/lab", en: "AI Lab", zh: "AI 实验室", icon: Sparkles },
@@ -70,10 +71,14 @@ export function Sidebar({
   onNavigate: () => void;
 }) {
   const pathname = usePathname();
-  // IELTS-format engines (writing tasks, IELTS practice, mock) have no CET
+  // exam-locked engine routes (writing tasks, IELTS practice, mock) have no CET
   // counterpart yet — hiding beats faking. Reading/Listening/Practice/Language
   // are exam-agnostic environments fed by the active profile's corpus.
-  const more = MORE.filter((m) => !m.ieltsOnly || examProfile === "ielts");  const itemCls = (active: boolean, secondary: boolean) =>
+  const more = MORE.filter((m) => {
+    const owner = lockedRouteOwner(m.href);
+    return owner === null || owner === examProfile;
+  });
+  const itemCls = (active: boolean, secondary: boolean) =>
     `press mb-0.5 flex items-center gap-3 rounded-[11px] transition-colors duration-150 ${
       collapsed ? "justify-center px-0 py-[12px]" : "px-3 py-[10px]"
     } ${secondary ? "text-[13px]" : "text-[14px]"} ${

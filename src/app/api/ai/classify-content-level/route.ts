@@ -5,6 +5,7 @@ import { contents as contentsT } from "@/db/schema";
 import { getUserIdOrNull, getActiveExam } from "@/server/current-user";
 import { getProvider } from "@/lib/ai";
 import { isLiveConfigured } from "@/lib/ai";
+import { examConfig } from "@/lib/exam-profiles";
 import { badRequest, readJsonBody } from "@/lib/request";
 
 /** POST /api/ai/classify-content-level — IELTS-only (V9): classify a stored
@@ -16,7 +17,7 @@ export async function POST(req: Request) {
   const userId = await getUserIdOrNull();
   if (!userId) return NextResponse.json({ error: "no user" }, { status: 401 });
   const exam = await getActiveExam();
-  if (exam !== "ielts") {
+  if (!examConfig(exam).hasContentClassifier) {
     return badRequest("Difficulty analysis is part of the IELTS learning layer.");
   }
   if (!isLiveConfigured()) {

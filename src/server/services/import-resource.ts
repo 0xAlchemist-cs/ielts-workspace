@@ -6,6 +6,7 @@ import { db } from "@/db";
 import { chunks, contents as contentsT, contentHistory, importedResources, sentences } from "@/db/schema";
 import { getActiveExam } from "@/server/current-user";
 import { getProvider, isLiveConfigured } from "@/lib/ai";
+import { examConfig } from "@/lib/exam-profiles";
 import { contentFingerprint } from "@/server/services/content-selection";
 import { analyzeContent } from "@/server/services/content-analysis";
 import {
@@ -290,7 +291,7 @@ async function importFileInner(
     // The local heuristic estimate below (analysis.cefr) participates in
     // ranking ONLY — the UI never displays an unanalyzed level. ────────────
     let level: string | undefined;
-    if (exam === "ielts" && isLiveConfigured()) {
+    if (examConfig(exam).hasContentClassifier && isLiveConfigured()) {
       try {
         const provider = getProvider();
         if (provider.classifyContentLevel) {

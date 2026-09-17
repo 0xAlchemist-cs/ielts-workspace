@@ -4,6 +4,7 @@
  * schemas stay identical across exams, so parsing/validation never branches. */
 
 import type { ExamProfile } from "@/lib/exam-profiles";
+import { examConfig } from "@/lib/exam-profiles";
 import { CET4_PROMPT, CET6_PROMPT, IELTS_PROMPT } from "./profiles";
 
 export const BASE_PROMPT_RULES = `
@@ -16,7 +17,7 @@ Honesty rules (always):
 export function examPromptProfile(exam: ExamProfile): string {
   const focus =
     exam === "cet4" ? CET4_PROMPT : exam === "cet6" ? CET6_PROMPT : IELTS_PROMPT;
-  return `The learner's goal: ${exam === "ielts" ? "IELTS" : exam === "cet4" ? "CET-4 (College English Test Band 4)" : "CET-6 (College English Test Band 6)"}.
+  return `The learner's goal: ${examConfig(exam).longLabel}.
 ${focus}
 ${BASE_PROMPT_RULES}`;
 }

@@ -61,11 +61,15 @@ export function LibraryView({
   imports,
   importSummary,
   userLevel,
+  examSuffix,
+  examSuffixZh,
 }: {
   contents: Item[];
   imports: import("./imports-manager").ImportRow[];
   importSummary: { total: number; ready: number; needsAttention: number };
   userLevel?: string; // V9: IELTS-only difficulty layer
+  examSuffix?: string; // V12: exam name for CET goals ("CET-4"); IELTS stays quiet
+  examSuffixZh?: string;
 }) {
   const bilingual = useBilingual();
   const [tab, setTab] = useState<Tab>("library");
@@ -103,8 +107,8 @@ export function LibraryView({
           </h1>
           <p className="mt-1.5 text-[13px] text-ink-2">
             <T
-              en="Bring your English materials — we'll turn them into learning."
-              zh="带上你的英语材料——我们把它变成能学的东西。"
+              en={`Bring your English materials — we'll turn them into learning.${examSuffix ? ` Adding to ${examSuffix}.` : ""}`}
+              zh={`带上你的英语材料——我们把它变成能学的东西。${examSuffixZh ? `当前加入：${examSuffixZh}。` : ""}`}
             />
           </p>
         </div>

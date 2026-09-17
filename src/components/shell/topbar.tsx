@@ -7,21 +7,21 @@ import { Menu, Settings, User } from "lucide-react";
 import { setExamProfileAction, setImmersionLevelAction } from "@/app/actions";
 import { T, useImmersion } from "@/components/i18n";
 import { ThemeToggle, applyFontZoom, FONT_ZOOM_STEPS } from "@/components/theme";
-import { EXAM_PROFILES, type ExamProfile } from "@/lib/exam-profiles";
+import { EXAM_PROFILES, lockedRouteOwner, type ExamProfile } from "@/lib/exam-profiles";
 
 /* ── Top Bar — one line of wayfinding; chrome, not content ───────────────────
  * The active exam goal always sits at the left: switching it switches the
  * whole workspace (corpus, memory, missions) — it must never be hidden. */
 
-const SECTION_MAP: { match: (p: string) => boolean; en: string; zh: string; ieltsOnly?: boolean }[] = [
+const SECTION_MAP: { match: (p: string) => boolean; en: string; zh: string }[] = [
   { match: (p) => p === "/", en: "Today", zh: "今日" },
   { match: (p) => p.startsWith("/welcome"), en: "Welcome", zh: "开始" },
   { match: (p) => p.startsWith("/library"), en: "Library", zh: "内容库" },
   { match: (p) => p.startsWith("/read"), en: "Reading", zh: "阅读" },
   { match: (p) => p.startsWith("/listen"), en: "Listening", zh: "听力" },
-  { match: (p) => p.startsWith("/writing"), en: "Writing", zh: "写作", ieltsOnly: true },
-  { match: (p) => p.startsWith("/ielts/mock"), en: "Mock exam", zh: "全真模考", ieltsOnly: true },
-  { match: (p) => p.startsWith("/ielts"), en: "IELTS", zh: "雅思练习", ieltsOnly: true },
+  { match: (p) => p.startsWith("/writing"), en: "Writing", zh: "写作" },
+  { match: (p) => p.startsWith("/ielts/mock"), en: "Mock exam", zh: "全真模考" },
+  { match: (p) => p.startsWith("/ielts"), en: "IELTS", zh: "雅思练习" },
   { match: (p) => p.startsWith("/review"), en: "Practice", zh: "练习" },
   { match: (p) => p.startsWith("/memory"), en: "Memory", zh: "学习记忆" },
   { match: (p) => p.startsWith("/chunks"), en: "Language", zh: "语言库" },
@@ -109,7 +109,8 @@ export function Topbar({
     });
   };
 
-  const section = SECTION_MAP.find((s) => s.match(pathname) && !(s.ieltsOnly && examProfile !== "ielts"));
+  const owner = lockedRouteOwner(pathname);
+  const section = SECTION_MAP.find((s) => s.match(pathname) && (owner === null || owner === examProfile));
 
   // slider position = nearest preset step; dragging previews live, snaps to step
   const zoomIndex = (() => {

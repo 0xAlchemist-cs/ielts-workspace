@@ -10,6 +10,7 @@ import { getDashboardStats, getTodayEvidence, getReturningToday } from "@/server
 import { getTodaysExpression } from "@/server/services/todays-expression";
 import { T } from "@/components/i18n";
 import { ExpressionAudio } from "@/components/expression-audio";
+import { examConfig } from "@/lib/exam-profiles";
 import { LiteToggle } from "./lite-toggle";
 import { plural } from "@/lib/plural";
 import type { MissionPlan } from "@/lib/types";
@@ -208,7 +209,14 @@ export default async function HomePage() {
       <section className="card-specular rounded-card bg-surface p-6 sm:p-8">
         <div className="flex items-center justify-between gap-3">
           <span className="t-section">
-            <T en="Today's practice" zh="今日练习" />
+            {cu.user.examProfile === "ielts" ? (
+              <T en="Today's practice" zh="今日练习" />
+            ) : (
+              <T
+                en={`Today's ${examConfig(cu.user.examProfile).label} practice`}
+                zh={`今日 ${examConfig(cu.user.examProfile).zh}练习`}
+              />
+            )}
           </span>
           <LiteToggle lite={!!plan.lite} />
         </div>

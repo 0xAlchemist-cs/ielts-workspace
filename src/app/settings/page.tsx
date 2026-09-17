@@ -1,5 +1,6 @@
 import { requireUser } from "@/server/current-user";
 import { getAIProviderStatus } from "@/lib/ai";
+import { examConfig } from "@/lib/exam-profiles";
 import { SettingsView } from "./view";
 
 /* ── Settings — appearance, language, rhythm, AI provider. Nothing else. ──── */
@@ -12,7 +13,7 @@ export default async function SettingsPage() {
       immersionLevel={cu.profile.immersionLevel}
       dailyMinutes={cu.profile.dailyMinutes}
       aiStatus={getAIProviderStatus()}
-      learningLevel={cu.user.examProfile === "ielts" ? cu.profile.cefr : undefined}
+      learningLevel={examConfig(cu.user.examProfile).hasCefrLayer ? cu.profile.cefr : undefined}
     />
   );
 }

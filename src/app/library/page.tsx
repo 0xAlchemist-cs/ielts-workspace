@@ -3,6 +3,7 @@ import { contents } from "@/db/schema";
 import { requireUser } from "@/server/current-user";
 import { isReadableContent } from "@/server/services/content-selection";
 import { importSummary, listImports } from "@/server/services/import-resource";
+import { examConfig } from "@/lib/exam-profiles";
 import { LibraryView } from "./view";
 
 export default async function LibraryPage() {
@@ -41,7 +42,9 @@ export default async function LibraryPage() {
       }))}
       imports={imports}
       importSummary={summary}
-      userLevel={cu.user.examProfile === "ielts" ? cu.profile.cefr : undefined}
+      userLevel={examConfig(cu.user.examProfile).hasCefrLayer ? cu.profile.cefr : undefined}
+      examSuffix={cu.user.examProfile === "ielts" ? undefined : examConfig(cu.user.examProfile).label}
+      examSuffixZh={cu.user.examProfile === "ielts" ? undefined : examConfig(cu.user.examProfile).zh}
     />
   );
 }
