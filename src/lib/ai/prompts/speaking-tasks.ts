@@ -7,6 +7,9 @@ export interface SpeakingTask {
   focusEn: string;
   focusZh: string;
   questions: string[];
+  /** per-question tag so memory can bias selection (V11): reason-type tasks
+   * push producing explanations when the learner recognises but can't produce */
+  tags?: ("reason" | "describe" | "argue")[];
 }
 
 const TASKS: Record<string, SpeakingTask> = {
@@ -27,6 +30,7 @@ const TASKS: Record<string, SpeakingTask> = {
       "Describe a trip that taught you something. What happened?",
       "Do you prefer studying alone or with others? Explain why.",
     ],
+    tags: ["reason", "describe", "reason"],
   },
   B2: {
     focusEn: "Argue a position with reasons, comparisons, and consequences.",
@@ -53,10 +57,20 @@ export function speakingTaskFor(level: string): SpeakingTask {
 }
 
 /** Weave the day's question with the learner's weak expression — an
- * invitation, never an order ("try to use it if it fits"). */
-export function personalizeSpeakingTask(task: SpeakingTask, weakExpression: string | null | undefined = null): string {
+ * invitation, never an order ("try to use it if it fits"). When memory says
+ * the learner recognises-but-cannot-produce, prefer a reason-type question
+ * (producing explanations is exactly the gap). */
+export function personalizeSpeakingTask(
+  task: SpeakingTask,
+  weakExpression: string | null | undefined = null,
+  preferTag?: "reason" | "describe" | "argue",
+): string {
   const dayIndex = Math.floor(Date.now() / 86_400_000);
-  const q = task.questions[dayIndex % task.questions.length];
+  let q = task.questions[dayIndex % task.questions.length];
+  if (preferTag && task.tags) {
+    const idx = task.tags.findIndex((t, i) => t === preferTag && i < task.questions.length);
+    if (idx >= 0) q = task.questions[idx];
+  }
   return weakExpression
     ? `${q}\n\nTry to naturally use "${weakExpression}" if it fits your answer.`
     : q;

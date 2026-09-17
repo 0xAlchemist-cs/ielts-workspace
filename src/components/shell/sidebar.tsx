@@ -4,6 +4,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import {
   BookOpen,
+  Brain,
   CircleAlert,
   ClipboardCheck,
   GraduationCap,
@@ -29,10 +30,11 @@ import type { LucideIcon } from "lucide-react";
 
 type Item = { href: string; en: string; zh: string; icon: LucideIcon };
 
-const PRIMARY: Item[] = [
+const PRIMARY: (Item & { ieltsOnly?: boolean })[] = [
   { href: "/", en: "Today", zh: "今日", icon: Target },
   { href: "/review", en: "Practice", zh: "练习", icon: RotateCcw },
   { href: "/library", en: "Library", zh: "内容库", icon: BookOpen },
+  { href: "/memory", en: "Memory", zh: "学习记忆", icon: Brain },
   { href: "/profile", en: "Progress", zh: "进步", icon: TrendingUp },
 ];
 

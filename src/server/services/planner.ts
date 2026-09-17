@@ -185,10 +185,32 @@ export async function readMemoryPressure(userId: number): Promise<{ pressure: Me
   };
 }
 
-/** Full plan assembly — one call for the mission generator and the UI. */
+/** Full plan assembly — one call for the mission generator and the UI.
+ * V11: when learning memory shows a supported pattern, the plan's why-line
+ * says so (budget numbers stay evidence-driven exactly as in V10). */
 export async function buildDailyPlan(userId: number): Promise<{ budget: TimeBudget; tomorrow: TomorrowProjection }> {
   const { pressure, dailyMinutes } = await readMemoryPressure(userId);
-  const budget = allocateBudget(dailyMinutes, pressure);
+  let budget = allocateBudget(dailyMinutes, pressure);
+
+  try {
+    const { buildLearningMemory } = await import("@/server/services/learning-memory");
+    const memory = await buildLearningMemory(userId);
+    if (memory.patterns.some((p) => p.patternId === "fade_after_gap")) {
+      budget = {
+        ...budget,
+        whyEn: `${budget.whyEn} You tend to need one more pass after a break, so today leans toward keeping things fresh.`,
+        whyZh: `${budget.whyZh} 你隔段时间常需要再过一遍，所以今天偏向保温。`,
+      };
+    } else if (memory.patterns.some((p) => p.patternId === "writing_helps")) {
+      budget = {
+        ...budget,
+        whyEn: `${budget.whyEn} Writing helps your expressions stick — today's transfer step is worth finishing.`,
+        whyZh: `${budget.whyZh} 写一遍对你的记忆更牢——今天的迁移步骤值得完成。`,
+      };
+    }
+  } catch {
+    /* memory is an enhancement — never block the plan */
+  }
 
   const t0 = new Date();
   t0.setHours(0, 0, 0, 0);

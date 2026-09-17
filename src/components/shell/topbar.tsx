@@ -23,6 +23,7 @@ const SECTION_MAP: { match: (p: string) => boolean; en: string; zh: string; ielt
   { match: (p) => p.startsWith("/ielts/mock"), en: "Mock exam", zh: "全真模考", ieltsOnly: true },
   { match: (p) => p.startsWith("/ielts"), en: "IELTS", zh: "雅思练习", ieltsOnly: true },
   { match: (p) => p.startsWith("/review"), en: "Practice", zh: "练习" },
+  { match: (p) => p.startsWith("/memory"), en: "Memory", zh: "学习记忆" },
   { match: (p) => p.startsWith("/chunks"), en: "Language", zh: "语言库" },
   { match: (p) => p.startsWith("/lab"), en: "AI Lab", zh: "AI 实验室" },
   { match: (p) => p.startsWith("/errors"), en: "Mistakes", zh: "惯犯错误" },
