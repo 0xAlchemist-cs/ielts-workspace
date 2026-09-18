@@ -21,50 +21,20 @@ import {
 import type { AIProvider, ContentLevelInput, ContentLevelResult } from "@/lib/ai/provider";
 import type { DrillSet, ParaphraseFeedback, RetrievalGrade, SentenceAnalysis, SpeakingFeedback, TutorReply, WordAnalysis, WritingFeedback } from "@/lib/types";
 import { getActiveExam } from "@/server/current-user";
-import { examPromptProfile } from "@/lib/ai/prompts";
-import { IELTS_CONTENT_LEVEL_PROMPT } from "@/lib/ai/prompts/ielts-content-level";
-import { CET_WRITING_FEEDBACK_PROMPT } from "@/lib/ai/prompts/cet-writing-feedback";
+import { resolvePrompt } from "@/lib/ai/registry";
+import { db } from "@/db";
+import { users, learningProfiles } from "@/db/schema";
+import { eq } from "drizzle-orm";
 
-type TaskName =
-  | "word"
-  | "sentence"
-  | "retrieval"
-  | "speaking"
-  | "writing"
-  | "paraphrase"
-  | "tutor"
-  | "drills"
-  | "classifyContentLevel"
-  | "cetWritingFeedback";
+type TaskName = Parameters<typeof resolvePrompt>[0]["task"];
 
-const PROMPTS: Record<TaskName, string> = {
-  word: WORD_PROMPT,
-  sentence: SENTENCE_PROMPT,
-  retrieval: RETRIEVAL_PROMPT,
-  speaking: SPEAKING_PROMPT,
-  writing: WRITING_PROMPT,
-  paraphrase: PARAPHRASE_PROMPT,
-  tutor: TUTOR_PROMPT,
-  drills: DRILL_PROMPT,
-  classifyContentLevel: IELTS_CONTENT_LEVEL_PROMPT,
-  cetWritingFeedback: CET_WRITING_FEEDBACK_PROMPT,
-};
-
-/* Coaching/analysis tasks learn the learner's exam goal (V8) so selection
- * priorities match; grading/drilling tasks stay exam-neutral (their output
- * shape is fixed and objective). */
-const EXAM_AWARE: Partial<Record<TaskName, boolean>> = {
-  word: true,
-  sentence: true,
-  tutor: true,
-  paraphrase: true,
-  speaking: true,
-  writing: true,
-};
+/* V13: The old PROMPTS map + EXAM_AWARE injection are replaced by the Prompt
+ * Registry + Resolver (src/lib/ai/registry.ts). chatJSON calls resolvePrompt
+ * which composes Module + Exam + CEFR + Base (with injection guard). */
 
 /** Long-JSON tasks (sentence 8-dim, full essay marking) regularly exceed the
- *  default on flash-tier models — give them room instead of degrading to
- *  template output after a minute. */
+ * default on flash-tier models — give them room instead of degrading to
+ * template output after a minute. */
 const TASK_TIMEOUT_MS: Partial<Record<TaskName, number>> = {
   sentence: 150_000,
   writing: 180_000,
@@ -83,42 +53,73 @@ export class OpenAICompatProvider implements AIProvider {
   ) {}
 
   private async chatJSON(task: TaskName, payload: unknown): Promise<unknown> {
-    let system = PROMPTS[task];
-    if (EXAM_AWARE[task]) {
-      const exam = await getActiveExam();
-      system = `${system}\n\n---\n${examPromptProfile(exam)}`;
-    }
+    // V13: Prompt Resolver composes Module + Exam + CEFR + Base (with injection guard)
+    const exam = await getActiveExam();
+    let cefr: string | null = null;
+    try {
+      const [p] = await db
+        .select({ cefr: learningProfiles.cefr })
+        .from(learningProfiles)
+        .innerJoin(users, eq(users.id, learningProfiles.userId))
+        .where(eq(users.examProfile, exam))
+        .limit(1);
+      cefr = p?.cefr ?? null;
+    } catch { /* profile lookup is best-effort */ }
+    const resolved = resolvePrompt({ task, exam, cefr });
+    const system = resolved.systemPrompt;
+
     const url = `${this.baseUrl.replace(/\/+$/, "")}/chat/completions`;
-    const res = await fetch(url, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${this.apiKey}`,
-      },
-      body: JSON.stringify({
-        model: this.model,
-        temperature: 0.4,
-        response_format: { type: "json_object" },
-        messages: [
-          { role: "system", content: system },
-          { role: "user", content: JSON.stringify(payload) },
-        ],
-      }),
-      redirect: "manual", // never follow redirects — the URL was guard-checked, a hop is not
-      signal: AbortSignal.timeout(TASK_TIMEOUT_MS[task] ?? 60_000),
-    });
-    if (!res.ok) {
-      const body = await res.text().catch(() => "");
-      throw new Error(`AI provider ${res.status}: ${body.slice(0, 300)}`);
+    const maxAttempts = 2; // one retry for transient failures (timeout / 429 / 5xx)
+    let lastError: Error | null = null;
+
+    for (let attempt = 1; attempt <= maxAttempts; attempt++) {
+      try {
+        const res = await fetch(url, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${this.apiKey}`,
+          },
+          body: JSON.stringify({
+            model: this.model,
+            temperature: 0.4,
+            response_format: { type: "json_object" },
+            messages: [
+              { role: "system", content: system },
+              { role: "user", content: JSON.stringify(payload) },
+            ],
+          }),
+          redirect: "manual", // never follow redirects — the URL was guard-checked, a hop is not
+          signal: AbortSignal.timeout(TASK_TIMEOUT_MS[task] ?? 60_000),
+        });
+        if (!res.ok) {
+          const body = await res.text().catch(() => "");
+          const err = new Error(`AI provider ${res.status}: ${body.slice(0, 300)}`);
+          // retry only transient failures; auth/validation errors fail immediately
+          (err as Error & { retryable?: boolean }).retryable =
+            res.status === 429 || res.status >= 500;
+          throw err;
+        }
+        const data = (await res.json()) as {
+          choices?: { message?: { content?: string } }[];
+        };
+        const content = data.choices?.[0]?.message?.content;
+        if (!content) throw new Error("AI provider returned an empty message");
+        // Some models wrap JSON in ```json fences — strip before parsing.
+        const cleaned = content.replace(/^```(?:json)?\s*/i, "").replace(/\s*```$/, "");
+        return JSON.parse(cleaned);
+      } catch (e) {
+        lastError = e as Error;
+        const retryable =
+          (e as Error & { retryable?: boolean }).retryable === true ||
+          (e as Error).name === "TimeoutError" ||
+          (e as Error).name === "AbortError";
+        if (!retryable || attempt === maxAttempts) throw e;
+        // brief backoff before retry
+        await new Promise((r) => setTimeout(r, 1000 * attempt));
+      }
     }
-    const data = (await res.json()) as {
-      choices?: { message?: { content?: string } }[];
-    };
-    const content = data.choices?.[0]?.message?.content;
-    if (!content) throw new Error("AI provider returned an empty message");
-    // Some models wrap JSON in ```json fences — strip before parsing.
-    const cleaned = content.replace(/^```(?:json)?\s*/i, "").replace(/\s*```$/, "");
-    return JSON.parse(cleaned);
+    throw lastError ?? new Error("AI request failed");
   }
 
   async word(input: Parameters<AIProvider["word"]>[0]): Promise<WordAnalysis> {
