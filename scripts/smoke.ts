@@ -1,6 +1,7 @@
 /** End-to-end learning-loop smoke test against the real services.
  * Creates a temporary user, walks the full loop, verifies counters, cleans up. */
 import { eq, inArray } from "drizzle-orm";
+import { pinActiveExam } from "./pin-exam";
 import { db } from "../src/db";
 import {
   chunks as chunksT,
@@ -31,7 +32,10 @@ function check(name: string, cond: boolean, extra = "") {
   else { fail++; console.log(`  ✗ FAIL: ${name} ${extra}`); }
 }
 
+let restoreExamFn: (() => Promise<void>) | null = null;
+
 async function main() {
+  restoreExamFn = await pinActiveExam("ielts");
   // ── setup temp user ──────────────────────────────────────────────────────
   const [u] = await db.insert(users).values({ name: "__smoke__" }).returning();
   const userId = u.id;
@@ -145,7 +149,8 @@ async function main() {
     await db.delete(users).where(eq(users.id, userId));
     console.log("  (smoke user cleaned up)");
   }
-  if (fail > 0) process.exit(1);
+  await restoreExamFn?.();
+  process.exit(fail > 0 ? 1 : 0);
 }
 
-main().catch((e) => { console.error(e); process.exit(1); });
+void main().catch(async (e) => { console.error(e); try { await restoreExamFn?.(); } catch {} process.exit(1); });

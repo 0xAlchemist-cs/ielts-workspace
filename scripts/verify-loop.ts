@@ -1,4 +1,5 @@
 import { and, eq } from "drizzle-orm";
+import { pinActiveExam } from "./pin-exam";
 import { db } from "../src/db";
 import {
   chunks as chunksT,
@@ -55,6 +56,7 @@ const yesterdayKey = () => {
 };
 
 async function main() {
+  const restoreExam = await pinActiveExam("ielts");
   // ── temp user ─────────────────────────────────────────────────────────────
   const [u] = await db.insert(users).values({ name: "loop-audit", createdAt: Date.now() }).returning({ id: users.id });
   const userId = u.id;
@@ -188,6 +190,6 @@ async function main() {
   await db.delete(users).where(eq(users.id, userId));
   console.log(`\n${pass} passed, ${fail} failed (audit user cleaned)`);
   if (findings.length) console.log("FINDINGS:\n" + findings.join("\n"));
-  process.exit(fail === 0 ? 0 : 1);
+  await restoreExam(); process.exit(fail === 0 ? 0 : 1);
 }
 void main();

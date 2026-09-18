@@ -1,4 +1,5 @@
 import { eq, inArray } from "drizzle-orm";
+import { pinActiveExam } from "./pin-exam";
 import { db } from "../src/db";
 import { chunks as chunksT, contentHistory, contents, learningProfiles, retrievalItems, sentences as sentencesT, users } from "../src/db/schema";
 import {
@@ -25,6 +26,7 @@ const BODY = (tag: string) =>
   `${tag} ${"The city council recently announced a new plan to improve public transport across the metropolitan area, promising faster journeys and cleaner vehicles within the next five years. ".repeat(6)}`;
 
 async function main() {
+  const restoreExam = await pinActiveExam("ielts");
   // ── setup: temp user + profile ────────────────────────────────────────────
   const [u] = await db.insert(users).values({ name: "rotation-verify", createdAt: Date.now() }).returning({ id: users.id });
   const userId = u.id;
@@ -146,6 +148,6 @@ async function main() {
   await db.delete(learningProfiles).where(eq(learningProfiles.userId, userId));
   await db.delete(users).where(eq(users.id, userId));
   console.log(`\n${pass} passed, ${fail} failed (temp data cleaned)`);
-  process.exit(fail === 0 ? 0 : 1);
+  await restoreExam(); process.exit(fail === 0 ? 0 : 1);
 }
 void main();
