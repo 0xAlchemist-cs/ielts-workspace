@@ -20,9 +20,9 @@ export async function getTodayMission(userId: number): Promise<DailyMission | nu
 
 async function pickContent(type: "reading" | "listening", userId: number, notId?: number) {
   // All content choice flows through the selection engine — rotation,
-  // cooldown, scoring and fallback live in one place.
-  const sel = await selectNextContent({ userId, skill: type, excludeContentIds: notId ? [notId] : undefined });
-  return sel?.content ?? null;
+  // cooldown, scoring and fallback live in one place. The full selection
+  // (strength label + why-line) travels with the plan, not just the content.
+  return selectNextContent({ userId, skill: type, excludeContentIds: notId ? [notId] : undefined });
 }
 
 /** Notice list: corpus chunks sourced from this content + any chunks whose
@@ -96,16 +96,18 @@ export async function generateTodayMission(userId: number, liteOverride?: boolea
   const primaryType = primarySkill === "listening" ? "listening" : "reading";
   const secondaryType = primaryType === "listening" ? "reading" : "listening";
 
-  const primaryContent = await pickContent(primaryType, userId);
+  const primarySel = await pickContent(primaryType, userId);
   // Secondary slot must differ from the primary pick when alternatives exist.
-  const secondaryContent = actualLite
+  const secondarySel = actualLite
     ? null
-    : await pickContent(secondaryType, userId, primaryContent?.id);
+    : await pickContent(secondaryType, userId, primarySel?.content.id);
 
   // Assign: primary skill gets the primary content slot
   const isPrimaryListening = primaryType === "listening";
-  const reading = isPrimaryListening ? secondaryContent : primaryContent;
-  const listening = isPrimaryListening ? primaryContent : secondaryContent;
+  const readingSel = isPrimaryListening ? secondarySel : primarySel;
+  const listeningSel = isPrimaryListening ? primarySel : secondarySel;
+  const reading = readingSel?.content ?? null;
+  const listening = listeningSel?.content ?? null;
 
   const noticeRows = reading ? await noticeChunksFor(reading.id, reading.body) : [];
   const noticeIds = noticeRows.map((c) => c.id);
@@ -149,10 +151,19 @@ export async function generateTodayMission(userId: number, liteOverride?: boolea
           title: reading.title,
           minutes: lite ? Math.max(3, Math.round(reading.minutes * 0.5)) : Math.max(5, Math.round(reading.minutes * 0.7)),
           status: "pending",
+          strength: readingSel?.strength,
+          why: readingSel?.reasonHuman,
         }
       : { contentId: 0, title: "No reading content available", minutes: 0, status: "done" },
     listening: listening
-      ? { contentId: listening.id, title: listening.title, minutes: Math.max(3, Math.round(listening.minutes * 0.7)), status: "pending" }
+      ? {
+          contentId: listening.id,
+          title: listening.title,
+          minutes: Math.max(3, Math.round(listening.minutes * 0.7)),
+          status: "pending",
+          strength: listeningSel?.strength,
+          why: listeningSel?.reasonHuman,
+        }
       : { contentId: 0, title: "Skipped — lite mode", minutes: 0, status: "skipped" },
     notice: { contentId: reading?.id ?? 0, chunkIds: noticeIds.slice(0, lite ? 5 : 8), savedCount: 0, status: "pending" },
     deep: { chunkIds: deepIds, status: lite ? "skipped" : "pending" },

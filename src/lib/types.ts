@@ -76,12 +76,18 @@ export interface MissionReadingStep {
   title: string;
   minutes: number;
   status: StepStatus;
+  /** V13.2: difficulty vs the learner's level, captured at selection time */
+  strength?: { en: string | null; zh: string | null };
+  /** V13.2: one human line about why this piece was chosen */
+  why?: { en: string; zh: string };
 }
 export interface MissionListeningStep {
   contentId: number;
   title: string;
   minutes: number;
   status: StepStatus;
+  strength?: { en: string | null; zh: string | null };
+  why?: { en: string; zh: string };
 }
 export interface MissionNoticeStep {
   contentId: number;

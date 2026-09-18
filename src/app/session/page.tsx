@@ -27,6 +27,8 @@ function buildActivities(plan: MissionPlan, examProfile: string): SessionActivit
       desc: { en: "Read naturally — no test yet.", zh: "自然地读——现在还不考你。" },
       href: `/read/${plan.reading.contentId}`,
       minutes: plan.reading.minutes || 8,
+      strength: plan.reading.strength ?? undefined,
+      why: plan.reading.why,
     });
   }
   if (!lite && plan.listening.contentId && plan.listening.status === "pending") {
@@ -36,6 +38,8 @@ function buildActivities(plan: MissionPlan, examProfile: string): SessionActivit
       desc: { en: "Listen for the overall meaning.", zh: "听大意——谁在说什么、为什么。" },
       href: `/listen/${plan.listening.contentId}`,
       minutes: plan.listening.minutes || 6,
+      strength: plan.listening.strength ?? undefined,
+      why: plan.listening.why,
     });
   }
   if (!lite && plan.notice.status === "pending") {

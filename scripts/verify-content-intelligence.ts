@@ -137,7 +137,7 @@ async function main() {
     check("C1 learner prefers C1 content", selC1?.content.cefr === "C1");
 
     // ── 6 · reasonHuman present + strength from real CEFR distance ────────
-    check("reasonHuman always present", sel1?.reasonHuman && sel1.reasonHuman.en.length > 8);
+    check("reasonHuman always present", !!(sel1?.reasonHuman && sel1.reasonHuman.en.length > 8));
     check("strength null only at ≥2 distance", !sel4a || sel4a.strength.en !== null || Math.abs(1 - 4) >= 2);
 
     // ── 7 · Exam isolation (existing, re-verified) ────────────────────────

@@ -18,6 +18,9 @@ export interface SessionActivity {
   desc: { en: string; zh: string };
   href: string;
   minutes: number;
+  /** V13.2: difficulty vs learner level + why this piece — reading/listening only */
+  strength?: { en: string | null; zh: string | null };
+  why?: { en: string; zh: string };
 }
 
 const TYPE_ICON: Record<string, typeof BookOpen> = {
@@ -84,6 +87,19 @@ export function SessionView({
           <p className="mt-2 text-[14px] leading-relaxed text-ink-2">
             <T en={current.desc.en} zh={current.desc.zh} />
           </p>
+
+          {/* V13.2: why this piece, at this level — one quiet meta line */}
+          {(current.strength?.en || current.why) && (
+            <p className="mt-3 text-[13px] leading-relaxed text-ink-3">
+              {current.strength?.en && (
+                <span className="font-medium text-ink-2">
+                  <T en={current.strength.en} zh={current.strength.zh ?? ""} />
+                </span>
+              )}
+              {current.strength?.en && current.why && " · "}
+              {current.why && <T en={current.why.en} zh={current.why.zh} />}
+            </p>
+          )}
 
           {/* primary: go do the activity in its module */}
           <a

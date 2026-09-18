@@ -72,6 +72,23 @@ async function main() {
     check("IELTS session has activities from planner", seq1.length >= 1, JSON.stringify(seq1));
     check("IELTS session includes retrieval (core activity)", seq1.includes("retrieval"));
 
+    // ── 1b · V13.2: selection labels travel with the plan (rendered on /session)
+    if (plan1.reading.contentId) {
+      check(
+        "mission stores why-this line for reading",
+        !!plan1.reading.why && plan1.reading.why.en.length > 4,
+        JSON.stringify(plan1.reading.why),
+      );
+      const s1 = plan1.reading.strength;
+      check(
+        "strength label stored (one of 3 labels, or null ≥2 levels away)",
+        !s1 || s1.en === null || ["Good fit", "Stretching you a little", "Comfortable"].includes(s1.en),
+        JSON.stringify(s1),
+      );
+    } else {
+      check("no reading content → labels absent gracefully", true);
+    }
+
     // ── 2 · Completion advances the sequence ──────────────────────────────
     const first1 = seq1[0];
     await markStepDone(u1, first1);
