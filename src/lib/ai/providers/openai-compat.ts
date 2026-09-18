@@ -15,6 +15,7 @@ import {
   writingSchema,
   drillSchema,
   contentLevelSchema,
+  cetWritingFeedbackSchema,
   DRILL_PROMPT,
 } from "@/lib/ai/tasks";
 import type { AIProvider, ContentLevelInput, ContentLevelResult } from "@/lib/ai/provider";
@@ -22,6 +23,7 @@ import type { DrillSet, ParaphraseFeedback, RetrievalGrade, SentenceAnalysis, Sp
 import { getActiveExam } from "@/server/current-user";
 import { examPromptProfile } from "@/lib/ai/prompts";
 import { IELTS_CONTENT_LEVEL_PROMPT } from "@/lib/ai/prompts/ielts-content-level";
+import { CET_WRITING_FEEDBACK_PROMPT } from "@/lib/ai/prompts/cet-writing-feedback";
 
 type TaskName =
   | "word"
@@ -32,7 +34,8 @@ type TaskName =
   | "paraphrase"
   | "tutor"
   | "drills"
-  | "classifyContentLevel";
+  | "classifyContentLevel"
+  | "cetWritingFeedback";
 
 const PROMPTS: Record<TaskName, string> = {
   word: WORD_PROMPT,
@@ -44,6 +47,7 @@ const PROMPTS: Record<TaskName, string> = {
   tutor: TUTOR_PROMPT,
   drills: DRILL_PROMPT,
   classifyContentLevel: IELTS_CONTENT_LEVEL_PROMPT,
+  cetWritingFeedback: CET_WRITING_FEEDBACK_PROMPT,
 };
 
 /* Coaching/analysis tasks learn the learner's exam goal (V8) so selection
@@ -202,5 +206,18 @@ export class OpenAICompatProvider implements AIProvider {
       summary: raw.summary,
       isMock: false,
     };
+  }
+  /** V12.2.1: CET writing/translation practice feedback — exam context in the
+   * prompt, never IELTS; output is guidance, never an official score. */
+  async cetWritingFeedback(input: { exam: "cet4" | "cet6"; section: string; prompt: string; answer: string }) {
+    const raw = cetWritingFeedbackSchema.parse(
+      await this.chatJSON("cetWritingFeedback", {
+        exam: input.exam === "cet4" ? "CET-4 (practical university English)" : "CET-6 (broader academic English)",
+        section: input.section,
+        prompt: input.prompt.slice(0, 2000),
+        answer: input.answer.slice(0, 6000),
+      }),
+    );
+    return { ...raw, isMock: false };
   }
 }

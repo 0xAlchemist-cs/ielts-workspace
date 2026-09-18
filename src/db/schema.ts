@@ -617,6 +617,30 @@ export const cetAttempts = sqliteTable(
   ],
 );
 
+/** V12.2.1: CET Exam-Mode sessions — server-clock section timing.
+ * Refresh/back/remount cannot reset or add time: all truth is here. */
+export const cetExamSessions = sqliteTable(
+  "cet_exam_sessions",
+  {
+    id: integer("id").primaryKey({ autoIncrement: true }),
+    userId: integer("user_id").notNull(),
+    exam: text("exam").$type<"cet4" | "cet6">().notNull(),
+    testMode: integer("test_mode").notNull().default(0),
+    currentSection: text("current_section").$type<"writing" | "listening" | "reading" | "translation">().notNull(),
+    examStartTime: integer("exam_start_time").notNull(),
+    sectionStartTime: integer("section_start_time"),
+    /** {section: {responses, freeText, sectionEndTime, timedOut}} */
+    answers: text("answers", { mode: "json" }).$type<Record<string, unknown>>().notNull().default({}),
+    timedOut: text("timed_out", { mode: "json" }).$type<string[]>().notNull().default([]),
+    submittedAt: integer("submitted_at"),
+    createdAt: integer("created_at").notNull().$defaultFn(() => Date.now()),
+  },
+  (t) => [
+    index("idx_cet_exam_user").on(t.userId),
+    index("idx_cet_exam_live").on(t.userId, t.submittedAt),
+  ],
+);
+
 /** One IELTS attempt with full results. */
 export const ieltsAttempts = sqliteTable(
   "ielts_attempts",

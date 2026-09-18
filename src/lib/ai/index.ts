@@ -63,6 +63,12 @@ class FallbackProvider implements AIProvider {
       () => mockProvider.classifyContentLevel!(i),
     );
   }
+  cetWritingFeedback(i: Parameters<NonNullable<AIProvider["cetWritingFeedback"]>>[0]) {
+    return this.run(
+      () => this.live.cetWritingFeedback!(i),
+      () => mockProvider.cetWritingFeedback!(i),
+    );
+  }
 }
 
 // ── Provider config: Settings-saved (DB) first, .env.local fallback ─────────

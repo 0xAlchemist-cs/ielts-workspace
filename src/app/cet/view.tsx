@@ -6,6 +6,15 @@ import { BookOpen, Check, Headphones, PenLine, RotateCcw, X } from "lucide-react
 import { T, useBilingual } from "@/components/i18n";
 import { btn } from "@/components/ui";
 import type { CetTaskRow } from "@/server/services/cet-engine";
+import { SectionTimer, type ExamSessionState } from "./timer";
+
+interface AiFeedback {
+  strengths: string[];
+  problems: string[];
+  suggestions: string[];
+  revisionTargets: string[];
+  isMock: boolean;
+}
 
 /* ── CET written-test practice shell — one task at a time, honest scoring ───
  * Learning mode: transcripts + retry. Exam mode: no hints, one submission.
@@ -39,6 +48,10 @@ export function CetPracticeView({ exam, tasks }: { exam: "cet4" | "cet6"; tasks:
   const [freeText, setFreeText] = useState("");
   const [result, setResult] = useState<GradeResult | null>(null);
   const [submitting, setSubmitting] = useState(false);
+  const [aiFeedback, setAiFeedback] = useState<AiFeedback | null>(null);
+  const [aiLoading, setAiLoading] = useState(false);
+  const [reviseText, setReviseText] = useState("");
+  const [examSession, setExamSession] = useState<ExamSessionState | null>(null);
 
   const sectionTasks = section ? tasks.filter((t) => t.section === section) : [];
   const isCet4 = exam === "cet4";
@@ -54,6 +67,26 @@ export function CetPracticeView({ exam, tasks }: { exam: "cet4" | "cet6"; tasks:
         body: JSON.stringify({ taskId: activeTask.id, mode, responses, freeText: freeText || undefined }),
       });
       setResult(await res.json());
+      // writing/translation in learning mode: fetch AI practice feedback
+      if (
+        (activeTask.section === "writing" || activeTask.section === "translation") &&
+        mode === "learning" &&
+        freeText.trim().length >= 10
+      ) {
+        setAiLoading(true);
+        try {
+          const fb = await fetch("/api/cet/writing-feedback", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ taskId: activeTask.id, answer: freeText }),
+          });
+          const fbData = await fb.json();
+          if (fbData.feedback) setAiFeedback(fbData.feedback);
+          setReviseText(freeText);
+        } finally {
+          setAiLoading(false);
+        }
+      }
     } finally {
       setSubmitting(false);
     }
@@ -64,13 +97,91 @@ export function CetPracticeView({ exam, tasks }: { exam: "cet4" | "cet6"; tasks:
     setResponses({});
     setFreeText("");
     setResult(null);
+    setAiFeedback(null);
+    setReviseText("");
   };
 
   const retry = () => {
     setResult(null);
     setResponses({});
     setFreeText("");
+    setAiFeedback(null);
+    setReviseText("");
   };
+
+  // ── Exam Mode: start/resume the DB-backed session ───────────────────────
+  const startExam = async () => {
+    const res = await fetch("/api/cet/exam", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ phase: "start", testMode: true }), // test mode for timers under 30s each
+    });
+    const data = await res.json();
+    if (data.session) {
+      setExamSession(data.session);
+      setSection(data.session.currentSection);
+      const first = tasks.find((t) => t.section === data.session.currentSection);
+      if (first) setActiveTask(first);
+      setResponses({});
+      setFreeText("");
+    }
+  };
+
+  const advanceExamSection = async (timedOut: boolean) => {
+    if (!examSession) return;
+    const res = await fetch("/api/cet/exam", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        phase: "advance",
+        sessionId: examSession.sessionId,
+        fromSection: examSession.currentSection,
+        timedOut,
+        responses,
+        freeText: freeText || undefined,
+      }),
+    });
+    const data = await res.json();
+    if (data.session) {
+      setExamSession(data.session);
+      if (data.session.submitted) {
+        setActiveTask(null);
+        return;
+      }
+      const next = tasks.find((t) => t.section === data.session.currentSection);
+      if (next) {
+        setActiveTask(next);
+        setSection(data.session.currentSection);
+        setResponses({});
+        setFreeText("");
+        setResult(null);
+      }
+    }
+  };
+
+  // ── Exam result view (all sections done) ────────────────────────────────
+  if (mode === "exam" && examSession?.submitted) {
+    return (
+      <div className="shell-wide">
+        <h1 className="text-display">{examLabel} Exam Complete</h1>
+        <p className="mt-2 text-[14px] text-ink-2">
+          <T en="All sections timed out or submitted. Your answers are saved — review them in each section." zh="所有部分已到时或提交。你的作答已保存——可回到各分区查看。" />
+        </p>
+        {examSession.timedOut.length > 0 && (
+          <p className="mt-2 text-[12.5px] text-ink-3">
+            <T en={`Timed out: ${examSession.timedOut.join(", ")}`} zh={`到时分区：${examSession.timedOut.join("、")}`} />
+          </p>
+        )}
+        <button
+          type="button"
+          onClick={() => { setExamSession(null); setMode("learning"); setSection(null); }}
+          className="press mt-5 inline-flex h-10 items-center rounded-lg bg-surface-2 px-5 text-[13.5px] font-medium text-ink-2 hover:text-ink"
+        >
+          <T en="Back to sections" zh="返回分区" />
+        </button>
+      </div>
+    );
+  }
 
   // ── task view ────────────────────────────────────────────────────────────
   if (activeTask) {
@@ -90,6 +201,13 @@ export function CetPracticeView({ exam, tasks }: { exam: "cet4" | "cet6"; tasks:
             )}
           </div>
         </header>
+
+        {/* V12.2.1: exam-mode section timer — server-clock, auto-advance at 0 */}
+        {mode === "exam" && examSession && (
+          <div className="mb-5">
+            <SectionTimer session={examSession} onExhausted={() => void advanceExamSection(true)} />
+          </div>
+        )}
 
         <div className="card-specular rounded-card bg-surface p-6 sm:p-8">
           <p className="whitespace-pre-line text-[15.5px] leading-[1.75] text-ink text-pretty">
@@ -205,8 +323,90 @@ export function CetPracticeView({ exam, tasks }: { exam: "cet4" | "cet6"; tasks:
                   <p className="mt-1.5 text-[14px] leading-[1.75] text-ink text-pretty">{activeTask.referenceAnswer}</p>
                 </div>
               )}
+
+              {/* V12.2.1: AI Practice Feedback — never an official score */}
+              {aiLoading && (
+                <div className="rounded-xl bg-surface-2 px-5 py-4">
+                  <p className="text-[13.5px] font-medium text-ink">
+                    <T en="Getting your AI practice feedback…" zh="正在生成 AI 练习反馈…" />
+                  </p>
+                </div>
+              )}
+              {aiFeedback && (
+                <div className="enter rounded-xl bg-surface-2 px-5 py-4">
+                  <p className="t-caption">
+                    <T en="AI Practice Feedback" zh="AI 练习反馈" />
+                    <span className="ml-2 font-normal normal-case tracking-normal text-ink-3">
+                      <T en="(practice guidance — not an official score)" zh="（练习指导——非官方成绩）" />
+                    </span>
+                  </p>
+                  {aiFeedback.strengths.length > 0 && (
+                    <div className="mt-2.5">
+                      <p className="text-[12px] font-semibold uppercase tracking-[0.07em] text-ok-text"><T en="Strengths" zh="做得好的" /></p>
+                      <ul className="mt-1 space-y-0.5">
+                        {aiFeedback.strengths.map((s, i) => <li key={i} className="text-[13px] leading-relaxed text-ink-2">· {s}</li>)}
+                      </ul>
+                    </div>
+                  )}
+                  {aiFeedback.problems.length > 0 && (
+                    <div className="mt-2.5">
+                      <p className="text-[12px] font-semibold uppercase tracking-[0.07em] text-warn-text"><T en="Problems" zh="问题" /></p>
+                      <ul className="mt-1 space-y-0.5">
+                        {aiFeedback.problems.map((s, i) => <li key={i} className="text-[13px] leading-relaxed text-ink-2">· {s}</li>)}
+                      </ul>
+                    </div>
+                  )}
+                  {aiFeedback.suggestions.length > 0 && (
+                    <div className="mt-2.5">
+                      <p className="text-[12px] font-semibold uppercase tracking-[0.07em] text-accent-text"><T en="Suggestions" zh="建议" /></p>
+                      <ul className="mt-1 space-y-0.5">
+                        {aiFeedback.suggestions.map((s, i) => <li key={i} className="text-[13px] leading-relaxed text-ink-2">· {s}</li>)}
+                      </ul>
+                    </div>
+                  )}
+                  {aiFeedback.revisionTargets.length > 0 && (
+                    <div className="mt-2.5">
+                      <p className="text-[12px] font-semibold uppercase tracking-[0.07em] text-ink-2"><T en="Revision targets" zh="修改目标" /></p>
+                      <ul className="mt-1 space-y-0.5">
+                        {aiFeedback.revisionTargets.map((s, i) => <li key={i} className="text-[13px] leading-relaxed text-ink-2">· {s}</li>)}
+                      </ul>
+                    </div>
+                  )}
+                  {/* Revise: apply the feedback yourself */}
+                  <p className="mt-4 t-caption"><T en="Revise — apply the targets yourself" zh="修改——自己落实这些目标" /></p>
+                  <textarea
+                    value={reviseText}
+                    onChange={(e) => setReviseText(e.target.value)}
+                    rows={6}
+                    className="input-base mt-2 w-full resize-y px-4 py-3 text-[14px]"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setFreeText(reviseText);
+                      setAiFeedback(null);
+                      setResult(null);
+                    }}
+                    disabled={reviseText.trim().length < 10}
+                    className={`${btn.primary} mt-3`}
+                  >
+                    <T en="Submit revised draft" zh="提交修改稿" />
+                  </button>
+                </div>
+              )}
+
+              {/* exam-mode advance (manual submit = move to next section) */}
+              {mode === "exam" && examSession && (
+                <button
+                  type="button"
+                  onClick={() => void advanceExamSection(false)}
+                  className={btn.primary}
+                >
+                  <T en={examSession.currentSection === "translation" ? "Submit exam" : "Submit & next section"} zh={examSession.currentSection === "translation" ? "提交整场考试" : "提交并进入下一部分"} />
+                </button>
+              )}
               <div className="flex gap-2.5">
-                {mode === "learning" && (
+                {mode === "learning" && !aiFeedback && (
                   <button type="button" onClick={retry} className={btn.primary}>
                     <T en="Try again" zh="再试一次" />
                   </button>
@@ -238,25 +438,43 @@ export function CetPracticeView({ exam, tasks }: { exam: "cet4" | "cet6"; tasks:
       </header>
 
       <div className="mb-5 flex items-center gap-2">
-        {[["learning", "Learning"], ["exam", "Exam"]].map(([m, label]) => (
-          <button
-            key={m}
-            type="button"
-            onClick={() => setMode(m as Mode)}
-            className={`press rounded-full px-4 py-1.5 text-[12.5px] font-medium transition-colors duration-150 ${
-              mode === m ? "bg-accent text-white" : "bg-surface-2 text-ink-2 hover:text-ink"
-            }`}
-          >
-            {label === "Learning" ? <T en="Learning mode" zh="学习模式" /> : <T en="Exam mode" zh="考试模式" />}
-          </button>
-        ))}
+        <button
+          type="button"
+          onClick={() => setMode("learning")}
+          className={`press rounded-full px-4 py-1.5 text-[12.5px] font-medium transition-colors duration-150 ${
+            mode === "learning" ? "bg-accent text-white" : "bg-surface-2 text-ink-2 hover:text-ink"
+          }`}
+        >
+          <T en="Learning mode" zh="学习模式" />
+        </button>
+        <button
+          type="button"
+          onClick={() => {
+            setMode("exam");
+            void startExam();
+          }}
+          className={`press rounded-full px-4 py-1.5 text-[12.5px] font-medium transition-colors duration-150 ${
+            mode === "exam" ? "bg-accent text-white" : "bg-surface-2 text-ink-2 hover:text-ink"
+          }`}
+        >
+          <T en="Exam mode (timed)" zh="考试模式（计时）" />
+        </button>
         <span className="ml-2 text-[11.5px] text-ink-3">
           {mode === "learning"
             ? <T en="transcripts + retry available" zh="可看原文、可重试" />
-            : <T en="no hints, one submission" zh="无提示、一次交卷" />}
+            : <T en={`official section order & timing · total ${exam === "cet4" ? "125" : "130"} min (shortened in this practice build)`} zh={`官方分区顺序与计时 · 共 ${exam === "cet4" ? "125" : "130"} 分钟（练习版缩短）`} />}
         </span>
       </div>
 
+      {/* exam mode = one sequential flow, no section cards */}
+      {mode === "exam" && examSession ? (
+        <div className="card-specular rounded-card bg-surface p-6">
+          <SectionTimer session={examSession} onExhausted={() => void advanceExamSection(true)} />
+          <p className="mt-4 text-[13px] leading-relaxed text-ink-2">
+            <T en="The exam runs in official section order. Each section auto-advances when its time runs out — your answers are saved as you go." zh="考试按官方分区顺序进行。每部分到时自动进入下一部分——作答全程保存。" />
+          </p>
+        </div>
+      ) : (
       <div className="grid gap-3 sm:grid-cols-2">
         {SECTIONS.map((s) => {
           const count = tasks.filter((t) => t.section === s.key).length;
@@ -292,6 +510,7 @@ export function CetPracticeView({ exam, tasks }: { exam: "cet4" | "cet6"; tasks:
           );
         })}
       </div>
+      )}
     </div>
   );
 }

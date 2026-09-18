@@ -488,4 +488,11 @@ export const mockProvider: AIProvider = {
     summary: "Offline mode — connect an AI provider for a real difficulty analysis.",
     isMock: true,
   }),
+  cetWritingFeedback: async () => ({
+    strengths: ["Your answer addresses the topic.", "Sentence variety is emerging."],
+    problems: ["Offline mode — connect an AI provider for real feedback.", "Some sentences are shorter than the task expects."],
+    suggestions: ["Add one linking word per paragraph (however, therefore, in addition).", "Aim for the task's word count."],
+    revisionTargets: ["Replace two simple verbs with more precise ones.", "Check subject-verb agreement in the last paragraph."],
+    isMock: true,
+  }),
 };

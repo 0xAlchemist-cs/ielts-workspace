@@ -76,6 +76,14 @@ export interface ContentLevelResult {
   isMock: boolean;
 }
 
+export interface CetWritingFeedback {
+  strengths: string[];
+  problems: string[];
+  suggestions: string[];
+  revisionTargets: string[];
+  isMock: boolean;
+}
+
 export interface AIProvider {
   readonly name: string;
   readonly isMock: boolean;
@@ -88,6 +96,8 @@ export interface AIProvider {
   tutor(input: TutorInput): Promise<TutorReply>;
   /** IELTS-only: classify a whole material's language difficulty (V9) */
   classifyContentLevel?(input: ContentLevelInput): Promise<ContentLevelResult>;
+  /** CET-only: writing/translation practice feedback (V12.2.1) */
+  cetWritingFeedback?(input: { exam: "cet4" | "cet6"; section: string; prompt: string; answer: string }): Promise<CetWritingFeedback>;
   /** optional — providers without live drill generation fall back to mock frames */
   drills?(input: DrillInput): Promise<DrillSet>;
 }

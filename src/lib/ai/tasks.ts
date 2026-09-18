@@ -194,6 +194,14 @@ export const contentLevelSchema = z.object({
   summary: z.string(),
 });
 
+/** V12.2.1: CET writing/translation practice feedback (raw wire shape). */
+export const cetWritingFeedbackSchema = z.object({
+  strengths: z.array(z.string()).max(5).default([]),
+  problems: z.array(z.string()).max(6).default([]),
+  suggestions: z.array(z.string()).max(6).default([]),
+  revisionTargets: z.array(z.string()).max(4).default([]),
+});
+
 export const DRILL_PROMPT = `You create parallel drills for ONE learner error — new contexts that re-test the same pattern. Given the wrong form, the correct form and a note, write THREE fill-in sentences in three DIFFERENT everyday or IELTS contexts (e.g. workplace, travel, study, daily life). Each sentence contains exactly one blank "____" placed exactly where the correct form belongs and naturally eliciting it (inflections allowed); the sentence must NOT contain the wrong form. Vary subject and tense. Reply with STRICT JSON only:
 { "items": [ { "context": "sentence with ____", "answer": "the expected correct form", "scene": "e.g. 'at the airport'" } ] }`;
 
