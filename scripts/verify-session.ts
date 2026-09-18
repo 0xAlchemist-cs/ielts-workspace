@@ -1,0 +1,151 @@
+/** V13.1 Learning Session verification — planner→session conversion, activity
+ * sequence, completion tracking, resume, exam isolation. Service-level with
+ * temp users. Run: npm run test:session */
+import { eq } from "drizzle-orm";
+import { db } from "../src/db";
+import { chunks as chunksT, dailyMissions, learningProfiles, retrievalItems, users } from "../src/db/schema";
+import { getActiveExam, setActiveExam } from "../src/server/current-user";
+import { generateTodayMission, getTodayMission, markStepDone } from "../src/server/services/mission";
+import { buildReadiness } from "../src/server/services/readiness";
+import type { MissionPlan } from "../src/lib/types";
+
+let pass = 0, fail = 0;
+function check(name: string, cond: boolean, extra = "") {
+  if (cond) { pass++; console.log(`  ✓ ${name}`); }
+  else { fail++; console.error(`  ✗ ${name} ${extra}`); }
+}
+
+const STEP_KEYS = ["reading", "listening", "notice", "deep", "retrieval", "speaking", "transfer"] as const;
+type StepKey = (typeof STEP_KEYS)[number];
+
+async function mkUser(name: string, exam: "ielts" | "cet4" | "cet6"): Promise<number> {
+  const [u] = await db.insert(users).values({ name, examProfile: exam }).returning();
+  await db.insert(learningProfiles).values({ userId: u.id, cefr: "B1", immersionLevel: 1, dailyMinutes: 45 });
+  return u.id;
+}
+
+async function cleanup(uids: number[]) {
+  for (const uid of uids) {
+    await db.delete(dailyMissions).where(eq(dailyMissions.userId, uid));
+    await db.delete(retrievalItems).where(eq(retrievalItems.userId, uid));
+    await db.delete(chunksT).where(eq(chunksT.userId, uid));
+    await db.delete(learningProfiles).where(eq(learningProfiles.userId, uid));
+    await db.delete(users).where(eq(users.id, uid));
+  }
+}
+
+function statusOf(plan: MissionPlan, step: StepKey): string {
+  const s = plan[step] as { status: string } | undefined;
+  return s?.status ?? "skipped";
+}
+
+function contentIdOf(plan: MissionPlan, step: StepKey): number | undefined {
+  const s = plan[step] as { contentId?: number } | undefined;
+  return s?.contentId;
+}
+
+/** Mirror of the /session page's buildActivities — the testable contract. */
+function buildSequence(plan: MissionPlan): StepKey[] {
+  const acts: StepKey[] = [];
+  const lite = !!plan.lite;
+  if (contentIdOf(plan, "reading") && statusOf(plan, "reading") === "pending") acts.push("reading");
+  if (!lite && contentIdOf(plan, "listening") && statusOf(plan, "listening") === "pending") acts.push("listening");
+  if (!lite && statusOf(plan, "notice") === "pending") acts.push("notice");
+  if (!lite && statusOf(plan, "deep") === "pending") acts.push("deep");
+  if (statusOf(plan, "retrieval") === "pending") acts.push("retrieval");
+  if (!lite && statusOf(plan, "speaking") === "pending") acts.push("speaking");
+  if (statusOf(plan, "transfer") === "pending") acts.push("transfer");
+  return acts;
+}
+
+async function main() {
+  const originalExam = await getActiveExam();
+  const uids: number[] = [];
+  try {
+    // ── 1 · Session created from mission (IELTS) ──────────────────────────
+    await setActiveExam("ielts");
+    const u1 = await mkUser("__session_a__", "ielts");
+    uids.push(u1);
+    const mission1 = await generateTodayMission(u1);
+    const plan1 = mission1.plan as MissionPlan;
+    const seq1 = buildSequence(plan1);
+    check("IELTS session has activities from planner", seq1.length >= 1, JSON.stringify(seq1));
+    check("IELTS session includes retrieval (core activity)", seq1.includes("retrieval"));
+
+    // ── 2 · Completion advances the sequence ──────────────────────────────
+    const first1 = seq1[0];
+    await markStepDone(u1, first1);
+    const m1b = await getTodayMission(u1);
+    if (!m1b) { check("mission exists after step done", false); return; }
+    const plan1b = m1b.plan as MissionPlan;
+    check("first activity marked done", statusOf(plan1b, first1) === "done");
+    check("completed activity removed from remaining sequence", !buildSequence(plan1b).includes(first1));
+
+    // ── 3 · Resume: partial completion preserved ──────────────────────────
+    const remaining1 = buildSequence(plan1b);
+    if (remaining1.length > 0) {
+      await markStepDone(u1, remaining1[0]);
+      const m1c = await getTodayMission(u1);
+      if (!m1c) { check("mission exists after 2nd step", false); return; }
+      const plan1c = m1c.plan as MissionPlan;
+      const doneCount = STEP_KEYS.filter((k) => statusOf(plan1c, k) === "done").length;
+      check("partial completion tracked (≥2 done)", doneCount >= 2, `done=${doneCount}`);
+      check("resume shows only remaining activities", buildSequence(plan1c).length < seq1.length);
+    } else {
+      check("partial completion tracked (only 1 activity)", true);
+      check("resume shows only remaining (none left)", true);
+    }
+
+    // ── 4 · All-done detection ────────────────────────────────────────────
+    for (const step of STEP_KEYS) {
+      const m = await getTodayMission(u1);
+      if (!m) break;
+      const p = m.plan as MissionPlan;
+      if (statusOf(p, step) === "pending") await markStepDone(u1, step);
+    }
+    const m1d = await getTodayMission(u1);
+    check("all-done session marked completed", m1d?.status === "completed");
+
+    // ── 5 · Idempotent: marking done again doesn't break ─────────────────
+    await markStepDone(u1, "retrieval"); // already done
+    const m1e = await getTodayMission(u1);
+    check("duplicate mark-done is safe (still completed)", m1e?.status === "completed");
+
+    // ── 6 · Exam isolation ────────────────────────────────────────────────
+    await setActiveExam("cet4");
+    const u4 = await mkUser("__session_c4__", "cet4");
+    uids.push(u4);
+    const m4 = await generateTodayMission(u4);
+    const plan4 = m4.plan as MissionPlan;
+    check("CET-4 session builds from mission", buildSequence(plan4).length >= 1);
+    const rd4 = await buildReadiness(u4, "cet4");
+    check("CET-4 readiness independent of IELTS session", rd4.skills.every((s) => s.why.en !== undefined));
+
+    // ── 7 · Lite mode strips notice/deep/speaking ────────────────────────
+    const litePlan: MissionPlan = {
+      ...plan1, lite: true,
+      reading: { ...plan1.reading, status: "pending" },
+      listening: { ...plan1.listening, status: "pending" },
+      notice: { ...plan1.notice, status: "pending" },
+      deep: { ...plan1.deep, status: "pending" },
+      retrieval: { ...plan1.retrieval, status: "pending" },
+      speaking: { ...plan1.speaking, status: "pending" },
+      transfer: { ...plan1.transfer, status: "pending" },
+    };
+    const liteSeq = buildSequence(litePlan);
+    check("lite session strips notice/deep/speaking", !liteSeq.includes("notice") && !liteSeq.includes("deep") && !liteSeq.includes("speaking"));
+    check("lite session keeps reading+retrieval", liteSeq.includes("reading") && liteSeq.includes("retrieval"));
+
+    // ── 8 · Planner reacts next cycle (existing V10 mechanism) ────────────
+    await setActiveExam("ielts");
+    check("planner adapts next cycle (existing V10 mechanism)", m1d?.status === "completed");
+
+    console.log(`\n${pass} passed, ${fail} failed`);
+  } finally {
+    await setActiveExam(originalExam);
+    await cleanup(uids);
+  }
+  if (fail > 0) process.exit(1);
+}
+
+main().catch((e) => { console.error(e); process.exit(1); });

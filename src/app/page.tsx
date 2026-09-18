@@ -95,7 +95,8 @@ export default async function HomePage() {
     { href: "/ielts", done: plan.transfer.status === "done", skipped: plan.transfer.status === "skipped" },
   ];
   const allDone = mission.status === "completed";
-  const startHref = allDone ? "/profile#trajectory" : (stepHrefs.find((st) => !st.done && !st.skipped)?.href ?? stepHrefs.find((st) => !st.done)?.href ?? "/review");
+  // V13.1: the session is the primary flow — one guided pass through all pending activities
+  const startHref = allDone ? "/profile#trajectory" : "/session";
   const doneCount = stepHrefs.filter((st) => st.done).length;
 
   const est =
@@ -238,9 +239,9 @@ export default async function HomePage() {
             {allDone ? (
               <T en="All done — see your progress" zh="都完成了 — 看看你的进步" />
             ) : doneCount > 0 ? (
-              <T en="Resume" zh="继续" />
+              <T en="Continue today's learning" zh="继续今天的学习" />
             ) : (
-              <T en="Start" zh="开始" />
+              <T en="Start today's learning" zh="开始今天的学习" />
             )}
             <ArrowRight size={15} strokeWidth={2} />
           </Link>
