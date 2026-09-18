@@ -36,6 +36,8 @@ export interface SelectedContent {
   reason: string;
   /** learner-facing why-this (V10 P24) — data-backed, bilingual */
   reasonHuman: { en: string; zh: string };
+  /** V13.2: strength relative to the learner's level (Good fit / Stretching) */
+  strength: { en: string | null; zh: string | null };
 }
 
 export interface SelectionInput {
@@ -227,6 +229,19 @@ export async function selectNextContent(input: SelectionInput): Promise<Selected
       if (now - h.lastUsedAt < 86_400_000) score -= 0.25; // < 1 day → cooldown
       if (h.timesUsed >= 3 && now - h.lastUsedAt < 3 * 86_400_000) score -= 0.15;
     }
+    // V13.2 topic diversity: ≥2 same-topic uses in the last 7 days → gentle
+    // fatigue penalty — but a strong learning-need (all 10% itemValue) earns
+    // its reinforcement and the penalty is waived (spec: diversity applies
+    // "where learning value is comparable")
+    const topicUses = historyRows.filter(
+      (r) => now - r.lastUsedAt < 7 * 86_400_000 && candidates.find((cc) => cc.id === r.contentId)?.topic === c.topic,
+    ).length;
+    if (topicUses >= 2 && itemValue < 0.9) score -= 0.1;
+    // V13.2 quality gate: thin/fragmented content sits lower in the pool but
+    // never blocked — manual access from the Library stays unrestricted
+    const bodyWords = c.body.split(/\s+/).length;
+    const sentenceCount = (c.body.match(/[.!?]\s/g) ?? c.body.match(/[.!?]$/g) ?? []).length;
+    if (bodyWords < 120 || sentenceCount < 5) score -= 0.15;
     return score;
   };
 
@@ -256,7 +271,15 @@ export async function selectNextContent(input: SelectionInput): Promise<Selected
         : "in progress, continuing rotation";
 
   // human why-this (V10 P24): built from the same real factors, never invented
+  // V13.2: strength label derived from CEFR distance (Good fit / Stretching)
   const d = Math.abs((CEFR_LEVEL[pick.c.cefr] ?? 4) - myLevel);
+  const strength = d === 0
+    ? { en: "Good fit", zh: "正合适" }
+    : d === 1 && (CEFR_LEVEL[pick.c.cefr] ?? 4) > myLevel
+      ? { en: "Stretching you a little", zh: "稍有挑战" }
+      : d === 1
+        ? { en: "Comfortable", zh: "轻松复习" }
+        : { en: null as string | null, zh: null as string | null };
   const reasonHuman: { en: string; zh: string } = weak > 0
     ? {
         en: `At your level, and it naturally re-uses ${weak} expression${weak > 1 ? "s" : ""} you're still learning.`,
@@ -276,5 +299,5 @@ export async function selectNextContent(input: SelectionInput): Promise<Selected
           ? { en: "You finished it before — a second pass cements it.", zh: "你之前读完过——再过一遍会更牢。" }
           : { en: "You started it — a natural place to continue.", zh: "你读到一半——正好接着读。" };
 
-  return { content: pick.c, status, score: Math.round(pick.score * 1000) / 1000, fallbackLevel, reason, reasonHuman };
+  return { content: pick.c, status, score: Math.round(pick.score * 1000) / 1000, fallbackLevel, reason, reasonHuman, strength };
 }
