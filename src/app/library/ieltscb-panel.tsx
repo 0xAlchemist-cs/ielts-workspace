@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { Check, CircleAlert, CircleCheck, ExternalLink, Globe, Loader2, TriangleAlert } from "lucide-react";
 import { T } from "@/components/i18n";
 import { toast } from "@/components/motion";
+import { IELTSCB_READING_URL } from "@/lib/external-coaches";
 
 /* ── Import from IELTSCB — paste a Reading report URL; the deterministic
  *    parser fetches the structured report (official questions, your answers,
@@ -133,7 +134,7 @@ export function IeltscbImport() {
       <div className="mt-3.5 flex flex-wrap items-center gap-x-2 gap-y-1.5 rounded-lg bg-surface-2 px-3 py-2 text-[12px] text-ink-2">
         <span className="flex items-center gap-1.5">
           <span className="flex h-[18px] w-[18px] items-center justify-center rounded-full bg-accent/10 text-[10.5px] font-semibold text-accent-text">1</span>
-          <a href="https://www.ieltscb.com/" target="_blank" rel="noreferrer" className="press font-medium text-accent-text underline decoration-accent/30 underline-offset-2">
+          <a href={IELTSCB_READING_URL} target="_blank" rel="noopener noreferrer" className="press font-medium text-accent-text underline decoration-accent/30 underline-offset-2">
             <T en="Do the test on ieltscb (opens a new tab — this page stays)" zh="去 ieltscb 做题（新窗口打开，本页不动）" />
           </a>
         </span>

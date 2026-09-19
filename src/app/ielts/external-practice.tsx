@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { ArrowDown, FileUp, Globe, Headphones, Layers, Mic } from "lucide-react";
 import { T } from "@/components/i18n";
-import { EXTERNAL_COACH_URL, IELTSCB_URL } from "@/lib/external-coaches";
+import { EXTERNAL_COACH_URL, IELTSCB_READING_URL, IELTSCB_URL } from "@/lib/external-coaches";
 
 /* ── V14.2 External Practice — the product's front door for real exams.
  *    Narrative: 真题在外部完成，能力在工作区沉淀 (practice outside, ability
@@ -17,7 +17,7 @@ const ENTRIES: { key: string; icon: typeof Globe; titleEn: string; titleZh: stri
     titleZh: "雅思阅读真题",
     noteEn: "Do real passages on IELTSCB, then import the report here",
     noteZh: "在 IELTSCB 做真题阅读，回来导入报告",
-    url: IELTSCB_URL,
+    url: IELTSCB_READING_URL,
   },
   {
     key: "full",
@@ -66,7 +66,7 @@ export function ExternalPractice() {
         {/* primary CTAs: go do real exams (new tab) / import a report */}
         <div className="flex items-center gap-2.5">
           <a
-            href={IELTSCB_URL}
+            href={IELTSCB_READING_URL}
             target="_blank"
             rel="noopener noreferrer"
             className="btn-apple press inline-flex h-10 items-center gap-2 rounded-lg px-4.5 text-[13.5px] font-medium text-white"

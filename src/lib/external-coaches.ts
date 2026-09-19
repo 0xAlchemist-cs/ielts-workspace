@@ -2,9 +2,11 @@ export const EXTERNAL_COACH_URL =
   "https://chatgpt.com/g/g-69064123ce508191a55e2aa3cf07e152-english-language-coach-for-ielts-speaking-test";
 
 /* V14.2: IELTSCB is where real-exam practice happens (the workspace imports
- * the reports). Only the site root is referenced — deep links to specific
- * practice sections are NOT invented; pick the paper/set on the site itself. */
+ * the reports). The reading-practice list URL is user-supplied (verified
+ * live, HTTP 200); only the site root is used for anything else — deep links
+ * are never invented. */
 export const IELTSCB_URL = "https://www.ieltscb.com/";
+export const IELTSCB_READING_URL = "https://www.ieltscb.com/ReadQuestion/listpage?classify=2";
 
 export interface ExternalCoach {
   id: string;

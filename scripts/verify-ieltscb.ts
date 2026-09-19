@@ -169,14 +169,16 @@ async function main() {
      * (fs) that keep the retirement from silently regressing */
     const coaches = await import("../src/lib/external-coaches");
     check("⑫ external coach config: one GPT covers speaking + listening", coaches.EXTERNAL_COACHES.length >= 1 && coaches.EXTERNAL_COACHES.some((c) => c.skill === "both" && c.url.startsWith("https://chatgpt.com/")));
-    check("⑫ IELTSCB entry defined from config (no invented deep links)", coaches.IELTSCB_URL === "https://www.ieltscb.com/");
+    check("⑫ IELTSCB entries defined from config (user-supplied reading list, no invented deep links)", coaches.IELTSCB_URL === "https://www.ieltscb.com/" && coaches.IELTSCB_READING_URL === "https://www.ieltscb.com/ReadQuestion/listpage?classify=2");
 
     const readSrc = (p: string) => readFileSync(p, "utf-8");
     const ieltsPage = readSrc("src/app/ielts/page.tsx");
     check("⑫ /ielts page renders the External Practice area", ieltsPage.includes("<ExternalPractice />"));
     const ep = readSrc("src/app/ielts/external-practice.tsx");
-    check("⑫ Reading + Full-practice entries point at IELTSCB (config-driven)", ep.includes("IELTSCB_URL"));
+    check("⑫ Reading entry + 去做真题 CTA use the real reading list URL; full practice stays on site root", ep.split("IELTSCB_READING_URL").length >= 3 && ep.includes("IELTSCB_URL"));
     check("⑫ Speaking + Listening entries read the existing coach URL", ep.includes("EXTERNAL_COACH_URL"));
+    const panel = readSrc("src/app/library/ieltscb-panel.tsx");
+    check("⑫ import panel round-trip link also targets the reading list", panel.includes("IELTSCB_READING_URL"));
     const extAnchors = ep.split("<a").slice(1);
     check("⑫ every external anchor template: target=_blank + rel=noopener noreferrer (workspace tab never covered)", extAnchors.length >= 2 && extAnchors.every((a) => a.includes('target="_blank"') && a.includes('rel="noopener noreferrer"')));
     const sidebar = readSrc("src/components/shell/sidebar.tsx");
