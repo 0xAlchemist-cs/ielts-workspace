@@ -2,14 +2,17 @@
  *  (runs against the saved real fixture) + one LIVE round-trip when
  *  IELTSCB_LIVE=1. Covers spec §27: URL parser, API validation, adapter,
  *  evidence mapping, answer semantics, preview, confirm, duplicate strategy,
- *  error routing, readiness consumption. Run: npm run test:ieltscb */
+ *  error routing, readiness consumption. V14.1 adds: import diagnostics,
+ *  passages-array foundation, image fallback, sentence-tagged passage
+ *  display, error-type derivation, attempt-history integrity, scoring copy.
+ *  Run: npm run test:ieltscb */
 import { readFileSync } from "node:fs";
 import { and, eq } from "drizzle-orm";
 import { db } from "../src/db";
 import { errors as errorsT, ieltscbImports, ieltsAttempts, ieltsTasks, learningProfiles, users } from "../src/db/schema";
 import { parseIeltscbReportUrl } from "../src/lib/ieltscb/url";
 import { validateIeltscbEnvelope } from "../src/lib/ieltscb/client";
-import { adaptIeltscbReport, htmlToText, splitAnswerVariants, tolerantEqual } from "../src/lib/ieltscb/adapter";
+import { adaptIeltscbReport, buildImportDiagnostics, buildPassageDisplay, deriveErrorType, htmlToText, splitAnswerVariants, tolerantEqual } from "../src/lib/ieltscb/adapter";
 import { buildIeltscbPreview, confirmIeltscbImport } from "../src/server/services/ieltscb-import";
 import { getActiveExam, setActiveExam } from "../src/server/current-user";
 import { buildReadiness } from "../src/server/services/readiness";
@@ -84,6 +87,27 @@ async function main() {
       (test.questions.find((q) => q.number === 9)?.acceptedAnswers.length ?? 0) === 3 &&
       !!test.questions.find((q) => q.number === 9)?.acceptedAnswers.includes("ship’s anchor"));
 
+    /* ── 4b · V14.1: passages array + diagnostics + image fallback ─────── */
+    check("④b passages array (test foundation) keeps single-passage shape", test.passages.length === 1 && test.passages[0] === test.passage);
+    const diag = buildImportDiagnostics(test, null, { responseHash: "a".repeat(64), importDurationMs: 123 });
+    check("④b diagnostics: 9 stages, fetch+api success", diag.stages.length === 9 && diag.stages.filter((s) => s.stage === "fetch" || s.stage === "api").every((s) => s.status === "success"));
+    check("④b diagnostics: evidence=warning (11/13), images=warning (no source img)", diag.stages.find((s) => s.stage === "evidence")?.status === "warning" && diag.stages.find((s) => s.stage === "images")?.status === "warning");
+    check("④b diagnostics: answers+analysis+synonym success", ["answers", "analysis", "synonym"].every((k) => diag.stages.find((s) => s.stage === k)?.status === "success"));
+    check("④b diagnostics: parser version + hash + duration carried", diag.parserVersion === "1.0.0" && diag.responseHash === "a".repeat(64) && diag.importDurationMs === 123);
+    check("④b image fallback: no img field → null + honest source tag", test.questionGroups.every((g) => g.imageUrl === null && g.imageSource === "none"));
+    check("④b error type: blank → 未作答", deriveErrorType({ userAnswer: null, type: "matching_information", paraphrases: [] }).zh === "未作答");
+    check("④b error type: synonym → 同义替换未识别", deriveErrorType({ userAnswer: "A", type: "matching_information", paraphrases: [{ questionWord: "cold", passageWords: "freezing" }] }).zh === "同义替换未识别");
+    check("④b error type: no-synonym matching → 定位偏差", deriveErrorType({ userAnswer: "E", type: "matching_information", paraphrases: [] }).zh === "定位偏差");
+    check("④b error type: fill-in → 词汇产出缺口", deriveErrorType({ userAnswer: "no", type: "diagram_label", paraphrases: [] }).zh === "词汇产出缺口");
+
+    /* ── 4c · V14.1 §4: sentence-tagged passage display ────────────────── */
+    const display = buildPassageDisplay(test);
+    const taggedSentences = display.flatMap((p) => p.sentences.filter((s) => s.tags.length > 0));
+    const q1Sentence = taggedSentences.find((s) => s.tags.includes("Q1"));
+    check("④c passage display: 8 paragraphs, tagged sentences exist", display.length === 8 && taggedSentences.length >= 10);
+    check("④c Q1 sentence tagged + carries the freezing evidence", !!q1Sentence && /freezing/i.test(q1Sentence.text));
+    check("④c tags come only from source markers (Q12/Q13 absent as warned)", !taggedSentences.some((s) => s.tags.includes("Q12")));
+
     /* ── 5+6 · temp user, then preview + confirm (offline, raw injected;
  *         synthetic tid can never collide with real imports) ─────────── */
     const [u] = await db.insert(users).values({ name: "__ieltscb_verify__", examProfile: "ielts" }).returning();
@@ -92,6 +116,9 @@ async function main() {
 
     const pv = await buildIeltscbPreview(TEST_URL, { raw, userId: uid });
     check("⑤ preview ok, nothing written yet", pv.ok && pv.preview.questions.length === 13 && pv.preview.existing === null);
+    check("⑤ preview diagnostics attached (hash + stages)", pv.ok && !!pv.preview.diagnostics && pv.preview.diagnostics.stages.length === 9 && /^[0-9a-f]{64}$/.test(pv.preview.diagnostics.responseHash ?? ""));
+    check("⑤ preview evidence count 11/13", pv.ok && pv.preview.questions.filter((q) => q.evidence.length > 0).length === 11);
+
     const c1 = await confirmIeltscbImport(uid, TEST_URL, { raw });
     check("⑥ confirm → imported", c1.ok && c1.action === "imported");
     taskId = c1.ok ? c1.taskId : null;
@@ -99,15 +126,17 @@ async function main() {
     const [taskRow] = taskId ? await db.select().from(ieltsTasks).where(eq(ieltsTasks.id, taskId)) : [];
     check("⑥ task row: source ieltscb, 13 questions, options A-H", taskRow?.source === "ieltscb" && (taskRow?.questions as { options?: string[] }[])?.length === 13 && ((taskRow?.questions as { options?: string[] }[])[0]?.options?.length ?? 0) === 8);
     check("⑥ task explanations carry official fields", Array.isArray((taskRow?.explanations as { questionExplanations?: unknown[] })?.questionExplanations) && ((taskRow?.explanations as { questionExplanations?: { paraphrase: string | null }[] }).questionExplanations?.[0]?.paraphrase ?? "").includes("="));
+    check("⑥ task explanations carry passageDisplay for highlighting", Array.isArray((taskRow?.explanations as { passageDisplay?: unknown[] })?.passageDisplay) && ((taskRow?.explanations as { passageDisplay?: { sentences: { tags: string[] }[] }[] }).passageDisplay?.length ?? 0) === 8);
 
     const [impRow] = await db.select().from(ieltscbImports).where(eq(ieltscbImports.userId, uid));
     check("⑥ registry: raw snapshot + canonical + parser version", !!impRow && impRow.parserVersion === "1.0.0" && !!impRow.rawSnapshot && !!impRow.canonical && impRow.tid === 990001111);
 
     const attemptId1 = c1.ok ? c1.attemptId : null;
     const [att1] = attemptId1 ? await db.select().from(ieltsAttempts).where(eq(ieltsAttempts.id, attemptId1)) : [];
-    const att1Responses = (att1?.responses ?? {}) as { taskSkill?: string; source?: string; external?: { tid?: number }; answers?: Record<string, string> };
+    const att1Responses = (att1?.responses ?? {}) as { taskSkill?: string; source?: string; external?: { tid?: number; bandBasis?: string }; answers?: Record<string, string> };
     check("⑥ attempt: taskSkill reading + source ieltscb + answers", att1Responses.taskSkill === "reading" && att1Responses.source === "ieltscb" && att1Responses.external?.tid === 990001111 && Object.keys(att1Responses.answers ?? {}).length === 13);
     check("⑥ attempt: score 15 band 3 (2/13 → scaled 6/40)", att1?.score === 15 && att1?.band === 3, `got score=${att1?.score} band=${att1?.band}`);
+    check("⑥ attempt: band labeled passage reference, NOT official band", (att1Responses.external?.bandBasis ?? "").includes("passage practice reference"));
 
     /* ── 7 · error routing: synonym misses → vocabulary errors ─────────── */
     const routed = await db.select().from(errorsT).where(and(eq(errorsT.userId, uid), eq(errorsT.sourceModule, "ieltscb_reading")));
@@ -115,16 +144,20 @@ async function main() {
 
     /* ── 8 · duplicate: same tid → update, never a second attempt ──────── */
     const before = (await db.select().from(ieltsAttempts).where(eq(ieltsAttempts.userId, uid))).length;
+    const questionsBefore = ((await db.select().from(ieltsTasks).where(eq(ieltsTasks.id, taskId!)))[0]?.questions as unknown[])?.length;
     const c2 = await confirmIeltscbImport(uid, TEST_URL, { raw });
     const after = (await db.select().from(ieltsAttempts).where(eq(ieltsAttempts.userId, uid))).length;
+    const questionsAfter = ((await db.select().from(ieltsTasks).where(eq(ieltsTasks.id, taskId!)))[0]?.questions as unknown[])?.length;
     check("⑧ same report re-import → updated, attempts untouched", c2.ok && c2.action === "updated" && before === after);
+    check("⑧ question set is static source data (re-import changes nothing)", questionsBefore === 13 && questionsAfter === 13);
 
     /* ── 9 · same material re-tested (new tid) → attempt-added ─────────── */
     const RETEST_URL = TEST_URL.replace("tid=990001111", "tid=990001112");
     const c3 = await confirmIeltscbImport(uid, RETEST_URL, { raw });
     check("⑨ re-test same passage → new attempt, same task", c3.ok && c3.action === "attempt-added" && c3.taskId === taskId);
-    const attemptsAll = await db.select().from(ieltsAttempts).where(eq(ieltsAttempts.userId, uid));
-    check("⑨ two attempts on one task", attemptsAll.length === 2 && attemptsAll.every((a) => a.taskId === taskId));
+    const attemptsAll = await db.select().from(ieltsAttempts).where(eq(ieltsAttempts.userId, uid)).orderBy(ieltsAttempts.createdAt);
+    check("⑨ two attempts on one task, history preserved (attempt 1 intact)", attemptsAll.length === 2 && attemptsAll.every((a) => a.taskId === taskId) && attemptsAll[0].id === attemptId1);
+    check("⑨ questions never duplicated by re-test", ((await db.select().from(ieltsTasks).where(eq(ieltsTasks.id, taskId!)))[0]?.questions as unknown[])?.length === 13);
 
     /* ── 10 · readiness consumes imported bands ─────────────────────────── */
     const rd = await buildReadiness(uid, "ielts");

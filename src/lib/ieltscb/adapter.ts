@@ -12,9 +12,12 @@ import type {
   CanonicalQuestionType,
   CanonicalReadingTest,
   CanonicalSynonym,
+  ImportDiagnostic,
+  ImportDiagnostics,
   IeltscbReportData,
   IeltscbWarning,
 } from "./types";
+import { IELTSCB_PARSER_VERSION } from "./types";
 import type { IeltscbReportParams } from "./url";
 
 /* ── HTML cleaning: keep semantic text, extract <sentence> evidence markers ── */
@@ -172,6 +175,43 @@ export function detectQuestionType(
   return "unknown";
 }
 
+/* ── V14.1 §3: deterministic error-type derivation (data in → label out) ─── */
+
+export function deriveErrorType(q: {
+  userAnswer: string | null;
+  type: string;
+  paraphrases: { questionWord: string; passageWords: string }[];
+}): { en: string; zh: string } {
+  if (!q.userAnswer) return { en: "Left blank", zh: "未作答" };
+  if (q.paraphrases.length) return { en: "Synonym bridge missed", zh: "同义替换未识别" };
+  if (q.type === "matching_information" || q.type === "matching_classification" || q.type === "matching_headings") {
+    return { en: "Location / match off", zh: "定位偏差" };
+  }
+  if (q.type.includes("completion") || q.type === "diagram_label" || q.type === "short_answer") {
+    return { en: "Word recall gap", zh: "词汇产出缺口" };
+  }
+  return { en: "Question strategy", zh: "题型策略" };
+}
+
+/** Absolutize the site's group image reference (empty/null → honest null). */
+function groupImageUrl(img: string | null | undefined): { url: string | null; type: string | null } {
+  const raw = (img ?? "").trim();
+  if (!raw) return { url: null, type: null };
+  if (/^https?:\/\//i.test(raw)) {
+    try {
+      const u = new URL(raw);
+      if (u.hostname === "www.ieltscb.com" || u.hostname === "ieltscb.com") return { url: raw, type: null };
+      // off-site hotlink: keep verbatim, flagged by type
+      return { url: raw, type: "external" };
+    } catch {
+      return { url: null, type: null };
+    }
+  }
+  // relative path → absolutize against the site origin
+  const abs = `https://www.ieltscb.com/${raw.replace(/^\/+/, "")}`;
+  return { url: abs, type: "relative" };
+}
+
 /* ── main adapter ─────────────────────────────────────────────────────────── */
 
 export function adaptIeltscbReport(
@@ -282,6 +322,7 @@ export function adaptIeltscbReport(
     const instruction = g.guide ? htmlToText(g.guide) : "";
     const options = (g.options?.list ?? []).map((o) => (o.prefix ?? "").replace(/\u00a0/g, " ").trim()).filter(Boolean);
     const groupType = detectQuestionType(instruction, rawMeta);
+    const img = groupImageUrl(g.img);
     const questions: CanonicalQuestion[] = [];
 
     if ((g.list ?? []).length > 0) {
@@ -358,7 +399,17 @@ export function adaptIeltscbReport(
       }
     }
 
-    groups.push({ number: g.number ?? "", type: groupType, instruction, options, questions, rawMeta });
+    groups.push({
+      number: g.number ?? "",
+      type: groupType,
+      instruction,
+      options,
+      questions,
+      imageUrl: img.url,
+      imageType: img.type,
+      imageSource: img.url ? "ieltscb_group_img" : "none",
+      rawMeta,
+    });
     flat.push(...questions);
   }
 
@@ -396,6 +447,9 @@ export function adaptIeltscbReport(
     title: raw.content_title?.trim() || raw.bread_crumbs?.trim() || "IELTSCB Reading",
     breadcrumb: raw.crumbs_text?.trim() ?? raw.bread_crumbs?.trim() ?? null,
     passage,
+    // V14.1 §7: the test-level passages array (single-passage reports today;
+    // a future full-test import fills 2-3 without touching consumers)
+    passages: [passage],
     questionGroups: groups,
     questions: flat,
     synonyms,
@@ -410,4 +464,122 @@ export function adaptIeltscbReport(
     warnings,
   };
   return { test, warnings };
+}
+
+/** V14.1 §4: passage split into sentences with the question tags each
+ *  sentence is evidence for — powers scroll-to-paragraph + highlight on the
+ *  report page. Deterministic: tags come from the site's own
+ *  <sentence data-tag> markers (re-parsed from rawHtml), never inferred. */
+export interface PassageSentence {
+  text: string;
+  tags: string[]; // "Q1" style, as the source marks them
+}
+export interface PassageDisplayParagraph {
+  label: string | null;
+  sentences: PassageSentence[];
+}
+
+export function buildPassageDisplay(test: CanonicalReadingTest): PassageDisplayParagraph[] {
+  return test.passages.flatMap((p) =>
+    p.paragraphs.map((para) => {
+      const { markers } = extractSentenceMarkers(para.rawHtml);
+      // drop the leading "A." label prefix so it doesn't become its own
+      // sentence after the split
+      const body = para.label ? para.text.replace(new RegExp(`^${para.label}\\.\\s*`), "") : para.text;
+      // split the clean paragraph text into sentences; a sentence is tagged
+      // when a source marker's text is contained in it
+      const parts = body
+        .split(/(?<=[.!?])\s+/)
+        .map((s) => s.trim())
+        .filter(Boolean);
+      const sentences: PassageSentence[] = parts.map((text) => ({
+        text,
+        tags: markers.filter((m) => m.tag && text.includes(m.text.slice(0, Math.min(40, m.text.length)))).map((m) => m.tag as string),
+      }));
+      // paragraphs whose text didn't split still render as one sentence
+      if (!sentences.length && para.text) sentences.push({ text: para.text, tags: [] });
+      return { label: para.label, sentences };
+    }),
+  );
+}
+
+/* ── V14.1 §2: per-stage diagnostics from the canonical result ──────────── */
+
+export function buildImportDiagnostics(
+  test: CanonicalReadingTest,
+  fetch: { ok: boolean; httpStatus?: number; code?: string } | null,
+  opts: { responseHash: string | null; importDurationMs: number | null },
+): ImportDiagnostics {
+  const stages: ImportDiagnostic[] = [];
+  const qCount = test.questions.length;
+
+  stages.push(
+    fetch === null || fetch.ok
+      ? { stage: "fetch", status: "success", detail: "HTTP 200 from /Report/show" }
+      : { stage: "fetch", status: "error", detail: `${fetch.code ?? "fetch failed"}${fetch.httpStatus ? ` (HTTP ${fetch.httpStatus})` : ""}` },
+  );
+  stages.push({ stage: "api", status: fetch === null || fetch.ok ? "success" : "error", detail: fetch === null || fetch.ok ? "e=9999 操作成功" : "API envelope rejected" });
+
+  const paraCount = test.passage.paragraphs.length;
+  stages.push(
+    paraCount === 0
+      ? { stage: "passage", status: "error", detail: "no paragraphs" }
+      : { stage: "passage", status: "success", detail: `${paraCount} paragraphs + ${test.passage.subtitle ? "subtitle" : "no subtitle"}` },
+  );
+
+  const unknownTypes = test.questions.filter((q) => q.type === "unknown").length;
+  stages.push(
+    qCount === 0
+      ? { stage: "questions", status: "error", detail: "no questions" }
+      : unknownTypes > 0
+        ? { stage: "questions", status: "warning", detail: `${qCount} questions, ${unknownTypes} unrecognised type(s) kept as unknown` }
+        : { stage: "questions", status: "success", detail: `${qCount} questions in ${test.questionGroups.length} groups` },
+  );
+
+  const graded = test.questions.filter((q) => q.isCorrect != null).length;
+  stages.push(
+    graded === 0
+      ? { stage: "answers", status: "error", detail: "no graded answers" }
+      : graded < qCount
+        ? { stage: "answers", status: "warning", detail: `${graded}/${qCount} questions carry your answer` }
+        : { stage: "answers", status: "success", detail: `${graded}/${qCount} answers (user + correct separated)` },
+  );
+
+  const explained = test.questions.filter((q) => q.explanation).length;
+  stages.push(
+    explained === 0
+      ? { stage: "analysis", status: "error", detail: "no official explanations" }
+      : explained < qCount
+        ? { stage: "analysis", status: "warning", detail: `${explained}/${qCount} official explanations` }
+        : { stage: "analysis", status: "success", detail: `${explained}/${qCount} official explanations` },
+  );
+
+  const evidenced = test.questions.filter((q) => q.evidence.length > 0).length;
+  stages.push(
+    evidenced === 0
+      ? { stage: "evidence", status: "error", detail: "no evidence sentences located" }
+      : evidenced < qCount
+        ? { stage: "evidence", status: "warning", detail: `${evidenced}/${qCount} questions carry evidence markers` }
+        : { stage: "evidence", status: "success", detail: `${evidenced}/${qCount} evidence sentences mapped` },
+  );
+
+  stages.push(
+    test.synonyms.length > 0
+      ? { stage: "synonym", status: "success", detail: `${test.synonyms.length} synonym mappings` }
+      : { stage: "synonym", status: "warning", detail: "no synonym mappings in this report" },
+  );
+
+  const withImage = test.questionGroups.filter((g) => g.imageUrl).length;
+  stages.push(
+    withImage > 0
+      ? { stage: "images", status: "success", detail: `${withImage} group image(s) linked from source` }
+      : { stage: "images", status: "warning", detail: "no source image provided — honest fallback (instruction + question number)" },
+  );
+
+  return {
+    parserVersion: IELTSCB_PARSER_VERSION,
+    responseHash: opts.responseHash,
+    importDurationMs: opts.importDurationMs,
+    stages,
+  };
 }

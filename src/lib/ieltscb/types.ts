@@ -183,7 +183,34 @@ export interface CanonicalQuestionGroup {
   instruction: string;
   options: string[];
   questions: CanonicalQuestion[];
+  /** V14.1 §6: source image asset when the site provides one (diagram labels
+   *  etc.). Null = honest fallback (instruction + question number), never
+   *  fabricated, never OCR-substituted. */
+  imageUrl: string | null;
+  imageType: string | null;
+  imageSource: "ieltscb_group_img" | "none";
   rawMeta: { style?: string | null; realType?: string | null; questionType?: string | null; type?: string | null };
+}
+
+/* ── V14.1 §2: structured import diagnostics — one line per pipeline stage,
+ *    no credentials ever (the client sends none by design). ─────────────── */
+
+export type DiagnosticStatus = "success" | "warning" | "error";
+
+export interface ImportDiagnostic {
+  stage: "fetch" | "api" | "passage" | "questions" | "answers" | "analysis" | "evidence" | "synonym" | "images";
+  status: DiagnosticStatus;
+  /** human line, bilingual-safe (dev-facing English + zh where useful) */
+  detail: string;
+}
+
+export interface ImportDiagnostics {
+  parserVersion: string;
+  /** sha256 of the raw response body (null when fetch failed) */
+  responseHash: string | null;
+  /** fetch + adapt wall time, ms */
+  importDurationMs: number | null;
+  stages: ImportDiagnostic[];
 }
 
 export interface CanonicalParagraph {
@@ -224,10 +251,15 @@ export type IeltscbWarning =
 export interface CanonicalReadingTest {
   source: "ieltscb";
   sourceUrl: string;
-  externalKey: { paperId: number; chaptersId: number; pType: number; tid: number; classify: number };
+  externalKey: { paperId: number; classify: number; chaptersId: number; pType: number; tid: number };
   title: string;
   breadcrumb: string | null;
+  /** primary passage (single-passage imports = the only one). V14 kept this
+   *  shape; V14.1 §7 adds `passages` for the future full-3-passage test while
+   *  single-passage imports keep working unchanged. */
   passage: CanonicalPassage;
+  /** all passages of the test (1 for today's per-passage reports) */
+  passages: CanonicalPassage[];
   questionGroups: CanonicalQuestionGroup[];
   questions: CanonicalQuestion[]; // flat, ordered by number
   synonyms: CanonicalSynonym[];
@@ -255,6 +287,8 @@ export interface IeltscbImportPreview extends CanonicalReadingTest {
     attemptId: number | null;
   } | null;
   parserVersion: string;
+  /** V14.1 §2: per-stage import health */
+  diagnostics: ImportDiagnostics;
 }
 
 export const IELTSCB_PARSER_VERSION = "1.0.0";

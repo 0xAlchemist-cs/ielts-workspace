@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { Check, ExternalLink, Globe, Loader2, TriangleAlert } from "lucide-react";
+import { Check, CircleAlert, CircleCheck, ExternalLink, Globe, Loader2, TriangleAlert } from "lucide-react";
 import { T } from "@/components/i18n";
 import { toast } from "@/components/motion";
 
@@ -15,13 +15,23 @@ interface PreviewResponse {
   title: string;
   breadcrumb: string | null;
   summary: { totalQuestions: number; correctCount: number | null; rightNumText: string | null; durationSeconds: number | null };
+  passages: number;
   groups: number;
   questions: number;
+  answerCount: number;
   answersComplete: boolean;
   explanations: number;
+  evidenceCount: number;
   synonyms: number;
   coreWords: number;
+  imageGroups: number;
   warnings: { code: string }[];
+  diagnostics: {
+    parserVersion: string;
+    responseHash: string | null;
+    importDurationMs: number | null;
+    stages: { stage: string; status: "success" | "warning" | "error"; detail: string }[];
+  } | null;
   existing: { taskId: number; importedAt: number; sameReport: boolean; attemptId: number | null } | null;
 }
 
@@ -162,11 +172,43 @@ export function IeltscbImport() {
           <div className="mt-3 grid grid-cols-2 gap-x-4 gap-y-1.5 text-[12.5px] text-ink-2 sm:grid-cols-3">
             <PreviewLine ok={preview.questions > 0} en={`${preview.questions} questions`} zh={`${preview.questions} 道题`} />
             <PreviewLine ok={preview.groups > 0} en={`${preview.groups} question groups`} zh={`${preview.groups} 个题型组`} />
-            <PreviewLine ok={preview.answersComplete} en="Your answers" zh="你的答案" />
-            <PreviewLine ok={preview.explanations === preview.questions} en={`${preview.explanations} official explanations`} zh={`${preview.explanations} 条官方解析`} />
+            <PreviewLine ok={preview.answersComplete} en={`${preview.answerCount} answers`} zh={`${preview.answerCount} 份答案`} />
+            <PreviewLine ok={preview.explanations === preview.questions} en={`${preview.explanations} explanations`} zh={`${preview.explanations} 条官方解析`} />
+            <PreviewLine ok={preview.evidenceCount > 0} en={`${preview.evidenceCount} evidence sentences`} zh={`${preview.evidenceCount} 句证据定位`} />
             <PreviewLine ok={preview.synonyms > 0} en={`${preview.synonyms} synonym mappings`} zh={`${preview.synonyms} 组同义替换`} />
             <PreviewLine ok={preview.coreWords > 0} en={`${preview.coreWords} core words`} zh={`${preview.coreWords} 个核心词`} />
+            <PreviewLine ok={preview.imageGroups > 0} en={`${preview.imageGroups} source image(s)`} zh={`${preview.imageGroups} 张源图`} />
+            <PreviewLine ok={preview.passages > 0} en={`${preview.passages} passage`} zh={`${preview.passages} 篇文章`} />
           </div>
+
+          {preview.diagnostics && (
+            <details className="mt-3 rounded-lg bg-surface px-3 py-2">
+              <summary className="press cursor-pointer text-[11.5px] font-medium text-ink-3">
+                <T
+                  en={`Import diagnostics · parser ${preview.diagnostics.parserVersion}${preview.diagnostics.importDurationMs != null ? ` · ${preview.diagnostics.importDurationMs}ms` : ""}`}
+                  zh={`导入诊断 · 解析器 ${preview.diagnostics.parserVersion}${preview.diagnostics.importDurationMs != null ? ` · ${preview.diagnostics.importDurationMs}ms` : ""}`}
+                />
+              </summary>
+              <div className="mt-2 space-y-1">
+                {preview.diagnostics.stages.map((s) => (
+                  <p key={s.stage} className="flex items-start gap-1.5 text-[11.5px] leading-relaxed text-ink-2">
+                    {s.status === "success" ? (
+                      <CircleCheck size={12} className="mt-0.5 shrink-0 text-ok-text" />
+                    ) : s.status === "warning" ? (
+                      <TriangleAlert size={12} className="mt-0.5 shrink-0 text-warn-text" />
+                    ) : (
+                      <CircleAlert size={12} className="mt-0.5 shrink-0 text-err-text" />
+                    )}
+                    <span className="w-[64px] shrink-0 font-medium text-ink-3">{s.stage}</span>
+                    <span>{s.detail}</span>
+                  </p>
+                ))}
+                {preview.diagnostics.responseHash && (
+                  <p className="pt-1 font-mono text-[10.5px] text-ink-3">sha256 {preview.diagnostics.responseHash.slice(0, 16)}…</p>
+                )}
+              </div>
+            </details>
+          )}
 
           {preview.warnings.length > 0 && (
             <p className="mt-3 flex items-center gap-1.5 text-[11.5px] text-ink-3">

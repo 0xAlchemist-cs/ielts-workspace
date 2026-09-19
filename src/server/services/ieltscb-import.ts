@@ -8,7 +8,7 @@ import { and, eq } from "drizzle-orm";
 import { db } from "@/db";
 import { ieltscbImports, ieltsAttempts, ieltsTasks } from "@/db/schema";
 import { fetchIeltscbReport } from "@/lib/ieltscb/client";
-import { adaptIeltscbReport } from "@/lib/ieltscb/adapter";
+import { adaptIeltscbReport, buildImportDiagnostics, buildPassageDisplay } from "@/lib/ieltscb/adapter";
 import { parseIeltscbReportUrl, type IeltscbReportParams } from "@/lib/ieltscb/url";
 import { IELTSCB_PARSER_VERSION, type CanonicalQuestion, type CanonicalReadingTest, type IeltscbImportPreview, type IeltscbReportData } from "@/lib/ieltscb/types";
 import { addError } from "./bank";
@@ -41,11 +41,18 @@ export async function buildIeltscbPreview(url: string, opts?: { raw?: unknown; u
   const params = parsed.params;
 
   let data: IeltscbReportData;
+  let fetchMeta: { ok: boolean; httpStatus?: number; code?: string } | null = null;
+  let importDurationMs: number | null = null;
   if (opts?.raw !== undefined) {
     data = opts.raw as IeltscbReportData;
   } else {
+    const t0 = Date.now();
     const fetched = await fetchIeltscbReport(params);
-    if (!fetched.ok) return { ok: false, code: fetched.code, message: fetched.message };
+    importDurationMs = Date.now() - t0;
+    if (!fetched.ok) {
+      return { ok: false, code: fetched.code, message: fetched.message };
+    }
+    fetchMeta = { ok: true, httpStatus: 200 };
     data = fetched.data;
   }
 
@@ -56,6 +63,11 @@ export async function buildIeltscbPreview(url: string, opts?: { raw?: unknown; u
   if (!test.passage.paragraphs.length) {
     return { ok: false, code: "MISSING_PASSAGE", message: "The report contains no passage." };
   }
+
+  // V14.1 §2: response hash (raw body) + per-stage diagnostics — no credentials
+  // exist to leak (the client sends none by design)
+  const responseHash = createHash("sha256").update(JSON.stringify(data ?? {})).digest("hex");
+  const diagnostics = buildImportDiagnostics(test, fetchMeta, { responseHash, importDurationMs });
 
   const existing = await findExistingImport(params, opts?.userId);
   const preview: IeltscbImportPreview = {
@@ -70,6 +82,7 @@ export async function buildIeltscbPreview(url: string, opts?: { raw?: unknown; u
         }
       : null,
     parserVersion: IELTSCB_PARSER_VERSION,
+    diagnostics,
   };
   return { ok: true, preview, raw: data };
 }
@@ -262,7 +275,10 @@ async function writeAttemptAndRegistry(
           classify: params.classify,
           rightNumText: test.summary.rightNumText,
           durationSeconds: test.summary.durationSeconds,
-          bandBasis: "per-passage estimate (scaled to the 40-question Cambridge AC reading table)",
+          bandBasis:
+            test.summary.totalQuestions >= 40
+              ? "Practice Reading Estimate — full 40-question test"
+              : "passage practice reference — scaled to the 40-question Cambridge AC table; not an official IELTS band",
         },
         answers: Object.fromEntries(test.questions.map((q) => [String(q.number - 1), q.userAnswer ?? ""])),
       },
@@ -349,7 +365,8 @@ async function updateTaskMaterial(taskId: number, test: CanonicalReadingTest) {
 }
 
 /** explanations payload in the shape the reading bank already uses, plus the
- *  structured official fields + synonyms + evidence the report page reads. */
+ *  structured official fields + synonyms + evidence the report page reads.
+ *  V14.1: passageDisplay carries sentence-level question tags for highlight. */
 function buildExplanationsPayload(test: CanonicalReadingTest) {
   return {
     examId: `ieltscb-${test.externalKey.chaptersId}-${test.externalKey.paperId}`,
@@ -358,6 +375,7 @@ function buildExplanationsPayload(test: CanonicalReadingTest) {
     officialGuide: test.officialGuide,
     synonyms: test.synonyms,
     coreWords: test.coreWords,
+    passageDisplay: buildPassageDisplay(test),
     questionExplanations: test.questions.map((q) => ({
       questionNumber: q.number,
       answer: q.explanation?.answer ?? `Answer: ${q.correctAnswer}`,

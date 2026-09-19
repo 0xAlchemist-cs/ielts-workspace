@@ -1,7 +1,7 @@
 import { notFound } from "next/navigation";
-import { eq } from "drizzle-orm";
+import { and, asc, eq } from "drizzle-orm";
 import { db } from "@/db";
-import { ieltsAttempts, ieltsTasks } from "@/db/schema";
+import { errors as errorsT, ieltsAttempts, ieltsTasks } from "@/db/schema";
 import { requireUser } from "@/server/current-user";
 import { IeltsReportView } from "./view";
 
@@ -9,7 +9,10 @@ export const dynamic = "force-dynamic";
 
 /* ── External reading report — an imported IELTSCB attempt with official
  *    explanations, evidence and synonym mapping. The learner answers on the
- *    external site; this page is where the misses become visible. */
+ *    external site; this page is where the misses become visible.
+ *    V14.1: attempt history across re-tests of the same passage (same task,
+ *    different tid) + cross-attempt 掌握/持续错误 analysis. Question rows are
+ *    static source data; attempts are user behaviour and never overwritten. */
 
 interface ExplanationPayload {
   examId?: string;
@@ -17,6 +20,7 @@ interface ExplanationPayload {
   officialGuide?: string | null;
   synonyms?: { questionNumber: number | null; questionWord: string; passageWords: string }[];
   coreWords?: { text: string; note: string | null }[];
+  passageDisplay?: { label: string | null; sentences: { text: string; tags: string[] }[] }[];
   questionExplanations?: {
     questionNumber: number;
     answer: string | null;
@@ -28,6 +32,16 @@ interface ExplanationPayload {
     paraphrases: { questionWord: string; passageWords: string }[];
     evidence: { paragraphLabel: string; sentenceId: string | null; text: string }[];
   }[];
+}
+
+interface AttemptProgressRow {
+  attemptId: number;
+  createdAt: number;
+  correct: number;
+  incorrect: number;
+  score: number | null;
+  durationSeconds: number | null;
+  perQuestion: Record<number, boolean>; // question number → correct?
 }
 
 export default async function ReportPage({ params }: { params: Promise<{ id: string }> }) {
@@ -61,11 +75,56 @@ export default async function ReportPage({ params }: { params: Promise<{ id: str
   const subSkills = (attempt.subSkillResults ?? []) as { skill: string; correct: boolean; note: string }[];
   const explanations = (task.explanations ?? null) as ExplanationPayload | null;
 
+  /* ── attempt history: same test (task), every imported session ─────────── */
+  const history = await db
+    .select()
+    .from(ieltsAttempts)
+    .where(and(eq(ieltsAttempts.userId, userId), eq(ieltsAttempts.taskId, task.id)))
+    .orderBy(asc(ieltsAttempts.createdAt));
+
+  const attemptsProgress: AttemptProgressRow[] = history.map((a) => {
+    const subs = (a.subSkillResults ?? []) as { correct: boolean }[];
+    const perQuestion: Record<number, boolean> = {};
+    subs.forEach((s, i) => {
+      perQuestion[i + 1] = !!s.correct;
+    });
+    const ext = ((a.responses ?? {}) as { external?: { durationSeconds?: number | null } }).external ?? {};
+    return {
+      attemptId: a.id,
+      createdAt: a.createdAt,
+      correct: subs.filter((s) => s.correct).length,
+      incorrect: subs.filter((s) => !s.correct).length,
+      score: a.score,
+      durationSeconds: ext.durationSeconds ?? null,
+      perQuestion,
+    };
+  });
+
+  // cross-attempt analysis (needs ≥2 attempts): 持续错误 = wrong in every
+  // attempt that graded it; 已掌握 = wrong earlier + correct in the latest
+  const persistentWrong: number[] = [];
+  const mastered: number[] = [];
+  if (attemptsProgress.length >= 2) {
+    const latest = attemptsProgress[attemptsProgress.length - 1];
+    for (let n = 1; n <= questions.length; n++) {
+      const wrongIn = attemptsProgress.filter((ap) => ap.perQuestion[n] === false);
+      const rightIn = attemptsProgress.filter((ap) => ap.perQuestion[n] === true);
+      const seenCount = attemptsProgress.filter((ap) => n in ap.perQuestion).length;
+      if (seenCount >= 2 && wrongIn.length >= 1 && rightIn.length === 0) persistentWrong.push(n);
+      if (latest.perQuestion[n] === true && wrongIn.length >= 1) mastered.push(n);
+    }
+  }
+
+  /* review candidates: which synonym pairs from this import are already in
+     the Error Bank (→ the existing review queue picks them up) */
+  const banked = new Set(
+    (await db.select({ w: errorsT.wrongForm }).from(errorsT).where(and(eq(errorsT.userId, userId), eq(errorsT.sourceModule, "ieltscb_reading")))).map((r) => r.w),
+  );
+
   return (
     <IeltsReportView
       attemptId={attempt.id}
       title={task.prompt.match(/"([^"]+)"/)?.[1] ?? "Reading report"}
-      breadcrumb={responses.external?.rightNumText ?? null}
       sourceUrl={responses.external?.url ?? null}
       createdAt={attempt.createdAt}
       score={attempt.score}
@@ -73,8 +132,13 @@ export default async function ReportPage({ params }: { params: Promise<{ id: str
       bandBasis={responses.external?.bandBasis ?? null}
       durationSeconds={responses.external?.durationSeconds ?? null}
       rightNumText={responses.external?.rightNumText ?? null}
-      passageText={task.content ?? ""}
+      totalQuestions={questions.length}
       officialGuide={explanations?.officialGuide ?? null}
+      passageDisplay={explanations?.passageDisplay ?? []}
+      attemptHistory={attemptsProgress}
+      persistentWrong={persistentWrong}
+      mastered={mastered}
+      bankedWrongForms={banked}
       questions={questions.map((q, i) => ({
         number: i + 1,
         type: q.subSkill,
