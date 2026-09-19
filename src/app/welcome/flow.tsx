@@ -309,8 +309,8 @@ export function WelcomeFlow({ material }: { material: WelcomeMaterial }) {
           </p>
           <p className="mt-5 text-[15px] leading-relaxed text-ink-2">
             <T
-              en="From now on, your practice will adapt to what you actually struggle with. Nothing to configure — just come back tomorrow."
-              zh="从现在起，你的练习会针对你真正薄弱的地方自动调整。不需要设置什么——明天回来就行。"
+              en="Everything you just did left a real learning record. From now on, the system schedules your review and practice from those results — nothing to configure. Just come back tomorrow."
+              zh="你刚做的每一步都留下了真实的学习记录。从现在起，系统会根据这些结果安排你的复习和练习——不需要设置什么，明天回来就行。"
             />
           </p>
           <Link href="/" className={`${btn.primary} press mt-8 inline-flex h-11 items-center px-6`}>

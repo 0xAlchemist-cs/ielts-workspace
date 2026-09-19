@@ -91,6 +91,12 @@ export function WelcomeChooser({ needsLevel }: { needsLevel: boolean }) {
         </h1>
         <p className="mt-4 text-[15px] leading-relaxed text-ink-2">
           <T
+            en="This is your English learning space. Every practice you do leaves a real record, and the system plans what comes next from those records."
+            zh="这是你的英语学习空间。你每次练习都会留下真实记录，系统再根据这些记录安排下一步。"
+          />
+        </p>
+        <p className="mt-2.5 text-[13.5px] leading-relaxed text-ink-3">
+          <T
             en="You don't need to understand the system yet. We'll guide you through your first session — about three minutes."
             zh="你现在不需要理解这个系统。我们会带你完成第一次学习——大约三分钟。"
           />

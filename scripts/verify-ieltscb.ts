@@ -236,6 +236,23 @@ async function main() {
     check("⑬ IELTS external practice covers all four skills incl. Writing",
       readSrc("src/app/ielts/external-practice.tsx").includes('key: "writing"'));
 
+    /* ── 14 · V15.4 first-use journey ─────────────────────────────────── */
+    const chooser = readSrc("src/app/welcome/chooser.tsx");
+    const flowDone = readSrc("src/app/welcome/flow.tsx");
+    check("⑭ first-use: what-this-is sentence on the chooser (records → system plans next)",
+      chooser.includes("leaves a real record") && chooser.includes("安排下一步"));
+    check("⑭ first-use: completion explains records → scheduling (no engine words)",
+      flowDone.includes("left a real learning record") && flowDone.includes("根据这些结果安排"));
+    const welcomeCopy = chooser + flowDone;
+    check("⑭ no internal engine vocabulary in first-use copy",
+      !/SM-2|readiness|retrieval format|priority engine|AI Gateway|prompt resolver|forgetting detection/i.test(welcomeCopy));
+    check("⑭ CEFR level step gated on needsLevel (IELTS only — CET never sees it)",
+      chooser.includes("needsLevel ? (") && chooser.includes('setStep("level")'));
+    check("⑭ empty states exist for no-queue / no-trajectory / no-story",
+      readSrc("src/app/review/session.tsx").includes("Nothing is due") &&
+      readSrc("src/app/profile/view.tsx").includes("2+ days") &&
+      readSrc("src/app/progress/view.tsx").includes("Nothing recorded yet"));
+
     /* ── 11 · LIVE round-trip (network; only with IELTSCB_LIVE=1) ─────── */
     if (process.env.IELTSCB_LIVE === "1") {
       const live = await buildIeltscbPreview(REAL_URL);
