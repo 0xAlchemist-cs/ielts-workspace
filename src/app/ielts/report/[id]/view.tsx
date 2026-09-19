@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { Check, ChevronDown, ExternalLink, Locate, TrendingUp, Trophy, X } from "lucide-react";
+import { Check, ChevronDown, ExternalLink, Locate, RotateCcw, TrendingUp, Trophy, X } from "lucide-react";
 import { T } from "@/components/i18n";
 import { deriveErrorType } from "@/lib/ieltscb/adapter";
 
@@ -59,6 +59,7 @@ export function IeltsReportView({
   persistentWrong,
   mastered,
   bankedWrongForms,
+  practiceByWrongForm,
   questions,
   synonyms,
   coreWords,
@@ -79,6 +80,8 @@ export function IeltsReportView({
   persistentWrong: number[];
   mastered: number[];
   bankedWrongForms: Set<string>;
+  /** V15.1: wrongForm → errors.id, deep-links a wrong question into practice */
+  practiceByWrongForm?: Record<string, number>;
   questions: ReportQuestion[];
   synonyms: { questionNumber: number | null; questionWord: string; passageWords: string }[];
   coreWords: { text: string; note: string | null }[];
@@ -369,12 +372,24 @@ export function IeltsReportView({
                     </div>
                   )}
                   {banked && (
-                    <p className="flex items-center gap-1.5 text-[12px] text-ok-text">
-                      <TrendingUp size={13} />
-                      <T
-                        en="In your Error Bank — it will return in review until it sticks."
-                        zh="已进入错误银行——复习时会反复出现，直到记牢。"
-                      />
+                    <p className="flex flex-wrap items-center gap-x-3 gap-y-1.5 text-[12px] text-ok-text">
+                      <span className="flex items-center gap-1.5">
+                        <TrendingUp size={13} />
+                        <T
+                          en="In your Error Bank — it will return in review until it sticks."
+                          zh="已进入错误银行——复习时会反复出现，直到记牢。"
+                        />
+                      </span>
+                      {(() => {
+                        const kw = q.explanation?.paraphrases[0]?.questionWord;
+                        const pid = kw != null ? practiceByWrongForm?.[kw] : undefined;
+                        return pid ? (
+                          <a href={`/practice/${pid}`} className="press inline-flex items-center gap-1 rounded-lg bg-accent/[0.1] px-2.5 py-1 font-medium text-accent-text">
+                            <RotateCcw size={12} />
+                            <T en="Practice this mistake" zh="重新练习" />
+                          </a>
+                        ) : null;
+                      })()}
                     </p>
                   )}
                 </div>

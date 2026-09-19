@@ -704,6 +704,35 @@ export const ieltscbImports = sqliteTable(
   ],
 );
 
+/** V15.1 Wrong→Practice ledger — provenance for every targeted practice
+ *  attempt, SEPARATE from the original error (which is never modified).
+ *  Grading/scheduling itself lives in the existing retrieval/retention
+ *  engines (submitRetentionReview writes review_history + updates the
+ *  ladder); this table only records WHERE the practice came from. */
+export const wrongPracticeLog = sqliteTable(
+  "wrong_practice_log",
+  {
+    id: integer("id").primaryKey({ autoIncrement: true }),
+    userId: integer("user_id").notNull(),
+    /** client session id issued by /start — one submission per stage */
+    sessionId: text("session_id").notNull(),
+    errorId: integer("error_id").notNull(),
+    /** e.g. "IELTSCB report" | "Error Bank" | "Review" */
+    source: text("source").notNull(),
+    sourceQuestion: text("source_question"),
+    /** "retrieval" | "transfer" */
+    practiceType: text("practice_type").notNull(),
+    /** "correct" | "partial" | "incorrect" */
+    result: text("result").notNull(),
+    quality: integer("quality").notNull().default(0),
+    createdAt: integer("created_at").notNull().$defaultFn(() => Date.now()),
+  },
+  (t) => [
+    index("idx_wrong_practice_user").on(t.userId),
+    index("idx_wrong_practice_session_stage").on(t.sessionId, t.practiceType),
+  ],
+);
+
 /** Per-skill IELTS tracking — IELTS Performance ≠ Language Ability. */
 export const ieltsSkillProfiles = sqliteTable(
   "ielts_skill_profiles",

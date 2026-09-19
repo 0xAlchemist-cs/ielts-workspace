@@ -1,13 +1,13 @@
 "use client";
 
-import { useEffect, useRef, useState, useTransition } from "react";
+import { useEffect, useState, useTransition } from "react";
 import Link from "next/link";
 import { addErrorAction, toggleErrorAction } from "@/app/actions";
-import { Badge, Card, EmptyState, MockBadge, btn, inputCls } from "@/components/ui";
-import { Drawer, ElapsedWait, toast } from "@/components/motion";
+import { Badge, Card, EmptyState, btn, inputCls } from "@/components/ui";
+import { toast } from "@/components/motion";
 import { T } from "@/components/i18n";
 import { AskTutor } from "@/components/ask-tutor";
-import type { DrillSet, ErrorCategory } from "@/lib/types";
+import type { ErrorCategory } from "@/lib/types";
 
 interface ErrorItem {
   id: number;
@@ -34,7 +34,6 @@ export function ErrorBankView({ errors }: { errors: ErrorItem[] }) {
   const [pending, start] = useTransition();
   const [tutorOpen, setTutorOpen] = useState(false);
   const [tutorQuestion, setTutorQuestion] = useState("");
-  const [drillErr, setDrillErr] = useState<ErrorItem | null>(null);
 
   const active = rows.filter((r) => r.status === "active");
   const resolved = rows.filter((r) => r.status === "resolved");
@@ -142,12 +141,10 @@ export function ErrorBankView({ errors }: { errors: ErrorItem[] }) {
             <ErrorRow key={e.id} e={e} onToggle={() => {
               toggleErrorAction(e.id);
               setRows((r) => r.map((x) => (x.id === e.id ? { ...x, status: "resolved" } : x)));
-            }} onAskTutor={(q) => { setTutorQuestion(q); setTutorOpen(true); }} onDrills={() => setDrillErr(e)} />
+            }} onAskTutor={(q) => { setTutorQuestion(q); setTutorOpen(true); }} />
           ))}
         </div>
       )}
-
-      <DrillDrawer key={drillErr?.id ?? "none"} error={drillErr} onClose={() => setDrillErr(null)} />
 
       {resolved.length > 0 && (
         <div className="mt-8">
@@ -185,7 +182,7 @@ export function ErrorBankView({ errors }: { errors: ErrorItem[] }) {
   );
 }
 
-function ErrorRow({ e, onToggle, onAskTutor, onDrills }: { e: ErrorItem; onToggle: () => void; onAskTutor: (q: string) => void; onDrills: () => void }) {
+function ErrorRow({ e, onToggle, onAskTutor }: { e: ErrorItem; onToggle: () => void; onAskTutor: (q: string) => void }) {
   const meta = CATEGORIES.find((c) => c.value === e.category);
   return (
     <div className="rounded-2xl bg-white p-4 shadow-[0_0_0_0.5px_rgba(0,0,0,0.06),0_2px_8px_rgba(0,0,0,0.04)]">
@@ -209,9 +206,9 @@ function ErrorRow({ e, onToggle, onAskTutor, onDrills }: { e: ErrorItem; onToggl
       </div>
       {e.explanation && <p className="mt-1.5 text-[12.5px] leading-relaxed text-ink-2">{e.explanation}</p>}
       <div className="mt-2 flex flex-wrap items-center gap-2">
-        <button onClick={onDrills} className={`${btn.primary} px-3.5 py-1.5 text-[12px]`}>
-          <T en="Practice in new contexts" zh="换场景再测（平行操练）" />
-        </button>
+        <Link href={`/practice/${e.id}`} className={`${btn.primary} px-3.5 py-1.5 text-[12px]`}>
+          <T en="Practice this mistake" zh="重新练习" />
+        </Link>
         <button
           onClick={() => onAskTutor(`Why do I keep making the mistake "${e.wrongForm}" instead of "${e.correctForm}"? This has happened ${e.occurrenceCount} times.`)}
           className={`${btn.ghost} text-[#0068d0]`}
@@ -223,103 +220,3 @@ function ErrorRow({ e, onToggle, onAskTutor, onDrills }: { e: ErrorItem; onToggl
   );
 }
 
-/* ── Parallel drills — the same error pattern re-tested in 3 NEW contexts,
- * so killing it stops depending on remembering the original sentence. ──── */
-const normAnswer = (s: string) =>
-  s.toLowerCase().replace(/[^a-z0-9'\s]/g, "").replace(/\s+/g, " ").trim();
-
-function DrillDrawer({ error, onClose }: { error: ErrorItem | null; onClose: () => void }) {
-  const [set, setSet] = useState<DrillSet | null>(null);
-  const [answers, setAnswers] = useState<Record<number, string>>({});
-  const [checked, setChecked] = useState<Record<number, boolean>>({});
-  const recorded = useRef(false);
-
-  // parent remounts this drawer per error (key), so state starts clean —
-  // the effect only fetches
-  useEffect(() => {
-    if (!error) return;
-    fetch("/api/ai/drills", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ errorId: error.id }),
-    })
-      .then((r) => r.json())
-      .then((d: DrillSet) => d.items?.length && setSet(d));
-  }, [error?.id]);
-
-  if (!error) return null;
-  const check = (i: number) => {
-    const item = set?.items[i];
-    if (!item || checked[i] !== undefined) return;
-    const ok = (() => {
-      const a = normAnswer(answers[i] ?? "");
-      const want = normAnswer(item.answer);
-      return !!a && (a === want || a.includes(want));
-    })();
-    setChecked((c) => ({ ...c, [i]: ok }));
-    const correctCount = Object.values({ ...checked, [i]: ok }).filter(Boolean).length;
-    if (correctCount > 0 && !recorded.current) {
-      recorded.current = true;
-      fetch("/api/ai/drills", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ errorId: error.id, record: { correct: 1 } }),
-      }).catch(() => {});
-      toast("Retrieval counted — it appears in today's evidence.", "success");
-    }
-  };
-
-  return (
-    <Drawer
-      open={!!error}
-      onClose={onClose}
-      title={<T en="Parallel drills" zh="平行操练" />}
-      subtitle={
-        <>
-          <span className="line-through">{error.wrongForm}</span> → <b>{error.correctForm}</b>
-          {set?.isMock && <MockBadge />}
-        </>
-      }
-    >
-      {!set ? (
-        <ElapsedWait en="Writing your drills — usually under 60 s" zh="生成操练句中 — 通常 60 秒内" />
-      ) : (
-        <div className="space-y-5">
-          <p className="text-[12.5px] leading-relaxed text-ink-2">
-            <T
-              en="Same pattern, three new scenes. Fill the blank from memory — no peeking at the answer."
-              zh="同一个错误模式，三个新场景。凭记忆填空——先别看答案。"
-            />
-          </p>
-          {set.items.map((item, i) => (
-            <div key={i} className="rounded-xl bg-surface-2 px-4 py-3">
-              {item.scene && <p className="mb-1 text-[11.5px] font-medium uppercase tracking-[0.05em] text-ink-3">{item.scene}</p>}
-              <p className="text-[14px] leading-relaxed text-ink">{item.context}</p>
-              <div className="mt-2.5 flex items-center gap-2">
-                <input
-                  value={answers[i] ?? ""}
-                  onChange={(e) => setAnswers((a) => ({ ...a, [i]: e.target.value }))}
-                  onKeyDown={(e) => e.key === "Enter" && check(i)}
-                  disabled={checked[i] !== undefined}
-                  placeholder="____"
-                  className="input-base w-44 px-3 py-1.5 text-[13px]"
-                />
-                {checked[i] === undefined ? (
-                  <button onClick={() => check(i)} className={`${btn.secondary} px-3 py-1.5 text-[12px]`}>
-                    <T en="Check" zh="检查" />
-                  </button>
-                ) : checked[i] ? (
-                  <span className="text-[12.5px] font-medium text-ok-text">✓</span>
-                ) : (
-                  <span className="text-[12.5px] text-ink-2">
-                    → <b className="text-ink">{item.answer}</b>
-                  </span>
-                )}
-              </div>
-            </div>
-          ))}
-        </div>
-      )}
-    </Drawer>
-  );
-}

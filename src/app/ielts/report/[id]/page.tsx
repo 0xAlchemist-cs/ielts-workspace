@@ -116,10 +116,14 @@ export default async function ReportPage({ params }: { params: Promise<{ id: str
   }
 
   /* review candidates: which synonym pairs from this import are already in
-     the Error Bank (→ the existing review queue picks them up) */
-  const banked = new Set(
-    (await db.select({ w: errorsT.wrongForm }).from(errorsT).where(and(eq(errorsT.userId, userId), eq(errorsT.sourceModule, "ieltscb_reading")))).map((r) => r.w),
-  );
+     the Error Bank (→ the existing review queue picks them up). V15.1: also
+     carry the error id so each wrong question can deep-link into practice. */
+  const bankedRows = await db
+    .select({ id: errorsT.id, w: errorsT.wrongForm })
+    .from(errorsT)
+    .where(and(eq(errorsT.userId, userId), eq(errorsT.sourceModule, "ieltscb_reading")));
+  const banked = new Set(bankedRows.map((r) => r.w));
+  const practiceByWrongForm = new Map(bankedRows.map((r) => [r.w, r.id]));
 
   return (
     <IeltsReportView
@@ -139,6 +143,7 @@ export default async function ReportPage({ params }: { params: Promise<{ id: str
       persistentWrong={persistentWrong}
       mastered={mastered}
       bankedWrongForms={banked}
+      practiceByWrongForm={Object.fromEntries(practiceByWrongForm)}
       questions={questions.map((q, i) => ({
         number: i + 1,
         type: q.subSkill,

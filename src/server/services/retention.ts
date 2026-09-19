@@ -109,6 +109,8 @@ export interface ReviewQueueEntry {
   clozePrompt?: string;
   clozeAudio?: string;
   teach?: { pattern?: string; meaningZh?: string; examples?: string[]; explanation?: string };
+  /** V15.1: for error items — the underlying errors.id (deep link to /practice) */
+  sourceId?: number;
   /** priority metadata */
   priority: number; // 0-100, higher = more urgent
   category: "overdue" | "weak_retrieval" | "recurring_error" | "retention_check" | "new_item" | "at_risk";
@@ -337,6 +339,8 @@ async function buildEntry(
       expected: e.correctForm,
       display: { title: `${e.wrongForm} ✗ → ?`, meaningEn: e.explanation },
       teach: { explanation: e.explanation },
+      /** V15.1: the underlying error id — powers the [重新练习] deep link */
+      sourceId: item.itemId,
       priority, category, reasonDetail,
     };
   }

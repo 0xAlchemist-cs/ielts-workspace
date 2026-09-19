@@ -25,6 +25,8 @@ interface QueueItem {
   clozePrompt?: string;
   clozeAudio?: string;
   teach?: { pattern?: string; meaningZh?: string; examples?: string[]; explanation?: string };
+  /** V15.1: for error items — deep link into targeted practice */
+  sourceId?: number;
   priority?: number;
   category?: string;
   reasonDetail?: string;
@@ -399,6 +401,12 @@ export function ReviewSession({
                     <p className="mt-3 text-[12px] text-ink-3">
                       <T en="Retry used — production succeeded counts, but the interval stays honest." zh="已重试——成功记录，但间隔不会虚高。" />
                     </p>
+                  )}
+                  {/* V15.1: error items get a targeted two-stage practice entry */}
+                  {current.itemType === "error" && current.sourceId != null && (
+                    <a href={`/practice/${current.sourceId}`} className={`${btn.ghost} ml-2 mt-3 px-3 py-1.5 text-[12px]`}>
+                      <T en="Practice in new contexts →" zh="换语境重新练习 →" />
+                    </a>
                   )}
                 </div>
               )}
