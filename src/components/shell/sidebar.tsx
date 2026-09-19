@@ -4,6 +4,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import {
   BookOpen,
+  Brain,
   CircleAlert,
   GraduationCap,
   Layers,
@@ -33,12 +34,13 @@ const PRIMARY: Item[] = [
   { href: "/", en: "Today", zh: "今日", icon: Target },
   { href: "/review", en: "Practice", zh: "练习", icon: RotateCcw },
   { href: "/library", en: "Library", zh: "内容库", icon: BookOpen },
-  { href: "/profile", en: "Progress", zh: "进步", icon: TrendingUp },
+  { href: "/progress", en: "Progress", zh: "进步", icon: TrendingUp },
 ];
 
 const MORE: Item[] = [
   { href: "/ielts", en: "IELTS", zh: "雅思练习", icon: GraduationCap },
   { href: "/writing", en: "Writing", zh: "写作", icon: PenLine },
+  { href: "/profile", en: "Profile", zh: "学习画像", icon: Brain },
   { href: "/cet", en: "CET Practice", zh: "四六级练习", icon: BookOpen },
   { href: "/errors", en: "Mistakes", zh: "惯犯错误", icon: CircleAlert },
   { href: "/chunks", en: "Language", zh: "语言库", icon: Layers },

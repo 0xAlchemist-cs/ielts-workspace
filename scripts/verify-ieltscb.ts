@@ -199,7 +199,7 @@ async function main() {
     const navPrimary = sidebar.match(/const PRIMARY: Item\[[\s\S]*?\];/)?.[0] ?? "";
     const navMore = sidebar.match(/const MORE: Item\[[\s\S]*?\];/)?.[0] ?? "";
     check("⑬ primary nav = exactly Today/Practice/Library/Progress",
-      ['href: "/"', "href: \"/review\"", "href: \"/library\"", "href: \"/profile\""].every((h) => navPrimary.includes(h)) && !navPrimary.includes("/memory"));
+      ['href: "/"', "href: \"/review\"", "href: \"/library\"", "href: \"/progress\""].every((h) => navPrimary.includes(h)) && !navPrimary.includes("/memory"));
     check("⑬ removed entries absent from nav (Memory/External/Lab/Speaking/Mock)",
       !sidebar.includes('"/memory"') && !sidebar.includes('"/external"') && !sidebar.includes('"/lab"') && !sidebar.includes('"/speaking"') && !sidebar.includes('"/ielts/mock"'));
     const redirects: [string, string][] = [

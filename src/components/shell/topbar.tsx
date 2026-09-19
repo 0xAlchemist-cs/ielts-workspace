@@ -25,7 +25,8 @@ const SECTION_MAP: { match: (p: string) => boolean; en: string; zh: string }[] =
   { match: (p) => p.startsWith("/review"), en: "Practice", zh: "练习" },
   { match: (p) => p.startsWith("/chunks"), en: "Language", zh: "语言库" },
   { match: (p) => p.startsWith("/errors"), en: "Mistakes", zh: "惯犯错误" },
-  { match: (p) => p.startsWith("/profile"), en: "Progress", zh: "进步" },
+  { match: (p) => p.startsWith("/progress"), en: "Progress", zh: "进步" },
+  { match: (p) => p.startsWith("/profile"), en: "Profile", zh: "学习画像" },
   { match: (p) => p.startsWith("/settings"), en: "Settings", zh: "设置" },
 ];
 
