@@ -87,6 +87,8 @@ export function LibraryView({
     const t = searchParams.get("type");
     // eslint-disable-next-line react-hooks/set-state-in-effect -- sync filter to URL param (incl. query-only navigations)
     setFilter(t === "reading" || t === "listening" ? t : "all");
+    // deep link straight to the Add tab (external report import entry)
+    if (searchParams.get("add") === "1") setTab("add");
   }, [searchParams]);
   const [topic, setTopic] = useState("all");
   // the bank holds hundreds of items — render progressively instead of one

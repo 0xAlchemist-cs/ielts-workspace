@@ -2,6 +2,7 @@ import Link from "next/link";
 import { requireUser } from "@/server/current-user";
 import { getBandGaps } from "@/server/services/ielts-engine";
 import { IeltsEngineView } from "./engine";
+import { ExternalReportsCard } from "./reports-list";
 
 export default async function IeltsPage() {
   const cu = await requireUser();
@@ -18,6 +19,7 @@ export default async function IeltsPage() {
         </Link>
       </div>
       <IeltsEngineView targetBand={targetBand} />
+      <ExternalReportsCard />
     </div>
   );
 }

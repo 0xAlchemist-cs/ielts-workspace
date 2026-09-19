@@ -117,6 +117,11 @@ export function IeltsReportView({
 
   return (
     <div className="mx-auto w-full max-w-3xl">
+      {/* back to the reports entry — never a dead end */}
+      <a href="/ielts" className="press mb-3 inline-flex items-center gap-1 text-[12.5px] font-medium text-ink-3 hover:text-ink">
+        <ChevronDown size={13} className="-rotate-90" />
+        <T en="IELTS practice" zh="雅思练习" />
+      </a>
       {/* header */}
       <p className="text-[12px] font-medium uppercase tracking-[0.07em] text-ink-3">
         <T en="External reading report" zh="外部阅读报告" />
