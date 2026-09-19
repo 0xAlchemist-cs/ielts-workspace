@@ -4,15 +4,16 @@ import { computeFullProfile } from "@/server/services/learning-profile";
 import { getUserVocabulary, getUserChunks } from "@/server/services/bank";
 import { retrievalStats } from "@/server/services/retrieval";
 import { getListeningProfile, missStats } from "@/server/services/listening";
-import { getTrajectory, getLearningEfficiency, generateWeeklyReview } from "@/server/services/trajectory";
+import { getTrajectory } from "@/server/services/trajectory";
 import { buildReadiness } from "@/server/services/readiness";
+import { buildLearningMemory } from "@/server/services/learning-memory";
 import { ProfileView } from "./view";
 
 export default async function ProfilePage() {
   const cu = await requireUser();
   const userId = cu.user.id;
 
-  const [fullProfile, trend, vocab, chunks, retrieval, lProfile, lMisses, trajectory, efficiency, weekly, funnel, evidence, readiness] =
+  const [fullProfile, trend, vocab, chunks, retrieval, lProfile, lMisses, trajectory, funnel, evidence, readiness, memory] =
     await Promise.all([
       computeFullProfile(userId),
       getTrend14(userId),
@@ -22,11 +23,10 @@ export default async function ProfilePage() {
       getListeningProfile(userId),
       missStats(userId),
       getTrajectory(userId, 30),
-      getLearningEfficiency(userId),
-      generateWeeklyReview(userId),
       getTodayFunnel(userId),
       getTodayEvidence(userId),
       buildReadiness(userId, cu.user.examProfile),
+      buildLearningMemory(userId),
     ]);
 
   return (
@@ -52,8 +52,7 @@ export default async function ProfilePage() {
         acceleration: trajectory.acceleration,
         snapshotCount: trajectory.snapshots.length,
       }}
-      efficiency={efficiency}
-      weeklyReview={weekly}
+      memory={memory}
       stats={{
         activeVocabulary: vocab.filter((v) => v.status === "active").length,
         passiveVocabulary: vocab.filter((v) => v.status === "passive").length,

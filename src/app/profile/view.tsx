@@ -15,7 +15,8 @@ import { T, useBilingual } from "@/components/i18n";
 import { plural } from "@/lib/plural";
 import type { CEFR, MissionCounters } from "@/lib/types";
 import type { FullLearningProfile, ErrorPattern } from "@/server/services/learning-profile";
-import type { SkillTrend, Bottleneck, WeeklyReview } from "@/lib/types";
+import type { SkillTrend, Bottleneck } from "@/lib/types";
+import { MemoryInsights, type LearningMemory } from "./memory-insights";
 
 interface TrajectoryData {
   trends: SkillTrend[];
@@ -23,15 +24,6 @@ interface TrajectoryData {
   plateau: { skill: string; detail: string }[];
   acceleration: { skill: string; detail: string }[];
   snapshotCount: number;
-}
-
-interface EfficiencyData {
-  eventsPerHour: number;
-  retrievalPerHour: number;
-  transferPerHour: number;
-  errorResolutionRate: number;
-  rating: string;
-  detail: string;
 }
 
 const MISS_ZH: Record<string, string> = {
@@ -59,8 +51,7 @@ export function ProfileView({
   profile,
   fullProfile,
   trajectory,
-  efficiency,
-  weeklyReview,
+  memory,
   stats,
   funnel,
   evidence,
@@ -69,8 +60,7 @@ export function ProfileView({
   profile: ProfileData;
   fullProfile: FullLearningProfile;
   trajectory: TrajectoryData;
-  efficiency: EfficiencyData;
-  weeklyReview: WeeklyReview | null;
+  memory: LearningMemory;
   stats: {
     activeVocabulary: number;
     passiveVocabulary: number;
@@ -421,61 +411,6 @@ export function ProfileView({
       </Card>
       </div>
 
-      {/* Learning Efficiency */}
-      <Card title={<T en="Learning efficiency" zh="学习效率" />} subtitle={<T en="Meaningful events per study hour — not time spent" zh="每小时有效学习事件——不是学习时长" />} className="mb-6">
-        <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
-          <div className="rounded-xl bg-black/[0.03] px-4 py-3 text-center">
-            <div className="font-mono text-[18px] font-semibold text-ink">{efficiency.eventsPerHour}</div>
-            <div className="text-[10.5px] font-medium text-ink-3">Events/hr</div>
-          </div>
-          <div className="rounded-xl bg-black/[0.03] px-4 py-3 text-center">
-            <div className="font-mono text-[18px] font-semibold text-ink">{efficiency.retrievalPerHour}</div>
-            <div className="text-[10.5px] font-medium text-ink-3">Retrievals/hr</div>
-          </div>
-          <div className="rounded-xl bg-black/[0.03] px-4 py-3 text-center">
-            <div className="font-mono text-[18px] font-semibold text-ink">{efficiency.transferPerHour}</div>
-            <div className="text-[10.5px] font-medium text-ink-3">Transfers/hr</div>
-          </div>
-          <div className={`rounded-xl px-4 py-3 text-center ${
-            efficiency.rating === "high" ? "bg-[#34c759]/[0.1]" : efficiency.rating === "medium" ? "bg-[#ff9f0a]/[0.08]" : "bg-black/[0.03]"
-          }`}>
-            <div className={`font-mono text-[18px] font-semibold capitalize ${
-              efficiency.rating === "high" ? "text-[#1f7a37]" : efficiency.rating === "medium" ? "text-[#9a6200]" : "text-ink"
-            }`}>{efficiency.rating}</div>
-            <div className="text-[10.5px] font-medium text-ink-3">Rating</div>
-          </div>
-        </div>
-        <p className="mt-3 text-[12px] leading-relaxed text-ink-3">{efficiency.detail}</p>
-      </Card>
-
-      {/* Weekly Review */}
-      {weeklyReview && (
-        <Card title={<T en="Weekly review" zh="每周回顾" />} subtitle={`Week of ${weeklyReview.weekOf}`} className="mb-6">
-          <div className="space-y-4">
-            {weeklyReview.improved.length > 0 && (
-              <div>
-                <div className="text-[10.5px] font-semibold uppercase text-[#1f7a37]">What improved · 进步了什么</div>
-                {weeklyReview.improved.map((imp, i) => (
-                  <p key={i} className="mt-1 text-[12.5px] text-ink-2">↗ {imp.skill} +{imp.delta} — {imp.reason}</p>
-                ))}
-              </div>
-            )}
-            {weeklyReview.stillWeak.length > 0 && (
-              <div>
-                <div className="text-[10.5px] font-semibold uppercase text-[#9a6200]">Still weak · 仍然薄弱</div>
-                {weeklyReview.stillWeak.map((w, i) => (
-                  <p key={i} className="mt-1 text-[12.5px] text-ink-2">○ {w.skill} ({w.score}) — {w.reason}</p>
-                ))}
-              </div>
-            )}
-            <div>
-              <div className="text-[10.5px] font-semibold uppercase text-ink-3">Next week priority · 下周优先</div>
-              <p className="mt-1 text-[13px] font-medium text-ink">{weeklyReview.nextPriority}</p>
-            </div>
-          </div>
-        </Card>
-      )}
-
       {/* Phone access */}
       <Card title={<T en="Phone (same WiFi)" zh="手机访问（同一 WiFi）" />} className="mb-6">
         <code className="block overflow-x-auto rounded-lg bg-black/[0.05] px-3.5 py-2.5 font-mono text-[12px] text-ink">
@@ -484,6 +419,11 @@ export function ProfileView({
       </Card>
         </>
       )}
+
+      {/* V15: Learning Memory insights (merged from /memory) replace the
+       *  efficiency/weekly data-wall cards — statements with Why?, always
+       *  visible, never behind the numbers disclosure */}
+      <MemoryInsights memory={memory} />
 
       {/* Edit profile form */}
       <form

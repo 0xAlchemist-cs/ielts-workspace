@@ -4,17 +4,14 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import {
   BookOpen,
-  Brain,
   CircleAlert,
   GraduationCap,
   Layers,
-  Mic,
   PanelLeftClose,
   PanelLeftOpen,
   PenLine,
   RotateCcw,
   Settings,
-  Sparkles,
   Target,
   TrendingUp,
 } from "lucide-react";
@@ -26,8 +23,9 @@ import type { LucideIcon } from "lucide-react";
  * A learner needs to answer "where do I do things", not "how is the product
  * architected": TODAY / PRACTICE / LIBRARY / PROGRESS are the whole primary
  * nav. Capabilities (writing, mistakes, language tools) live behind one
- * collapsed "More" group; Settings stays in the footer. V14.2: the internal
- * full mock is retired — real exams happen externally (/ielts is the door). */
+ * collapsed "More" group; Settings stays in the footer. V14.2 retired the
+ * internal full mock; V15 merges Memory into Progress, external into IELTS,
+ * and removes the AI Lab showcase. */
 
 type Item = { href: string; en: string; zh: string; icon: LucideIcon };
 
@@ -35,18 +33,15 @@ const PRIMARY: Item[] = [
   { href: "/", en: "Today", zh: "今日", icon: Target },
   { href: "/review", en: "Practice", zh: "练习", icon: RotateCcw },
   { href: "/library", en: "Library", zh: "内容库", icon: BookOpen },
-  { href: "/memory", en: "Memory", zh: "学习记忆", icon: Brain },
   { href: "/profile", en: "Progress", zh: "进步", icon: TrendingUp },
 ];
 
 const MORE: Item[] = [
-  { href: "/writing", en: "Writing", zh: "写作", icon: PenLine },
-  { href: "/external", en: "Speaking", zh: "口语", icon: Mic },
   { href: "/ielts", en: "IELTS", zh: "雅思练习", icon: GraduationCap },
+  { href: "/writing", en: "Writing", zh: "写作", icon: PenLine },
   { href: "/cet", en: "CET Practice", zh: "四六级练习", icon: BookOpen },
   { href: "/errors", en: "Mistakes", zh: "惯犯错误", icon: CircleAlert },
   { href: "/chunks", en: "Language", zh: "语言库", icon: Layers },
-  { href: "/lab", en: "AI Lab", zh: "AI 实验室", icon: Sparkles },
 ];
 
 function isActive(pathname: string, href: string): boolean {

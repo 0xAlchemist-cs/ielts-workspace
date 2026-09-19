@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { ArrowDown, FileUp, Globe, Headphones, Layers, Mic } from "lucide-react";
+import { ArrowDown, FileUp, Globe, Headphones, Layers, Mic, PenLine } from "lucide-react";
 import { T } from "@/components/i18n";
 import { EXTERNAL_COACH_URL, IELTSCB_READING_URL, IELTSCB_URL } from "@/lib/external-coaches";
 
@@ -9,7 +9,17 @@ import { EXTERNAL_COACH_URL, IELTSCB_READING_URL, IELTSCB_URL } from "@/lib/exte
  *    page is never navigated away from. URLs come from existing config only
  *    (external-coaches.ts) — nothing invented. */
 
-const ENTRIES: { key: string; icon: typeof Globe; titleEn: string; titleZh: string; noteEn: string; noteZh: string; url: string }[] = [
+const ENTRIES: {
+  key: string;
+  icon: typeof Globe;
+  titleEn: string;
+  titleZh: string;
+  noteEn: string;
+  noteZh: string;
+  url: string;
+  /** internal = a workspace route (Writing Lab), not an external site */
+  internal?: boolean;
+}[] = [
   {
     key: "reading",
     icon: Globe,
@@ -45,6 +55,16 @@ const ENTRIES: { key: string; icon: typeof Globe; titleEn: string; titleZh: stri
     noteEn: "Same coach — passages read aloud, connected speech, dictation",
     noteZh: "同一教练——朗读文章、连读讲解、听写练习",
     url: EXTERNAL_COACH_URL,
+  },
+  {
+    key: "writing",
+    icon: PenLine,
+    titleEn: "IELTS Writing",
+    titleZh: "雅思写作",
+    noteEn: "Write here in the workspace — plan, AI feedback, rewrite yourself",
+    noteZh: "直接在工作区写——列提纲、AI 反馈、自己重写",
+    url: "/writing",
+    internal: true,
   },
 ];
 
@@ -98,24 +118,30 @@ export function ExternalPractice() {
       </p>
 
       <div className="mt-4 grid gap-2.5 sm:grid-cols-2">
-        {ENTRIES.map((e) => (
-          <a
-            key={e.key}
-            href={e.url}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="press group flex items-start gap-3 rounded-xl bg-surface-2 p-3.5 transition-colors hover:bg-line/60"
-          >
-            <span className="mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-accent/10">
-              <e.icon size={15} strokeWidth={1.8} className="text-accent-text" />
-            </span>
-            <span className="min-w-0">
-              <span className="block text-[13.5px] font-semibold text-ink group-hover:text-accent-text">{e.titleZh} · {e.titleEn}</span>
-              <span className="mt-0.5 block text-[12px] leading-relaxed text-ink-2">{e.noteZh}</span>
-              <span className="sr-only">{e.noteEn}</span>
-            </span>
-          </a>
-        ))}
+        {ENTRIES.map((e) => {
+          const inner = (
+            <>
+              <span className="mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-accent/10">
+                <e.icon size={15} strokeWidth={1.8} className="text-accent-text" />
+              </span>
+              <span className="min-w-0">
+                <span className="block text-[13.5px] font-semibold text-ink group-hover:text-accent-text">{e.titleZh} · {e.titleEn}</span>
+                <span className="mt-0.5 block text-[12px] leading-relaxed text-ink-2">{e.noteZh}</span>
+                <span className="sr-only">{e.noteEn}</span>
+              </span>
+            </>
+          );
+          const cls = "press group flex items-start gap-3 rounded-xl bg-surface-2 p-3.5 transition-colors hover:bg-line/60";
+          return e.internal ? (
+            <Link key={e.key} href={e.url} className={cls}>
+              {inner}
+            </Link>
+          ) : (
+            <a key={e.key} href={e.url} target="_blank" rel="noopener noreferrer" className={cls}>
+              {inner}
+            </a>
+          );
+        })}
       </div>
     </div>
   );

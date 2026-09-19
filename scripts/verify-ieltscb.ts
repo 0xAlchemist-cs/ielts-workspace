@@ -195,6 +195,47 @@ async function main() {
     }
     check("⑫ mock exam UI + API + service retired", !mockExamExists);
 
+    /* ── 13 · V15 P0 收缩: navigation + redirects + merges ────────────── */
+    const navPrimary = sidebar.match(/const PRIMARY: Item\[[\s\S]*?\];/)?.[0] ?? "";
+    const navMore = sidebar.match(/const MORE: Item\[[\s\S]*?\];/)?.[0] ?? "";
+    check("⑬ primary nav = exactly Today/Practice/Library/Progress",
+      ['href: "/"', "href: \"/review\"", "href: \"/library\"", "href: \"/profile\""].every((h) => navPrimary.includes(h)) && !navPrimary.includes("/memory"));
+    check("⑬ removed entries absent from nav (Memory/External/Lab/Speaking/Mock)",
+      !sidebar.includes('"/memory"') && !sidebar.includes('"/external"') && !sidebar.includes('"/lab"') && !sidebar.includes('"/speaking"') && !sidebar.includes('"/ielts/mock"'));
+    const redirects: [string, string][] = [
+      ["src/app/lab/page.tsx", '"/"'],
+      ["src/app/speaking/page.tsx", '"/ielts"'],
+      ["src/app/onboarding/page.tsx", '"/welcome"'],
+      ["src/app/memory/page.tsx", '"/profile"'],
+      ["src/app/external/page.tsx", '"/ielts"'],
+      ["src/app/ielts/mock/page.tsx", '"/ielts"'],
+    ];
+    check("⑬ all 6 legacy routes redirect (no loop: targets are live pages)",
+      redirects.every(([f, t]) => readSrc(f).includes(`redirect(${t})`)));
+    let deadApiExists = false;
+    for (const d of ["src/app/api/progress/route.ts", "src/app/api/trajectory/route.ts", "src/app/api/missions/today/route.ts", "src/app/api/contents/route.ts"]) {
+      try {
+        readFileSync(d);
+        deadApiExists = true;
+      } catch {
+        /* deleted */
+      }
+    }
+    check("⑬ dead APIs removed (progress/trajectory/missions/contents routes)", !deadApiExists);
+    const profilePage = readSrc("src/app/profile/page.tsx");
+    const profileView = readSrc("src/app/profile/view.tsx");
+    const memInsights = readSrc("src/app/profile/memory-insights.tsx");
+    check("⑬ Memory merged into Profile (service feeds insights section)",
+      profilePage.includes("buildLearningMemory") && profileView.includes("<MemoryInsights") && memInsights.includes('id="memory"'));
+    check("⑬ Profile data-wall reduced (efficiency + weekly review cards dropped)",
+      !profileView.includes("Learning efficiency") && !profileView.includes("Weekly review"));
+    check("⑬ AI endpoints still alive for in-lab consumers (sentence + speaking + tutor)",
+      readFileSync("src/app/api/ai/sentence/route.ts", "utf-8").length > 0 &&
+      readFileSync("src/app/api/ai/speaking/route.ts", "utf-8").length > 0 &&
+      readFileSync("src/app/api/ai/tutor/route.ts", "utf-8").length > 0);
+    check("⑬ IELTS external practice covers all four skills incl. Writing",
+      readSrc("src/app/ielts/external-practice.tsx").includes('key: "writing"'));
+
     /* ── 11 · LIVE round-trip (network; only with IELTSCB_LIVE=1) ─────── */
     if (process.env.IELTSCB_LIVE === "1") {
       const live = await buildIeltscbPreview(REAL_URL);
