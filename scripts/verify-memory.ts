@@ -165,9 +165,17 @@ async function main() {
   const hasRNP = m5.patterns.some((p) => p.patternId === "recognise_not_produce");
   check("recognise-not-produce pattern emerges (5 items)", hasRNP, JSON.stringify(m5.patterns.map((p) => p.patternId)));
   const task = speakingTaskFor("B1");
+  // Date-flake-proof contract: with the "reason" bias the output IS the
+  // reason-tagged question (previously asserted ≠ unbiased, which breaks on
+  // days when the rotation already lands on a why-question — 2026-09-19).
   const withBias = personalizeSpeakingTask(task, "without a second thought", hasRNP ? "reason" : undefined);
-  const withoutBias = personalizeSpeakingTask(task, "without a second thought", undefined);
-  check("memory-biased speaking prompt picks the reason question", withBias !== withoutBias && /Why|why/.test(withBias));
+  const reasonIdx = task.tags?.findIndex((t) => t === "reason") ?? -1;
+  const reasonQ = reasonIdx >= 0 ? task.questions[reasonIdx] : null;
+  check(
+    "memory-biased speaking prompt picks the reason question",
+    !!reasonQ && /why/i.test(reasonQ) && withBias.startsWith(reasonQ),
+    `reasonQ=${reasonQ?.slice(0, 40) ?? "none"} withBias=${withBias.slice(0, 40)}`,
+  );
 
   // ── 8 · exam isolation: CET memory never surfaces in IELTS view ──────────
   const cetUser = await mkUser("__mem_cet4__", "cet4");

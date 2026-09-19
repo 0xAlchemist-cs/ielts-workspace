@@ -7,6 +7,9 @@ import { db } from "../src/db";
 import { chunks as chunksT, contents as contentsT, errors as errorsT, learningProfiles, retrievalItems, users } from "../src/db/schema";
 import { selectNextContent } from "../src/server/services/content-selection";
 import { ensureRetrievalItem } from "../src/server/services/retrieval";
+import { pinActiveExam } from "./pin-exam";
+
+const restoreExamFn: (() => Promise<void>) | null = null;
 
 let pass = 0, fail = 0;
 function check(name: string, cond: boolean, extra = "") {

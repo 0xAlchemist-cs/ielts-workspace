@@ -43,6 +43,7 @@ export default async function LibraryPage() {
       imports={imports}
       importSummary={summary}
       userLevel={examConfig(cu.user.examProfile).hasCefrLayer ? cu.profile.cefr : undefined}
+      isIelts={exam === "ielts"}
       examSuffix={cu.user.examProfile === "ielts" ? undefined : examConfig(cu.user.examProfile).label}
       examSuffixZh={cu.user.examProfile === "ielts" ? undefined : examConfig(cu.user.examProfile).zh}
     />

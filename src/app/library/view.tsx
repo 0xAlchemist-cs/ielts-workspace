@@ -9,6 +9,7 @@ import { T, useBilingual } from "@/components/i18n";
 import { importContentAction, assessDifficultyAction } from "@/app/actions";
 import { FileImport } from "./import-panel";
 import { ImportsManager } from "./imports-manager";
+import { IeltscbImport } from "./ieltscb-panel";
 
 interface Item {
   id: number;
@@ -61,6 +62,7 @@ export function LibraryView({
   imports,
   importSummary,
   userLevel,
+  isIelts,
   examSuffix,
   examSuffixZh,
 }: {
@@ -68,6 +70,7 @@ export function LibraryView({
   imports: import("./imports-manager").ImportRow[];
   importSummary: { total: number; ready: number; needsAttention: number };
   userLevel?: string; // V9: IELTS-only difficulty layer
+  isIelts?: boolean; // V14: IELTSCB report import is an IELTS feature
   examSuffix?: string; // V12: exam name for CET goals ("CET-4"); IELTS stays quiet
   examSuffixZh?: string;
 }) {
@@ -198,6 +201,7 @@ export function LibraryView({
           imports={imports}
           importSummary={importSummary}
           userLevel={userLevel}
+          isIelts={isIelts}
         />
       )}
     </div>
@@ -209,11 +213,13 @@ function AddContentPanel({
   imports,
   importSummary,
   userLevel,
+  isIelts,
 }: {
   onImported: (id: number) => void;
   imports: import("./imports-manager").ImportRow[];
   importSummary: { total: number; ready: number; needsAttention: number };
   userLevel?: string; // V9: set only for the IELTS profile (difficulty layer)
+  isIelts?: boolean;
 }) {
   const [text, setText] = useState("");  const [analysis, setAnalysis] = useState<AnalysisResult | null>(null);
   const [analyzing, setAnalyzing] = useState(false);
@@ -263,6 +269,7 @@ function AddContentPanel({
 
   return (
     <div className="space-y-5">
+      {isIelts && <IeltscbImport />}
       <FileImport userLevel={userLevel} />
       <ImportsManager rows={imports} summary={importSummary} />
       <div className="card-specular rounded-2xl bg-surface p-6">

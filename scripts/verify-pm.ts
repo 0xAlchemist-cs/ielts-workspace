@@ -11,7 +11,10 @@ import { saveCorpusChunk, saveVocabulary } from "../src/server/services/bank";
 import { getReviewQueue, submitReview } from "../src/server/services/retrieval";
 import { getWeeklyNorthStar, getReturningToday } from "../src/server/services/progress";
 import { importContentAction } from "../src/app/actions";
+import { pinActiveExam } from "./pin-exam";
 import type { MissionPlan } from "../src/lib/types";
+
+let restoreExamFn: (() => Promise<void>) | null = null;
 
 let pass = 0, fail = 0;
 const check = (name: string, cond: boolean, extra = "") => {
@@ -20,6 +23,7 @@ const check = (name: string, cond: boolean, extra = "") => {
 };
 
 async function main() {
+  restoreExamFn = await pinActiveExam("ielts");
   // ── P0-2: lite mode ──────────────────────────────────────────────────────
   const [u] = await db.insert(users).values({ name: "__pm_verify__" }).returning();
   const userId = u.id;

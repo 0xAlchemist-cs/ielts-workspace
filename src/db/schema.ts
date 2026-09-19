@@ -662,6 +662,48 @@ export const ieltsAttempts = sqliteTable(
   (t) => [index("idx_ielts_attempts_user").on(t.userId)],
 );
 
+/** V14 IELTSCB reading imports — one row per imported report session.
+ *  Keeps the raw JSON snapshot + canonical conversion + import warnings so a
+ *  future site change can be re-adapted without re-fetching, and gives
+ *  duplicate detection its stable keys. ielts_tasks/ielts_attempts stay the
+ *  business tables the engines already read. */
+export const ieltscbImports = sqliteTable(
+  "ieltscb_imports",
+  {
+    id: integer("id").primaryKey({ autoIncrement: true }),
+    userId: integer("user_id").notNull(),
+    /** linked ielts_tasks.id (source="ieltscb") */
+    taskId: integer("task_id").notNull(),
+    /** latest linked ielts_attempts.id (external session result) */
+    attemptId: integer("attempt_id"),
+    /** ieltscb external identifiers */
+    paperId: integer("paper_id").notNull(),
+    chaptersId: integer("chapters_id").notNull(),
+    pType: integer("p_type").notNull(),
+    tid: integer("tid").notNull(),
+    classify: integer("classify").notNull(),
+    sourceUrl: text("source_url").notNull(),
+    title: text("title").notNull(),
+    breadcrumb: text("breadcrumb"),
+    parserVersion: text("parser_version").notNull(),
+    /** sha256 of the raw JSON — change detection for updates */
+    rawHash: text("raw_hash").notNull(),
+    /** sanitized raw API payload, preserved for future re-adaptation */
+    rawSnapshot: text("raw_snapshot", { mode: "json" }),
+    /** canonical conversion result (passage/questions/evidence/synonyms…) */
+    canonical: text("canonical", { mode: "json" }),
+    importWarnings: text("import_warnings", { mode: "json" }).$type<unknown[]>().notNull().default([]),
+    createdAt: integer("created_at").notNull().$defaultFn(() => Date.now()),
+    updatedAt: integer("updated_at").notNull().$defaultFn(() => Date.now()),
+  },
+  (t) => [
+    index("idx_ieltscb_imports_user").on(t.userId),
+    // one report session (tid) imports once; same test re-taken gets a new tid
+    index("idx_ieltscb_imports_report").on(t.userId, t.chaptersId, t.paperId, t.pType, t.tid),
+    index("idx_ieltscb_imports_test").on(t.userId, t.chaptersId, t.paperId, t.pType),
+  ],
+);
+
 /** Per-skill IELTS tracking — IELTS Performance ≠ Language Ability. */
 export const ieltsSkillProfiles = sqliteTable(
   "ielts_skill_profiles",
