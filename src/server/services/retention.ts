@@ -1,6 +1,6 @@
 import { and, desc, eq, lte, sql, gte } from "drizzle-orm";
 import { db } from "@/db";
-import { retrievalItems, reviewHistory, chunks, errors, vocabularies } from "@/db/schema";
+import { retrievalItems, reviewHistory, chunks, errors, vocabularies, wrongPracticeLog } from "@/db/schema";
 import { holisticStrength } from "@/lib/retrieval-engine";
 import { CHUNK_DETECT } from "@/lib/chunk-detect";
 import { recordEvent } from "@/server/services/progress";
@@ -115,6 +115,9 @@ export interface ReviewQueueEntry {
   priority: number; // 0-100, higher = more urgent
   category: "overdue" | "weak_retrieval" | "recurring_error" | "retention_check" | "new_item" | "at_risk";
   reasonDetail: string;
+  /** V15.2: every signal that made this item review-worthy — ONE item, MANY
+   *  reasons; the primary category above stays for display compatibility. */
+  reasons: string[];
 }
 
 interface PriorityInput {
@@ -178,8 +181,23 @@ export async function generateReviewQueue(
   // Fetch all items
   const items = await db.select().from(retrievalItems).where(eq(retrievalItems.userId, userId));
 
+  // V15.2: wrong→practice failures in the last 3 days tag their error items
+  // with a wrong_practice reason — a SOURCE, never a second queue (SM-2 already
+  // rescheduled the item itself on failure)
+  const recentWrongPractice = new Set(
+    (await db
+      .select({ errorId: wrongPracticeLog.errorId })
+      .from(wrongPracticeLog)
+      .where(and(
+        eq(wrongPracticeLog.userId, userId),
+        eq(wrongPracticeLog.result, "incorrect"),
+        gte(wrongPracticeLog.createdAt, now - 3 * DAY),
+      )))
+      .map((r) => r.errorId),
+  );
+
   // Categorize each item
-  const entries: { item: typeof items[0]; priority: number; category: ReviewQueueEntry["category"]; reasonDetail: string; mode: ReviewMode }[] = [];
+  const entries: { item: typeof items[0]; priority: number; category: ReviewQueueEntry["category"]; reasonDetail: string; mode: ReviewMode; reasons: string[] }[] = [];
 
   for (const item of items) {
     const ls = item.learningState;
@@ -201,6 +219,17 @@ export async function generateReviewQueue(
 
     if (filter === "retention" && !retentionDue) continue;
     if (filter === "errors" && item.itemType !== "error") continue;
+
+    // V15.2: collect EVERY signal — one item, many reasons. The first match
+    // below stays the primary category for display compatibility.
+    const reasons: string[] = [];
+    if (isOverdue && overdueDays >= 1) reasons.push("overdue");
+    if (isAlmostDue && !isOverdue) reasons.push("almost_due");
+    if (failRate > 0.4 && totalAttempts >= 3) reasons.push("weak_retrieval");
+    if (item.itemType === "error" && item.failCount >= 1) reasons.push("recurring_error");
+    if (forgetting) reasons.push("forgettingDetected");
+    if (retentionDue) reasons.push("retention_check");
+    if (item.itemType === "error" && recentWrongPractice.has(item.itemId)) reasons.push("wrong_practice");
 
     if (retentionDue) {
       category = "retention_check";
@@ -242,7 +271,7 @@ export async function generateReviewQueue(
       ? "retention_check"
       : antiPatternMode(item.itemType, totalAttempts, format.mode);
 
-    entries.push({ item, priority, category, reasonDetail, mode });
+    entries.push({ item, priority, category, reasonDetail, mode, reasons });
   }
 
   // Sort by priority (descending)
@@ -256,7 +285,7 @@ export async function generateReviewQueue(
   const queue: ReviewQueueEntry[] = [];
   for (const e of top) {
     if (queue.length >= limit) break;
-    const qi = await buildEntry(e.item, e.mode, e.category, e.priority, e.reasonDetail);
+    const qi = await buildEntry(e.item, e.mode, e.category, e.priority, e.reasonDetail, e.reasons);
     if (qi) queue.push(qi);
   }
   return queue;
@@ -268,6 +297,7 @@ async function buildEntry(
   category: ReviewQueueEntry["category"],
   priority: number,
   reasonDetail: string,
+  reasons: string[],
 ): Promise<ReviewQueueEntry | null> {
   if (item.itemType === "chunk") {
     const rows = await db.select().from(chunks).where(eq(chunks.id, item.itemId)).limit(1);
@@ -284,7 +314,7 @@ async function buildEntry(
       expected: c.text,
       display: { title: c.text, meaningEn: c.meaningEn },
       teach: { pattern: c.pattern, meaningZh: c.meaningZh, examples: c.examples },
-      priority, category, reasonDetail,
+      priority, category, reasonDetail, reasons,
       ...(clozePrompt && (mode === "cloze" || mode === "context_transfer") ? { clozePrompt, clozeAudio: model } : {}),
     };
   }
@@ -316,7 +346,7 @@ async function buildEntry(
           prompt: `${v.meaningEn || ""}${v.meaningZh ? ` · ${v.meaningZh}` : ""}`,
           expected: v.headword,
           display: { title: v.headword, meaningEn: v.meaningEn },
-          options, priority, category, reasonDetail,
+          options, priority, category, reasonDetail, reasons,
         };
       }
     }
@@ -326,7 +356,7 @@ async function buildEntry(
       expected: v.headword,
       display: { title: v.headword, meaningEn: v.meaningEn },
       teach: { meaningZh: v.meaningZh, examples: v.exampleEn ? [v.exampleEn] : [] },
-      priority, category, reasonDetail,
+      priority, category, reasonDetail, reasons,
     };
   }
   if (item.itemType === "error") {
@@ -341,7 +371,7 @@ async function buildEntry(
       teach: { explanation: e.explanation },
       /** V15.1: the underlying error id — powers the [重新练习] deep link */
       sourceId: item.itemId,
-      priority, category, reasonDetail,
+      priority, category, reasonDetail, reasons,
     };
   }
   return null;

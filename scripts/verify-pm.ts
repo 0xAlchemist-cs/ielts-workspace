@@ -8,7 +8,8 @@ import {
 } from "../src/db/schema";
 import { generateTodayMission, toggleTodayLite } from "../src/server/services/mission";
 import { saveCorpusChunk, saveVocabulary } from "../src/server/services/bank";
-import { getReviewQueue, submitReview } from "../src/server/services/retrieval";
+import { submitReview } from "../src/server/services/retrieval";
+import { generateReviewQueue } from "../src/server/services/retention";
 import { getWeeklyNorthStar, getReturningToday } from "../src/server/services/progress";
 import { importContentAction } from "../src/app/actions";
 import { pinActiveExam } from "./pin-exam";
@@ -48,7 +49,7 @@ async function main() {
   await saveVocabulary(userId, "convinced", "I am convinced she is right.");
   await saveVocabulary(userId, "influence", "Parents have a big influence.");
   await saveVocabulary(userId, "effect", "The new law had little effect.");
-  const queue = await getReviewQueue(userId, 30);
+  const queue = await generateReviewQueue(userId, 30);
   const vocabItem = queue.find((q) => q.itemType === "vocab");
   check("② first vocab review is recognition with options", vocabItem?.mode === "recognition" && (vocabItem?.options?.length ?? 0) >= 3, JSON.stringify(vocabItem?.mode));
   check("② options include the target", !!vocabItem?.options?.includes(vocabItem.expected));
@@ -60,7 +61,7 @@ async function main() {
     const rightRes = await submitReview(userId, vocabItem.retrievalItemId, "recognition", vocabItem.expected);
     check("② right choice = 5", rightRes?.quality === 5);
     // two reviews done → ladder graduates to cued_recall
-    const queue2 = await getReviewQueue(userId, 10);
+    const queue2 = await generateReviewQueue(userId, 10);
     const same = queue2.find((q) => q.retrievalItemId === vocabItem.retrievalItemId);
     check("② after 2 encounters graduates to cued_recall", same?.mode === "cued_recall" || same === undefined, same?.mode);
   }
@@ -113,7 +114,7 @@ async function main() {
   check("⑤ rejects <50 words", !short.ok);
 
   // ── Round 2 · P0-1: teach fields ─────────────────────────────────────────
-  const q2 = await getReviewQueue(userId, 10);
+  const q2 = await generateReviewQueue(userId, 10);
   const chunkQ = q2.find((x) => x.itemType === "chunk");
   check("⑥ chunk queue item carries teach content", !!chunkQ?.teach?.pattern && (chunkQ.teach.examples?.length ?? 0) > 0);
 

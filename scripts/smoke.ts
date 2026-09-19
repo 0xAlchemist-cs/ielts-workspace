@@ -18,7 +18,8 @@ import {
 } from "../src/db/schema";
 import { generateTodayMission, markStepDone } from "../src/server/services/mission";
 import { saveCorpusChunk, saveVocabulary } from "../src/server/services/bank";
-import { getReviewQueue, submitReview } from "../src/server/services/retrieval";
+import { submitReview } from "../src/server/services/retrieval";
+import { generateReviewQueue } from "../src/server/services/retention";
 import { getDashboardStats, getTodayFunnel, recordEvent } from "../src/server/services/progress";
 import { gradeRetrieval } from "../src/lib/grading";
 import { detectChunksInSentence } from "../src/lib/chunk-detect";
@@ -79,7 +80,7 @@ async function main() {
     check("grader: vocab exact → 5", g3.quality === 5);
 
     // ⑥ review queue + submit (production correct)
-    const queue = await getReviewQueue(userId, 10);
+    const queue = await generateReviewQueue(userId, 10);
     check("review queue has the saved chunk", queue.some((q) => q.itemType === "chunk"));
     const chunkQ = queue.find((q) => q.itemType === "chunk")!;
     const r1 = await submitReview(userId, chunkQ.retrievalItemId, "production", `Obviously, honestly, ${chunkQ.expected} happened exactly like the model sentence.`);

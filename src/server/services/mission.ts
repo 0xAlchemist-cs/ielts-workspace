@@ -5,7 +5,8 @@ import { selectNextContent } from "@/server/services/content-selection";
 import { CHUNK_DETECT } from "@/lib/chunk-detect";
 import { cueCards, genericSpeakingPrompts, speakingPromptByChunk } from "@/lib/banks";
 import { todayKey } from "@/lib/text";
-import { getReviewQueue, retrievalIdsForChunks } from "@/server/services/retrieval";
+import { retrievalIdsForChunks } from "@/server/services/retrieval";
+import { generateReviewQueue } from "@/server/services/retention";
 import type { MissionPlan, StepStatus } from "@/lib/types";
 
 export async function getTodayMission(userId: number): Promise<DailyMission | null> {
@@ -116,11 +117,12 @@ export async function generateTodayMission(userId: number, liteOverride?: boolea
     ? noticeIds.filter((id) => decision.targetChunkIds.includes(id)).slice(0, 2)
     : (actualLite ? [] : noticeIds.slice(0, 2));
 
-  // ── Retrieval: engine-selected items override default queue; the planner's
-  // budget caps the batch so a backlog never floods the day (V10 P6) ────────
+  // ── Retrieval: V15.2 — the mission batch comes from the SAME canonical
+  // review queue as /review (one scheduling path); the planner's budget caps
+  // the batch so a backlog never floods the day (V10 P6) ──────────────────
   const retrievalItemIds = (decision.retrievalItemIds.length > 0
     ? decision.retrievalItemIds
-    : (await getReviewQueue(userId, actualLite ? 6 : Math.max(6, budget.reviewCount))).map((q) => q.retrievalItemId)
+    : (await generateReviewQueue(userId, actualLite ? 6 : Math.max(6, budget.reviewCount))).map((q) => q.retrievalItemId)
   ).slice(0, budget.reviewCount);
 
   const firstChunk = noticeRows[0];

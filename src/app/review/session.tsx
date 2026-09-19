@@ -67,6 +67,17 @@ const CATEGORY_TEXT: Record<string, { en: string; zh: string }> = {
   new_item: { en: "new", zh: "新学" },
 };
 
+/** V15.2: composition line wording — sources read as plain counts, never as
+ *  parallel entries the learner has to choose between. */
+const CATEGORY_QUIET: Record<string, { en: string; zh: string }> = {
+  overdue: { en: "due", zh: "到期" },
+  weak_retrieval: { en: "weak", zh: "薄弱" },
+  recurring_error: { en: "error", zh: "错题" },
+  retention_check: { en: "check", zh: "检验" },
+  at_risk: { en: "slipping", zh: "生疏" },
+  new_item: { en: "new", zh: "新学" },
+};
+
 export function ReviewSession({
   overdueCount, atRiskCount, tomorrow,
 }: {
@@ -179,6 +190,16 @@ export function ReviewSession({
               <T en={`${plural(atRiskCount, "item")} needs attention`} zh={`${atRiskCount} 项需要关注`} />
             </span>
           )}
+          {/* V15.2: where the queue came from — one composition line, the
+           * system decides the order; the learner never picks a source */}
+          {Object.keys(categories).length > 0 && (
+            <span className="ml-1 text-ink-3/80">
+              {" · "}
+              {Object.entries(categories)
+                .map(([k, n]) => `${n} ${CATEGORY_QUIET[k]?.[bilingual ? "zh" : "en"] ?? k}`)
+                .join(" · ")}
+            </span>
+          )}
         </p>
       )}
       {loading && <p className="mt-8 text-[13px] text-ink-3"><T en="Building your review queue…" zh="正在生成复习队列…" /></p>}
@@ -197,6 +218,8 @@ export function ReviewSession({
         </button>
         {optionsOpen && (
           <div className="enter mt-3 flex flex-wrap items-center gap-3">
+            {/* V15.2: duration presets over the SAME canonical queue — errors,
+             * forgetting and retention mix in naturally; no parallel entries */}
             <Segmented<SessionMode>
               value={mode}
               onChange={(m) => { setMode(m); load(m); }}
@@ -206,12 +229,6 @@ export function ReviewSession({
                 { value: "deep", label: <T en="Deep · 30 min" zh="深度 · 30 分钟" /> },
               ]}
             />
-            <a
-              href="/review?filter=errors"
-              className="press text-[12.5px] font-medium text-accent-text hover:underline"
-            >
-              <T en="Practice my mistakes" zh="练我的错题" />
-            </a>
           </div>
         )}
       </div>
