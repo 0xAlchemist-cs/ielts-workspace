@@ -6,7 +6,6 @@ import {
   BookOpen,
   Brain,
   CircleAlert,
-  ClipboardCheck,
   GraduationCap,
   Layers,
   Mic,
@@ -26,8 +25,9 @@ import type { LucideIcon } from "lucide-react";
 /* ── Sidebar — four places, then everything else folded away ────────────────
  * A learner needs to answer "where do I do things", not "how is the product
  * architected": TODAY / PRACTICE / LIBRARY / PROGRESS are the whole primary
- * nav. Capabilities (writing, mock, mistakes, language tools) live behind one
- * collapsed "More" group; Settings stays in the footer. */
+ * nav. Capabilities (writing, mistakes, language tools) live behind one
+ * collapsed "More" group; Settings stays in the footer. V14.2: the internal
+ * full mock is retired — real exams happen externally (/ielts is the door). */
 
 type Item = { href: string; en: string; zh: string; icon: LucideIcon };
 
@@ -43,7 +43,6 @@ const MORE: Item[] = [
   { href: "/writing", en: "Writing", zh: "写作", icon: PenLine },
   { href: "/external", en: "Speaking", zh: "口语", icon: Mic },
   { href: "/ielts", en: "IELTS", zh: "雅思练习", icon: GraduationCap },
-  { href: "/ielts/mock", en: "Mock exam", zh: "全真模考", icon: ClipboardCheck },
   { href: "/cet", en: "CET Practice", zh: "四六级练习", icon: BookOpen },
   { href: "/errors", en: "Mistakes", zh: "惯犯错误", icon: CircleAlert },
   { href: "/chunks", en: "Language", zh: "语言库", icon: Layers },
@@ -72,7 +71,7 @@ export function Sidebar({
   onNavigate: () => void;
 }) {
   const pathname = usePathname();
-  // exam-locked engine routes (writing tasks, IELTS practice, mock) have no CET
+  // exam-locked engine routes (writing tasks, IELTS practice) have no CET
   // counterpart — hiding beats faking. /cet is the reverse: a CET-only surface
   // hidden under IELTS. Reading/Listening/Practice/Language stay exam-agnostic.
   const more = MORE.filter((m) => {
@@ -87,8 +86,8 @@ export function Sidebar({
       active ? "nav-selected font-semibold text-ink" : "nav-hover text-ink-2 hover:text-ink"
     }`;
 
-  // longest-match wins: on /ielts/mock only the mock entry lights up, not
-  // its /ielts prefix sibling
+  // longest-match wins: a longer route only lights its own entry, not a
+  // shorter prefix sibling
   const activeHref = [...PRIMARY, ...more]
     .filter((it) => isActive(pathname, it.href))
     .sort((a, b) => b.href.length - a.href.length)[0]?.href;

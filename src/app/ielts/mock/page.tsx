@@ -1,12 +1,8 @@
-import { requireUser } from "@/server/current-user";
-import { buildMockPaper, todaySeed } from "@/server/services/mock-paper";
-import { MockExam } from "./exam";
+import { redirect } from "next/navigation";
 
-export const dynamic = "force-dynamic";
-
-export default async function MockExamPage() {
-  await requireUser();
-  const { seed, dateKey } = todaySeed();
-  const paper = await buildMockPaper(seed, dateKey);
-  return <MockExam paper={paper} />;
+/** V14.2: the internal full mock is retired — real exams happen on external
+ *  sites and reports are imported. Old links land on the IELTS page (its
+ *  External Practice area is the front door), never a 404. */
+export default function MockRedirectPage() {
+  redirect("/ielts");
 }

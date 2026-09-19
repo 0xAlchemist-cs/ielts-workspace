@@ -55,12 +55,12 @@ Your English isn't only in Cambridge books — it's in PDFs you saved, podcast e
 
 | | |
 | --- | --- |
+| **External practice** | Real exams happen on external sites (IELTSCB for reading/full papers, your AI coach for speaking/listening); paste the report link back in and it becomes learning evidence |
 | **Reading** | Guess-first word cards, 8-dimension sentence analysis, article-first workbench |
 | **Listening** | Real Cambridge audio, segment-level control, connected-speech annotation, shadowing |
 | **Writing** | Task → Plan → Write (instant local feedback + AI examiner) → Rewrite → Transfer |
 | **Speaking** | Your external coach (ChatGPT GPT); the workspace stores what happened and feeds it back into the loop |
 | **Review** | "Think first" — produce from memory, never flip flashcards |
-| **Mock Exam** | Full L+R+W paper (150 min, audio played once, a fresh paper daily from 60 real Cambridge sets) — measurement that feeds the next day's plan |
 
 ## Under the hood
 

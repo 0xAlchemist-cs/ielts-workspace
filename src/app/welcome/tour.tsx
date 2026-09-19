@@ -5,7 +5,6 @@ import Link from "next/link";
 import {
   ArrowRight,
   BookOpen,
-  ClipboardCheck,
   CircleAlert,
   GraduationCap,
   Layers,
@@ -76,8 +75,7 @@ const STOPS: Stop[] = [
 const MORE: { icon: LucideIcon; name: { en: string; zh: string }; note: { en: string; zh: string } }[] = [
   { icon: PenLine, name: { en: "Writing", zh: "写作" }, note: { en: "Write, get AI feedback, rewrite it yourself", zh: "写作 + AI 反馈 + 自己重写" } },
   { icon: Mic, name: { en: "Speaking", zh: "口语" }, note: { en: "Launch your external AI speaking coach", zh: "启动外部 AI 口语教练" } },
-  { icon: GraduationCap, name: { en: "IELTS", zh: "雅思练习" }, note: { en: "Real exam questions, skill by skill", zh: "真题逐项练习" } },
-  { icon: ClipboardCheck, name: { en: "Mock exam", zh: "全真模考" }, note: { en: "Full 150-min Listening + Reading + Writing paper", zh: "150 分钟听力+阅读+写作整卷" } },
+  { icon: GraduationCap, name: { en: "IELTS", zh: "雅思练习" }, note: { en: "Do real exams outside, import the reports here", zh: "真题在外部做，报告导入这里分析" } },
   { icon: CircleAlert, name: { en: "Mistakes", zh: "惯犯错误" }, note: { en: "Errors that keep coming back — retested in new contexts", zh: "反复出的错——换场景再测" } },
   { icon: Layers, name: { en: "Language", zh: "语言库" }, note: { en: "Everything you've saved: expressions, words, patterns", zh: "你存下的一切：表达、词、句式" } },
   { icon: Sparkles, name: { en: "AI Lab", zh: "AI 实验室" }, note: { en: "Drop in any sentence for a deep analysis", zh: "丢进任何句子做深度分析" } },

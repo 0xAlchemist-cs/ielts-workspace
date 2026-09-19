@@ -164,6 +164,35 @@ async function main() {
     const reading = rd.skills.find((s) => s.skill === "reading");
     check("⑩ readiness sees the reading evidence", (reading?.why.en.match(/\d+ attempts?/) ?? reading?.why.en.match(/attempt/)) !== null, reading?.why.en);
 
+    /* ── 12 · V14.2 external-practice收口 + internal mock retired ────────
+     * config-level assertions (import the real modules) + source guards
+     * (fs) that keep the retirement from silently regressing */
+    const coaches = await import("../src/lib/external-coaches");
+    check("⑫ external coach config: one GPT covers speaking + listening", coaches.EXTERNAL_COACHES.length >= 1 && coaches.EXTERNAL_COACHES.some((c) => c.skill === "both" && c.url.startsWith("https://chatgpt.com/")));
+    check("⑫ IELTSCB entry defined from config (no invented deep links)", coaches.IELTSCB_URL === "https://www.ieltscb.com/");
+
+    const readSrc = (p: string) => readFileSync(p, "utf-8");
+    const ieltsPage = readSrc("src/app/ielts/page.tsx");
+    check("⑫ /ielts page renders the External Practice area", ieltsPage.includes("<ExternalPractice />"));
+    const ep = readSrc("src/app/ielts/external-practice.tsx");
+    check("⑫ Reading + Full-practice entries point at IELTSCB (config-driven)", ep.includes("IELTSCB_URL"));
+    check("⑫ Speaking + Listening entries read the existing coach URL", ep.includes("EXTERNAL_COACH_URL"));
+    const extAnchors = ep.split("<a").slice(1);
+    check("⑫ every external anchor template: target=_blank + rel=noopener noreferrer (workspace tab never covered)", extAnchors.length >= 2 && extAnchors.every((a) => a.includes('target="_blank"') && a.includes('rel="noopener noreferrer"')));
+    const sidebar = readSrc("src/components/shell/sidebar.tsx");
+    check("⑫ Full Mock gone from sidebar navigation", !sidebar.includes("/ielts/mock") && !sidebar.includes("全真模考"));
+    const topbar = readSrc("src/components/shell/topbar.tsx");
+    check("⑫ Full Mock gone from topbar section map", !topbar.includes("/ielts/mock"));
+    const mockPage = readSrc("src/app/ielts/mock/page.tsx");
+    check("⑫ /ielts/mock redirects to /ielts (never a 404)", mockPage.includes('redirect("/ielts")'));
+    let mockExamExists = true;
+    try {
+      readFileSync("src/app/ielts/mock/exam.tsx");
+    } catch {
+      mockExamExists = false;
+    }
+    check("⑫ mock exam UI + API + service retired", !mockExamExists);
+
     /* ── 11 · LIVE round-trip (network; only with IELTSCB_LIVE=1) ─────── */
     if (process.env.IELTSCB_LIVE === "1") {
       const live = await buildIeltscbPreview(REAL_URL);

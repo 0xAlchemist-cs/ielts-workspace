@@ -20,7 +20,6 @@ const SECTION_MAP: { match: (p: string) => boolean; en: string; zh: string }[] =
   { match: (p) => p.startsWith("/read"), en: "Reading", zh: "阅读" },
   { match: (p) => p.startsWith("/listen"), en: "Listening", zh: "听力" },
   { match: (p) => p.startsWith("/writing"), en: "Writing", zh: "写作" },
-  { match: (p) => p.startsWith("/ielts/mock"), en: "Mock exam", zh: "全真模考" },
   { match: (p) => p.startsWith("/ielts"), en: "IELTS", zh: "雅思练习" },
   { match: (p) => p.startsWith("/cet"), en: "CET Practice", zh: "四六级练习" },
   { match: (p) => p.startsWith("/review"), en: "Practice", zh: "练习" },
