@@ -53,6 +53,7 @@
     "test:wrong-practice": "tsx scripts/verify-wrong-practice.ts",
     "test:review-unified": "tsx scripts/verify-review-unified.ts",
     "test:progress": "tsx scripts/verify-progress.ts",
+    "test:loop30": "tsx scripts/verify-30d-loop.ts",
     "normalize:exam": "tsx scripts/normalize-exam.ts",
     "test:content-intelligence": "tsx scripts/verify-content-intelligence.ts",
     "test:v9v10": "tsx scripts/verify-v9v10.ts",
@@ -60,7 +61,7 @@
     "test:data": "tsx scripts/verify-data-integrity.ts",
     "inspect:item": "tsx scripts/inspect-item.ts",
     "verify:product": "npm run test:engine && npm run test:rotation && npm run test:loop && npm run test:writing-gate",
-    "verify:all": "npm run normalize:exam && npm run lint && tsc --noEmit && npm run test:smoke && npm run test:pm && npm run test:engine && npm run test:rotation && npm run test:loop && npm run test:writing-gate && npm run test:input-gates && npm run test:import && npm run test:exam && npm run test:planner && npm run test:need && npm run test:memory && npm run test:readiness && npm run test:cet && npm run test:cet-completion && npm run test:ai && npm run test:session && npm run test:content-intelligence && npm run test:ieltscb && npm run test:wrong-practice && npm run test:review-unified && npm run test:progress && npm run test:v9v10"
+    "verify:all": "npm run normalize:exam && npm run lint && tsc --noEmit && npm run test:smoke && npm run test:pm && npm run test:engine && npm run test:rotation && npm run test:loop && npm run test:writing-gate && npm run test:input-gates && npm run test:import && npm run test:exam && npm run test:planner && npm run test:need && npm run test:memory && npm run test:readiness && npm run test:cet && npm run test:cet-completion && npm run test:ai && npm run test:session && npm run test:content-intelligence && npm run test:ieltscb && npm run test:wrong-practice && npm run test:review-unified && npm run test:progress && npm run test:loop30 && npm run test:v9v10"
   },
   "dependencies": {
     "better-sqlite3": "^13.0.3",

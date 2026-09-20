@@ -117,10 +117,10 @@ export function ChunkBankView({
                       ? { label: "Getting stronger", zh: "越来越熟", tone: "accent" as const }
                       : { label: "Needs practice", zh: "需要练习", tone: "neutral" as const };
                 return (
-                  <button
+                  <Link
                     key={c.id}
-                    onClick={() => setDetail(c)}
-                    className="press rounded-2xl bg-white p-4 text-left shadow-[0_0_0_0.5px_rgba(0,0,0,0.06),0_2px_8px_rgba(0,0,0,0.04)] transition-shadow duration-200 hover:shadow-[0_0_0_0.5px_rgba(0,0,0,0.06),0_8px_28px_rgba(0,0,0,0.09)]"
+                    href={`/chunks/${c.id}`}
+                    className="press block rounded-2xl bg-white p-4 text-left shadow-[0_0_0_0.5px_rgba(0,0,0,0.06),0_2px_8px_rgba(0,0,0,0.04)] transition-shadow duration-200 hover:shadow-[0_0_0_0.5px_rgba(0,0,0,0.06),0_8px_28px_rgba(0,0,0,0.09)]"
                   >
                     <div className="flex items-start justify-between gap-2">
                       <span className="text-[14px] font-semibold tracking-[-0.01em] text-ink">{c.text}</span>
@@ -132,7 +132,7 @@ export function ChunkBankView({
                     {c.mySentences.length > 0 && (
                       <p className="mt-2 text-[12px] text-ink-3">✍ {c.mySentences.length} of your own sentences</p>
                     )}
-                  </button>
+                  </Link>
                 );
               })}
             </div>
