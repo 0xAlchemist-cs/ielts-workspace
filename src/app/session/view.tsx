@@ -2,6 +2,7 @@
 
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
+import Link from "next/link";
 import { ArrowRight, BookOpen, Check, Headphones, Mic, PenLine, RotateCcw, Sparkles } from "lucide-react";
 import { T } from "@/components/i18n";
 import { btn } from "@/components/ui";
@@ -214,10 +215,10 @@ export function SessionView({
           ))}
         </div>
         <div className="mt-7 flex items-center gap-3">
-          <a href="/" className="btn-apple press inline-flex h-11 items-center gap-2 rounded-lg px-6 text-[14px] font-medium text-white">
+          <Link href="/" className="btn-apple press inline-flex h-11 items-center gap-2 rounded-lg px-6 text-[14px] font-medium text-white">
             <T en="Back to Today" zh="回到今日" />
             <ArrowRight size={15} strokeWidth={2} />
-          </a>
+          </Link>
         </div>
       </div>
     </div>
