@@ -8,6 +8,7 @@ import { requireUser } from "@/server/current-user";
 import { getOrCreateTodayMission } from "@/server/services/mission";
 import { getDashboardStats, getTodayEvidence, getReturningToday } from "@/server/services/progress";
 import { projectTomorrow, readMemoryPressure } from "@/server/services/planner";
+import { buildSessionPlan } from "@/server/services/session-plan";
 import { getTodaysExpression } from "@/server/services/todays-expression";
 import { T } from "@/components/i18n";
 import { ExpressionAudio } from "@/components/expression-audio";
@@ -100,8 +101,10 @@ export default async function HomePage() {
   const startHref = allDone ? "/profile#trajectory" : "/session";
   const doneCount = stepHrefs.filter((st) => st.done).length;
 
-  const est =
-    plan.length === "quick" ? "10–15 min" : plan.length === "standard" ? "25–35 min" : plan.length === "deep" ? "45–60 min" : "25–35 min";
+  // V16 hardening: ONE source of truth for the day's activity count and minute
+  // estimate — the same shared builder /session renders from (the pilot caught
+  // Today's plan-length ranges disagreeing with the session's summed minutes).
+  const sessionSummary = await buildSessionPlan(plan, cu.user.examProfile, userId);
 
   // the day's action, in learner words — never the engine's skill path.
   // V16: a rescue day says so honestly (the planner already decided the day
@@ -199,8 +202,8 @@ export default async function HomePage() {
         {!allDone && (
           <p className="mt-1.5 text-[12.5px] tabular-nums text-ink-3">
             <T
-              en={`${stepHrefs.filter((st) => !st.done && !st.skipped).length} activities · ${est}`}
-              zh={`${stepHrefs.filter((st) => !st.done && !st.skipped).length} 项活动 · ${est}`}
+              en={`${sessionSummary.pendingCount} activities · ~${sessionSummary.pendingMinutes} min`}
+              zh={`${sessionSummary.pendingCount} 项活动 · 约 ${sessionSummary.pendingMinutes} 分钟`}
             />
           </p>
         )}
@@ -225,7 +228,7 @@ export default async function HomePage() {
             <ArrowRight size={15} strokeWidth={2} />
           </Link>
           <p className="mt-3 text-[12px] text-ink-3">
-            {est}
+            ~{sessionSummary.pendingMinutes} min
             {dueNow > 0 && (
               <>
                 {" · "}

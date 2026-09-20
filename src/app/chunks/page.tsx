@@ -11,9 +11,18 @@ import {
 } from "@/server/services/bank";
 import { ChunkBankView } from "./view";
 
-export default async function ChunksPage() {
+export default async function ChunksPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ tab?: string }>;
+}) {
   const cu = await requireUser();
   const userId = cu.user.id;
+  // V16 hardening: cold-start sessions deep-link here (?tab=discover) so an
+  // empty-bank learner lands straight on the expressions they can save.
+  const { tab } = await searchParams;
+  const initialTab: "bank" | "discover" | "network" =
+    tab === "discover" || tab === "network" ? tab : "bank";
 
   const [userChunks, corpusWords, vocabRels, allContents] = await Promise.all([
     getUserChunks(userId),
@@ -103,6 +112,7 @@ export default async function ChunksPage() {
             to: wordById.get(r.toId)?.headword ?? "?",
           })),
       }}
+      initialTab={initialTab}
     />
   );
 }

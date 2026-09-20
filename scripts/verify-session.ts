@@ -3,9 +3,11 @@
  * temp users. Run: npm run test:session */
 import { eq } from "drizzle-orm";
 import { db } from "../src/db";
-import { chunks as chunksT, dailyMissions, learningProfiles, retrievalItems, users } from "../src/db/schema";
+import { chunks as chunksT, dailyMissions, errors as errorsT, learningProfiles, retrievalItems, users } from "../src/db/schema";
 import { getActiveExam, setActiveExam } from "../src/server/current-user";
 import { generateTodayMission, getTodayMission, markStepDone } from "../src/server/services/mission";
+import { buildSessionPlan } from "../src/server/services/session-plan";
+import { generateReviewQueue } from "../src/server/services/retention";
 import { buildReadiness } from "../src/server/services/readiness";
 import type { MissionPlan } from "../src/lib/types";
 
@@ -156,6 +158,43 @@ async function main() {
     // ── 8 · Planner reacts next cycle (existing V10 mechanism) ────────────
     await setActiveExam("ielts");
     check("planner adapts next cycle (existing V10 mechanism)", m1d?.status === "completed");
+
+    // ── 9 · V16 hardening: cold start + stable totals + dirty-pair gate ────
+    const u9 = await mkUser("__session_v16__", "ielts");
+    uids.push(u9);
+    const m9 = await generateTodayMission(u9);
+    const p9 = m9.plan as MissionPlan;
+    const s9 = await buildSessionPlan(p9, "ielts", u9);
+    // empty bank → NOTICE deep-links to Discover, USE-IT gated, finish blocked
+    const notice9 = s9.activities.find((a) => a.key === "notice");
+    const deep9 = s9.activities.find((a) => a.key === "deep");
+    check("cold start (empty bank): NOTICE routes to Discover", !!notice9 && notice9.href === "/chunks?tab=discover" && notice9.requiresItem === true, JSON.stringify(notice9?.href));
+    check("cold start: USE-IT flagged requiresItem", !!deep9 && deep9.requiresItem === true);
+    check("cold start: hasItems=false reported", s9.hasItems === false);
+    // save one real chunk → cold-start routing lifts (real state, not fake evidence)
+    const [c9] = await db.insert(chunksT).values({ userId: u9, text: "cold start end up doing", pattern: "p", meaningEn: "p", meaningZh: "p" }).returning();
+    const s9b = await buildSessionPlan(p9, "ielts", u9);
+    const notice9b = s9b.activities.find((a) => a.key === "notice");
+    check("after saving one item: NOTICE returns to normal route", !!notice9b && notice9b.href !== "/chunks?tab=discover" && notice9b.requiresItem !== true, notice9b?.href);
+    await db.delete(chunksT).where(eq(chunksT.userId, u9));
+    // stable denominator: totals don't shrink when a step completes
+    const t0 = s9b.totalCount;
+    await markStepDone(u9, s9b.activities[0].key as StepKey);
+    const m9b = await getTodayMission(u9);
+    const s9c = await buildSessionPlan((m9b?.plan ?? p9) as MissionPlan, "ielts", u9);
+    check("stable denominator: total unchanged after a step done", s9c.totalCount === t0, `${t0} → ${s9c.totalCount}`);
+    // Today and session agree by construction (same builder): pendingCount == activities.length
+    check("single source: pendingCount == activities.length", s9c.pendingCount === s9c.activities.length);
+    // dirty error pairs are skipped at question generation
+    const [dirtyErr] = await db.insert(errorsT).values({ userId: u9, category: "grammar", wrongForm: "decoration", correctForm: "essential infrastructure", occurrenceCount: 3 }).returning();
+    const [dirtyItem] = await db.insert(retrievalItems).values({ userId: u9, itemType: "error", itemId: dirtyErr.id, dueAt: Date.now() - 1000 }).returning();
+    const q9 = await generateReviewQueue(u9, 20);
+    check("incoherent wrong→correct pair is never served", !q9.some((e) => e.retrievalItemId === dirtyItem.id), `queue=${q9.length}`);
+    const [goodErr] = await db.insert(errorsT).values({ userId: u9, category: "preposition", wrongForm: "interested on", correctForm: "interested in", occurrenceCount: 2 }).returning();
+    const [goodItem] = await db.insert(retrievalItems).values({ userId: u9, itemType: "error", itemId: goodErr.id, dueAt: Date.now() - 1000 }).returning();
+    const q9b = await generateReviewQueue(u9, 20);
+    check("coherent pair still served", q9b.some((e) => e.retrievalItemId === goodItem.id));
+    await db.delete(errorsT).where(eq(errorsT.userId, u9));
 
     console.log(`\n${pass} passed, ${fail} failed`);
   } finally {

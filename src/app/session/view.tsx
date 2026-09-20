@@ -1,27 +1,18 @@
 "use client";
 
-import Link from "next/link";
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { ArrowRight, BookOpen, Check, Headphones, Mic, PenLine, RotateCcw, Sparkles } from "lucide-react";
 import { T } from "@/components/i18n";
 import { btn } from "@/components/ui";
+import type { SessionActivity } from "@/server/services/session-plan";
 
 /* ── Session Shell — one activity at a time, transitions, never a checklist ─
  * The learner sees: the current activity → do it in its existing module →
- * come back → [Continue] → next. Completion = existing mission step. */
-
-export interface SessionActivity {
-  key: string;
-  type: string;
-  title: { en: string; zh: string };
-  desc: { en: string; zh: string };
-  href: string;
-  minutes: number;
-  /** V13.2: difficulty vs learner level + why this piece — reading/listening only */
-  strength?: { en: string | null; zh: string | null };
-  why?: { en: string; zh: string };
-}
+ * come back → [Continue] → next. Completion = existing mission step.
+ * V16 hardening: position/total come from the shared session plan (stable
+ * denominator — finishing a step no longer shrinks the total), and when the
+ * cold-start gate is active the finish button waits for a real saved item. */
 
 const TYPE_ICON: Record<string, typeof BookOpen> = {
   reading: BookOpen, listening: Headphones, notice: Sparkles,
@@ -37,27 +28,31 @@ const TYPE_LABEL: Record<string, { en: string; zh: string }> = {
 
 export function SessionView({
   activities,
-  currentIdx,
-  allDone,
-  plannedMinutes,
+  position,
+  totalCount,
+  elapsedMinutes,
+  totalMinutes,
+  blocked,
   onComplete,
 }: {
   activities: SessionActivity[];
-  currentIdx: number;
-  allDone: boolean;
-  plannedMinutes: number;
+  position: number;
+  totalCount: number;
+  elapsedMinutes: number;
+  totalMinutes: number;
+  blocked: boolean;
   missionId: number;
   onComplete: (step: string) => Promise<void>;
 }) {
   const router = useRouter();
   const [pending, start] = useTransition();
-  const [phase, setPhase] = useState<"activity" | "transition" | "complete">(allDone ? "complete" : "activity");
-  const [justFinished, setJustFinished] = useState<string | null>(null);
+  const [phase, setPhase] = useState<"activity" | "transition" | "complete">(activities.length === 0 ? "complete" : "activity");
+  // keep the finished list for the complete screen — after the final refresh the
+  // pending list is empty, but the learner should still see what they did
+  const [finishedList, setFinishedList] = useState<SessionActivity[]>([]);
 
-  const current = activities[currentIdx];
-  const next = currentIdx + 1 < activities.length ? activities[currentIdx + 1] : null;
-  const doneCount = allDone ? activities.length : currentIdx;
-  const elapsedMin = activities.slice(0, doneCount).reduce((a, b) => a + b.minutes, 0);
+  const current = activities[0];
+  const next = activities[1];
 
   // ── Activity screen ─────────────────────────────────────────────────────
   if (phase === "activity" && current) {
@@ -65,13 +60,13 @@ export function SessionView({
     return (
       <div className="mx-auto flex min-h-[70vh] w-full max-w-xl flex-col justify-center">
         <div className="enter">
-          {/* progress — quiet, just direction */}
+          {/* progress — quiet, just direction (stable total from the plan) */}
           <div className="mb-6 flex items-center justify-between text-[12px] text-ink-3">
             <span>
-              <T en={`${doneCount + 1} of ${activities.length}`} zh={`第 ${doneCount + 1} / ${activities.length} 项`} />
+              <T en={`${Math.min(position, totalCount)} of ${totalCount}`} zh={`第 ${Math.min(position, totalCount)} / ${totalCount} 项`} />
             </span>
             <span className="tabular-nums">
-              <T en={`${elapsedMin}/${plannedMinutes} min`} zh={`${elapsedMin}/${plannedMinutes} 分钟`} />
+              <T en={`${elapsedMinutes}/${totalMinutes} min`} zh={`${elapsedMinutes}/${totalMinutes} 分钟`} />
             </span>
           </div>
 
@@ -111,15 +106,16 @@ export function SessionView({
           </a>
 
           <div className="mt-6 flex items-center gap-4">
-            {/* come back after doing it */}
+            {/* come back after doing it — gated at cold start until the action
+                is real (a saved item exists), never fabricated evidence */}
             <button
               type="button"
-              disabled={pending}
+              disabled={pending || blocked}
               onClick={() => {
-                setJustFinished(current.key);
                 setPhase("transition");
               }}
-              className="press text-[13px] font-medium text-accent-text"
+              className="press text-[13px] font-medium text-accent-text disabled:cursor-not-allowed disabled:text-ink-3"
+              title={blocked ? "Save one expression first, then come back." : undefined}
             >
               <T en="I've finished this →" zh="我完成了 →" />
             </button>
@@ -131,6 +127,14 @@ export function SessionView({
               <T en="Exit session" zh="退出练习" />
             </button>
           </div>
+          {blocked && (
+            <p className="mt-3 text-[12.5px] leading-relaxed text-ink-3">
+              <T
+                en="Save one real expression first (the button above takes you there) — then come back and continue."
+                zh="先存一个真实表达（上面的按钮会带你去）——回来这里再继续。"
+              />
+            </p>
+          )}
         </div>
       </div>
     );
@@ -177,6 +181,7 @@ export function SessionView({
               disabled={pending}
               onClick={() =>
                 start(async () => {
+                  setFinishedList([...(current ? [current] : []), ...activities.slice(1)]);
                   await onComplete(current.key);
                   setPhase("complete");
                   router.refresh();
@@ -200,7 +205,7 @@ export function SessionView({
           <T en="Today's learning complete." zh="今天的学习完成了。" />
         </h1>
         <div className="mt-5 space-y-1.5">
-          {activities.map((a, i) => (
+          {(finishedList.length ? finishedList : activities).map((a, i) => (
             <p key={a.key} className="flex items-center gap-2 text-[13.5px] text-ink-2">
               <Check size={13} strokeWidth={2.4} className="shrink-0 text-accent-text" />
               <T en={a.title.en} zh={a.title.zh} />
@@ -208,15 +213,12 @@ export function SessionView({
             </p>
           ))}
         </div>
-        <p className="mt-5 text-[13px] text-ink-3">
-          <T en="Tomorrow's plan has been updated based on today's evidence." zh="明天的计划已根据今天的证据更新。" />
-        </p>
-        <Link
-          href="/"
-          className="btn-apple press mt-7 inline-flex h-11 items-center rounded-lg px-6 text-[14px] font-medium text-white"
-        >
-          <T en="Done" zh="完成" />
-        </Link>
+        <div className="mt-7 flex items-center gap-3">
+          <a href="/" className="btn-apple press inline-flex h-11 items-center gap-2 rounded-lg px-6 text-[14px] font-medium text-white">
+            <T en="Back to Today" zh="回到今日" />
+            <ArrowRight size={15} strokeWidth={2} />
+          </a>
+        </div>
       </div>
     </div>
   );

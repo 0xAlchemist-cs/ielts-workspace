@@ -58,13 +58,16 @@ export function ChunkBankView({
   discover,
   chunkRelations,
   network,
+  initialTab = "bank",
 }: {
   myChunks: MyChunk[];
   discover: DiscoverGroup[];
   chunkRelations: RelationEdge[];
   network: Network;
+  /** V16 hardening: cold-start sessions deep-link with ?tab=discover */
+  initialTab?: Tab;
 }) {
-  const [tab, setTab] = useState<Tab>("bank");
+  const [tab, setTab] = useState<Tab>(initialTab);
   const [detail, setDetail] = useState<MyChunk | null>(null);
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const playAudio = (url: string) => {

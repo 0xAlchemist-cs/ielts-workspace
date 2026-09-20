@@ -363,6 +363,11 @@ async function buildEntry(
     const rows = await db.select().from(errors).where(eq(errors.id, item.itemId)).limit(1);
     if (!rows.length) return null;
     const e = rows[0];
+    // V16 hardening (beta pilot P1/P2): a stored wrong→correct pair with NO
+    // shared anchor word is a legacy corrupt row — serving it asks the learner
+    // to "fix decoration into essential infrastructure". Skip such items
+    // instead of quizzing nonsense; the row itself is left untouched.
+    if (!errorPairCoherent(e.wrongForm, e.correctForm)) return null;
     return {
       retrievalItemId: item.id, itemType: "error", mode: "production",
       prompt: `Fix it — write a sentence using the CORRECT form of: ${e.wrongForm}`,
@@ -375,6 +380,19 @@ async function buildEntry(
     };
   }
   return null;
+}
+
+/** A wrong→correct pair is coherent when it shares at least one word ≥3 chars
+ *  (real corrections keep the anchor: "interested on" → "interested in").
+ *  Corrupt legacy pairs share nothing — both sides are unrelated phrases. */
+function errorPairCoherent(wrongForm: string | null, correctForm: string | null): boolean {
+  if (!wrongForm || !correctForm) return false;
+  const toks = (s: string) => new Set((s.toLowerCase().match(/[a-z']{3,}/g) ?? []));
+  const w = toks(wrongForm);
+  const c = toks(correctForm);
+  if (w.size === 0 || c.size === 0) return false;
+  for (const t of w) if (c.has(t)) return true;
+  return false;
 }
 
 /** ── Submit a review with retention-aware processing ────────────────────── */
