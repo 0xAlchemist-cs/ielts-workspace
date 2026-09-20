@@ -1,12 +1,13 @@
 import Link from "next/link";
 import { cookies } from "next/headers";
-import { eq, sql } from "drizzle-orm";
+import { and, eq, gte, lte, sql } from "drizzle-orm";
 import { ArrowRight, Check } from "lucide-react";
 import { db } from "@/db";
-import { chunkEvents as chunkEventsT, reviewHistory as reviewHistoryT, vocabularies as vocabT } from "@/db/schema";
+import { chunkEvents as chunkEventsT, retrievalItems, reviewHistory as reviewHistoryT, vocabularies as vocabT } from "@/db/schema";
 import { requireUser } from "@/server/current-user";
 import { getOrCreateTodayMission } from "@/server/services/mission";
 import { getDashboardStats, getTodayEvidence, getReturningToday } from "@/server/services/progress";
+import { projectTomorrow, readMemoryPressure } from "@/server/services/planner";
 import { getTodaysExpression } from "@/server/services/todays-expression";
 import { T } from "@/components/i18n";
 import { ExpressionAudio } from "@/components/expression-audio";
@@ -102,10 +103,14 @@ export default async function HomePage() {
   const est =
     plan.length === "quick" ? "10–15 min" : plan.length === "standard" ? "25–35 min" : plan.length === "deep" ? "45–60 min" : "25–35 min";
 
-  // the day's action, in learner words — never the engine's skill path
+  // the day's action, in learner words — never the engine's skill path.
+  // V16: a rescue day says so honestly (the planner already decided the day
+  // is about steadying memory — the title must not pretend it's new learning)
   const dueNow = stats.dueNow;
-  const practiceTitle =
-    dueNow > 0
+  const isRescue = plan.rationale?.planWhy?.mode === "rescue";
+  const practiceTitle = isRescue
+    ? { en: `Steady your memory first — ${plural(dueNow, "item")}`, zh: `先把记忆稳住 — ${dueNow} 项` }
+    : dueNow > 0
       ? { en: `Learn & use ${plural(dueNow, "expression")}`, zh: `学习并使用 ${dueNow} 个表达` }
       : { en: "Read something new", zh: "读点新东西" };
 
@@ -137,6 +142,27 @@ export default async function HomePage() {
       zh: `用出 ${evidence.activated + evidence.usedInOutput} 个`,
     });
 
+  // V16 Q3 — "what's next after finishing": when today is done, the planner's
+  // existing two-scenario projection (same call /review uses) states tomorrow
+  // in one honest line. No new scheduling logic — pure reuse.
+  let tomorrowLine: { en: string; zh: string } | null = null;
+  if (allDone) {
+    const t0 = new Date();
+    t0.setHours(0, 0, 0, 0);
+    const from = t0.getTime() + 2 * 86_400_000;
+    const to = from + 86_400_000;
+    const dueRows = await db
+      .select({ dueAt: retrievalItems.dueAt })
+      .from(retrievalItems)
+      .where(and(eq(retrievalItems.userId, userId), gte(retrievalItems.dueAt, from), lte(retrievalItems.dueAt, to)));
+    const { pressure } = await readMemoryPressure(userId);
+    const tomorrow = projectTomorrow({
+      dueTomorrowCount: dueRows.length,
+      todayRiskCount: Math.min(pressure.atRiskCount + pressure.recentFailures, 12),
+    });
+    tomorrowLine = tomorrow.successLine;
+  }
+
   return (
     <div className="space-y-14">
       {/* ── Hero ─────────────────────────────────────────────────────────── */}
@@ -150,7 +176,75 @@ export default async function HomePage() {
         </h1>
       </header>
 
-      {/* ── Today's expression — one item from your own memory, met first ── */}
+      {/* ── Today's practice — THE primary surface, FIRST thing the eye meets
+   * (V16 Q1: what to do today is answered before anything else) ────────── */}
+      <section className="card-specular rounded-card bg-surface p-6 sm:p-8">
+        <div className="flex items-center justify-between gap-3">
+          <span className="t-section">
+            {cu.user.examProfile === "ielts" ? (
+              <T en="Today's practice" zh="今日练习" />
+            ) : (
+              <T
+                en={`Today's ${examConfig(cu.user.examProfile).label} practice`}
+                zh={`今日 ${examConfig(cu.user.examProfile).zh}练习`}
+              />
+            )}
+          </span>
+          <LiteToggle lite={!!plan.lite} />
+        </div>
+
+        <h2 className="mt-3 text-[24px] font-semibold leading-snug tracking-[-0.02em] text-ink text-pretty">
+          <T en={practiceTitle.en} zh={practiceTitle.zh} />
+        </h2>
+        {!allDone && (
+          <p className="mt-1.5 text-[12.5px] tabular-nums text-ink-3">
+            <T
+              en={`${stepHrefs.filter((st) => !st.done && !st.skipped).length} activities · ${est}`}
+              zh={`${stepHrefs.filter((st) => !st.done && !st.skipped).length} 项活动 · ${est}`}
+            />
+          </p>
+        )}
+        {whyLine && (
+          <p className="mt-2 text-[13px] leading-relaxed text-ink-3">
+            <T en={whyLine.en} zh={whyLine.zh} />
+          </p>
+        )}
+
+        <div className="mt-7">
+          <Link
+            href={startHref}
+            className="btn-apple press inline-flex h-11 items-center gap-2 rounded-lg px-6 text-[14px] font-medium text-white"
+          >
+            {allDone ? (
+              <T en="All done — see your progress" zh="都完成了 — 看看你的进步" />
+            ) : doneCount > 0 ? (
+              <T en="Continue today's learning" zh="继续今天的学习" />
+            ) : (
+              <T en="Start today's learning" zh="开始今天的学习" />
+            )}
+            <ArrowRight size={15} strokeWidth={2} />
+          </Link>
+          <p className="mt-3 text-[12px] text-ink-3">
+            {est}
+            {dueNow > 0 && (
+              <>
+                {" · "}
+                <T en={`${plural(dueNow, "item")} from memory`} zh={`凭记忆练 ${dueNow} 项`} />
+              </>
+            )}
+          </p>
+          {/* V16 Q3 — after finishing: what happened today + what tomorrow
+           * brings, from the planner's existing projection */}
+          {allDone && tomorrowLine && (
+            <p className="mt-2.5 text-[12.5px] leading-relaxed text-ink-3">
+              <T en="Tomorrow: " zh="明天：" />
+              <T en={tomorrowLine.en} zh={tomorrowLine.zh} />
+            </p>
+          )}
+        </div>
+      </section>
+
+      {/* ── Today's expression — warm-up item from your own memory, SECOND ── */}
       {expr && (
         <section className="rounded-card bg-surface p-5 sm:p-6">
           <div className="flex items-center justify-between gap-3">
@@ -205,57 +299,6 @@ export default async function HomePage() {
           </Link>
         </section>
       )}
-
-      {/* ── Today's practice — THE primary surface ───────────────────────── */}
-      <section className="card-specular rounded-card bg-surface p-6 sm:p-8">
-        <div className="flex items-center justify-between gap-3">
-          <span className="t-section">
-            {cu.user.examProfile === "ielts" ? (
-              <T en="Today's practice" zh="今日练习" />
-            ) : (
-              <T
-                en={`Today's ${examConfig(cu.user.examProfile).label} practice`}
-                zh={`今日 ${examConfig(cu.user.examProfile).zh}练习`}
-              />
-            )}
-          </span>
-          <LiteToggle lite={!!plan.lite} />
-        </div>
-
-        <h2 className="mt-3 text-[24px] font-semibold leading-snug tracking-[-0.02em] text-ink text-pretty">
-          <T en={practiceTitle.en} zh={practiceTitle.zh} />
-        </h2>
-        {whyLine && (
-          <p className="mt-2 text-[13px] leading-relaxed text-ink-3">
-            <T en={whyLine.en} zh={whyLine.zh} />
-          </p>
-        )}
-
-        <div className="mt-7">
-          <Link
-            href={startHref}
-            className="btn-apple press inline-flex h-11 items-center gap-2 rounded-lg px-6 text-[14px] font-medium text-white"
-          >
-            {allDone ? (
-              <T en="All done — see your progress" zh="都完成了 — 看看你的进步" />
-            ) : doneCount > 0 ? (
-              <T en="Continue today's learning" zh="继续今天的学习" />
-            ) : (
-              <T en="Start today's learning" zh="开始今天的学习" />
-            )}
-            <ArrowRight size={15} strokeWidth={2} />
-          </Link>
-          <p className="mt-3 text-[12px] text-ink-3">
-            {est}
-            {dueNow > 0 && (
-              <>
-                {" · "}
-                <T en={`${plural(dueNow, "item")} from memory`} zh={`凭记忆练 ${dueNow} 项`} />
-              </>
-            )}
-          </p>
-        </div>
-      </section>
 
       {/* ── Today's quiet progress line — secondary, real counts ─────────── */}
       {progressBits.length > 0 && (

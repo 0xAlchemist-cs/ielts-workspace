@@ -32,7 +32,7 @@ type Item = { href: string; en: string; zh: string; icon: LucideIcon };
 
 const PRIMARY: Item[] = [
   { href: "/", en: "Today", zh: "今日", icon: Target },
-  { href: "/review", en: "Practice", zh: "练习", icon: RotateCcw },
+  { href: "/practice", en: "Practice", zh: "练习", icon: RotateCcw },
   { href: "/library", en: "Library", zh: "内容库", icon: BookOpen },
   { href: "/progress", en: "Progress", zh: "进步", icon: TrendingUp },
 ];

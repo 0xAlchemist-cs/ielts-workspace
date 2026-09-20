@@ -173,7 +173,7 @@ export function ReviewSession({
       {/* ── Header ─────────────────────────────────────────────────────────── */}
       <header>
         <h1 className="text-display">
-          <T en="Practice" zh="练习" />
+          <T en="Review" zh="复习" />
         </h1>
         <p className="mt-1.5 text-[13px] text-ink-2">
           <T en="Answer from memory — that's what makes it stick." zh="凭记忆作答——这样才真正记得住。" />
