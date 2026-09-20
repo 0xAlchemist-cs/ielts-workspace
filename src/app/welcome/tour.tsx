@@ -11,7 +11,6 @@ import {
   Mic,
   PenLine,
   RotateCcw,
-  Sparkles,
   Target,
   TrendingUp,
   type LucideIcon,
@@ -78,7 +77,6 @@ const MORE: { icon: LucideIcon; name: { en: string; zh: string }; note: { en: st
   { icon: GraduationCap, name: { en: "IELTS", zh: "雅思练习" }, note: { en: "Do real exams outside, import the reports here", zh: "真题在外部做，报告导入这里分析" } },
   { icon: CircleAlert, name: { en: "Mistakes", zh: "惯犯错误" }, note: { en: "Errors that keep coming back — retested in new contexts", zh: "反复出的错——换场景再测" } },
   { icon: Layers, name: { en: "Language", zh: "语言库" }, note: { en: "Everything you've saved: expressions, words, patterns", zh: "你存下的一切：表达、词、句式" } },
-  { icon: Sparkles, name: { en: "AI Lab", zh: "AI 实验室" }, note: { en: "Drop in any sentence for a deep analysis", zh: "丢进任何句子做深度分析" } },
 ];
 
 const TOTAL = 6; // welcome + 4 stops + more — completion is the 7th screen
