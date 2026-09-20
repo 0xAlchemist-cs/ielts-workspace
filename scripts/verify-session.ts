@@ -186,10 +186,20 @@ async function main() {
     // Today and session agree by construction (same builder): pendingCount == activities.length
     check("single source: pendingCount == activities.length", s9c.pendingCount === s9c.activities.length);
     // dirty error pairs are skipped at question generation
+    // (answer-key leakage / list dumps / unrelated phrases — but single-word
+    //  synonym swaps like farming→agriculture still pass)
     const [dirtyErr] = await db.insert(errorsT).values({ userId: u9, category: "grammar", wrongForm: "decoration", correctForm: "essential infrastructure", occurrenceCount: 3 }).returning();
     const [dirtyItem] = await db.insert(retrievalItems).values({ userId: u9, itemType: "error", itemId: dirtyErr.id, dueAt: Date.now() - 1000 }).returning();
     const q9 = await generateReviewQueue(u9, 20);
     check("incoherent wrong→correct pair is never served", !q9.some((e) => e.retrievalItemId === dirtyItem.id), `queue=${q9.length}`);
+    const [synErr] = await db.insert(errorsT).values({ userId: u9, category: "vocabulary", wrongForm: "farming", correctForm: "agriculture", occurrenceCount: 2 }).returning();
+    const [synItem] = await db.insert(retrievalItems).values({ userId: u9, itemType: "error", itemId: synErr.id, dueAt: Date.now() - 1000 }).returning();
+    const q9s = await generateReviewQueue(u9, 20);
+    check("synonym swap (no shared word) still served", q9s.some((e) => e.retrievalItemId === synItem.id));
+    const [keyErr] = await db.insert(errorsT).values({ userId: u9, category: "grammar", wrongForm: "Q3: E", correctForm: "F", occurrenceCount: 2 }).returning();
+    const [keyItem] = await db.insert(retrievalItems).values({ userId: u9, itemType: "error", itemId: keyErr.id, dueAt: Date.now() - 1000 }).returning();
+    const q9k = await generateReviewQueue(u9, 20);
+    check("answer-key leak (Q3: E → F) never served", !q9k.some((e) => e.retrievalItemId === keyItem.id));
     const [goodErr] = await db.insert(errorsT).values({ userId: u9, category: "preposition", wrongForm: "interested on", correctForm: "interested in", occurrenceCount: 2 }).returning();
     const [goodItem] = await db.insert(retrievalItems).values({ userId: u9, itemType: "error", itemId: goodErr.id, dueAt: Date.now() - 1000 }).returning();
     const q9b = await generateReviewQueue(u9, 20);

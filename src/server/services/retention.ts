@@ -382,17 +382,25 @@ async function buildEntry(
   return null;
 }
 
-/** A wrong→correct pair is coherent when it shares at least one word ≥3 chars
- *  (real corrections keep the anchor: "interested on" → "interested in").
- *  Corrupt legacy pairs share nothing — both sides are unrelated phrases. */
+/** A wrong→correct pair is coherent when it looks like a language correction:
+ *  - rejected outright: exam answer-key leakage (wrongForm "Q3: E …") and
+ *    list-dump correctForms (comma-separated 3+ items) — the corrupt legacy
+ *    shapes found in the DB sweep;
+ *  - single-word → single-word is always plausible (synonym swaps like
+ *    "farming" → "agriculture" share no anchor word yet are real corrections);
+ *  - otherwise the pair must share a word ≥3 chars (real corrections keep
+ *    the anchor: "interested on" → "interested in"). */
 function errorPairCoherent(wrongForm: string | null, correctForm: string | null): boolean {
   if (!wrongForm || !correctForm) return false;
-  const toks = (s: string) => new Set((s.toLowerCase().match(/[a-z']{3,}/g) ?? []));
-  const w = toks(wrongForm);
-  const c = toks(correctForm);
-  if (w.size === 0 || c.size === 0) return false;
-  for (const t of w) if (c.has(t)) return true;
-  return false;
+  if (/^Q\s*\d+\s*[:.]/i.test(wrongForm)) return false;
+  if (correctForm.split(",").length >= 3) return false;
+  const words = (s: string) => (s.toLowerCase().match(/[a-z']{3,}/g) ?? []);
+  const w = words(wrongForm);
+  const c = words(correctForm);
+  if (w.length === 0 || c.length === 0) return false;
+  if (w.length === 1 && c.length === 1) return true; // synonym swap
+  const cs = new Set(c);
+  return w.some((t) => cs.has(t));
 }
 
 /** ── Submit a review with retention-aware processing ────────────────────── */
