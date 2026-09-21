@@ -85,11 +85,20 @@ if (process.platform === "win32") {
 const size = (statSync(ZIP).size / 1e6).toFixed(1);
 console.log(`\n✓ ${ZIP} (${size}MB)`);
 
-// 7) verify: no secrets in the package (list via PowerShell/tar)
-const zipContents =
-  process.platform === "win32"
-    ? execSync(`powershell -NoProfile -Command "[System.IO.Compression.ZipFile]::OpenRead('${ZIP.replace(/\//g, "\\")}').Entries | ForEach-Object { $_.FullName }"`, { encoding: "utf-8" })
-    : execSync(`unzip -l "${ZIP}"`, { encoding: "utf-8" });
+// 7) verify: no secrets in the staged package (scan the directory tree —
+//    the zip is a direct archive of this tree, so scanning it covers the zip)
+const { readdirSync } = await import("node:fs");
+const walk = (dir) => {
+  const out = [];
+  for (const e of readdirSync(dir, { withFileTypes: true })) {
+    const p = join(dir, e.name);
+    if (e.isDirectory()) out.push(...walk(p));
+    else out.push(p);
+  }
+  return out;
+};
+const allFiles = walk(STAGE).map((p) => p.slice(STAGE.length + 1).replace(/\\/g, "/"));
+const zipContents = allFiles.join("\n");
 const leaks = [".env.local\n", "app.db", "node_modules/", ".next/", "api_key", "sk-"];
 const found = leaks.filter((l) => zipContents.toLowerCase().includes(l.split("\n")[0]));
 if (found.length) {
