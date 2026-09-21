@@ -57,3 +57,5 @@ data/
 .mimosa/
 src/.mimosa/
 **/.mimosa/
+dist/
+*.tsbuildinfo

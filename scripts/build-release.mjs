@@ -72,14 +72,24 @@ console.log("  + download-audio.sh (audio is opt-in)");
 mkdirSync(join(STAGE, "data"), { recursive: true });
 console.log("  + data/ (empty — created on first run)");
 
-// 6) zip it
+// 6) zip it (cross-platform: PowerShell on Windows, zip on Unix)
 console.log("  zipping…");
-execSync(`cd "${DIST}" && zip -r -q ielts-workspace-v16.zip ielts-workspace-v16/`);
+if (process.platform === "win32") {
+  execSync(
+    `powershell -NoProfile -Command "Compress-Archive -Path '${STAGE.replace(/\//g, "\\")}\\*' -DestinationPath '${ZIP.replace(/\//g, "\\")}' -Force"`,
+    { cwd: DIST, encoding: "utf-8" },
+  );
+} else {
+  execSync(`cd "${DIST}" && zip -r -q ielts-workspace-v16.zip ielts-workspace-v16/`);
+}
 const size = (statSync(ZIP).size / 1e6).toFixed(1);
 console.log(`\n✓ ${ZIP} (${size}MB)`);
 
-// 7) verify: no secrets in the package
-const zipContents = execSync(`unzip -l "${ZIP}"`, { encoding: "utf-8" });
+// 7) verify: no secrets in the package (list via PowerShell/tar)
+const zipContents =
+  process.platform === "win32"
+    ? execSync(`powershell -NoProfile -Command "[System.IO.Compression.ZipFile]::OpenRead('${ZIP.replace(/\//g, "\\")}').Entries | ForEach-Object { $_.FullName }"`, { encoding: "utf-8" })
+    : execSync(`unzip -l "${ZIP}"`, { encoding: "utf-8" });
 const leaks = [".env.local\n", "app.db", "node_modules/", ".next/", "api_key", "sk-"];
 const found = leaks.filter((l) => zipContents.toLowerCase().includes(l.split("\n")[0]));
 if (found.length) {
