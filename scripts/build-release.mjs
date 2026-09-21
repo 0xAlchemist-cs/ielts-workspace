@@ -99,8 +99,30 @@ const walk = (dir) => {
 };
 const allFiles = walk(STAGE).map((p) => p.slice(STAGE.length + 1).replace(/\\/g, "/"));
 const zipContents = allFiles.join("\n");
+// precise scan: exact file names + real key patterns (not substrings in code)
+const exactExcluded = [".env.local"]; // exact filename match, .env.local.example is fine
+const patternExcluded = [/(?:^|\/)app\.db(?:$|-)/, /(?:^|\/)node_modules\//, /(?:^|\/)\.next\//, /sk-[A-Za-z0-9]{20,}/, /fc-[a-z0-9]{20,}/];
+const fileHits = exactExcluded.filter((n) => allFiles.includes(n));
+const patternHits = [];
+for (const p of allFiles) {
+  for (const pat of patternExcluded) {
+    if (pat.test(p)) { patternHits.push(p); break; }
+  }
+}
+// also grep file contents for real key shapes (not code placeholders)
+const { readFileSync } = await import("node:fs");
+const contentHits = [];
+for (const p of allFiles.filter((f) => f.endsWith(".ts") || f.endsWith(".tsx") || f.endsWith(".mjs") || f.endsWith(".json") || f.endsWith(".md") || f.endsWith(".example"))) {
+  try {
+    const c = readFileSync(join(STAGE, p), "utf-8");
+    if (/sk-[A-Za-z0-9-_]{30,}/.test(c) || /fc-[a-z0-9]{25,}/.test(c)) {
+      contentHits.push(p);
+    }
+  } catch { /* binary */ }
+}
+const found = [...fileHits, ...patternHits, ...contentHits];
 const leaks = [".env.local\n", "app.db", "node_modules/", ".next/", "api_key", "sk-"];
-const found = leaks.filter((l) => zipContents.toLowerCase().includes(l.split("\n")[0]));
+const found2 = []; // reserved
 if (found.length) {
   console.error(`\n✗ SECURITY: package contains excluded items: ${found.join(", ")}`);
   process.exit(1);
