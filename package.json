@@ -1,11 +1,12 @@
 {
   "name": "ielts-workspace",
-  "version": "0.1.0",
+  "version": "16.0.0",
   "private": true,
   "scripts": {
     "dev": "next dev",
     "build": "next build",
     "start": "next start -H 127.0.0.1",
+    "release:build": "node scripts/build-release.mjs",
     "lint": "eslint",
     "db:push": "drizzle-kit push --force",
     "db:seed": "tsx scripts/seed.ts",
