@@ -19,6 +19,9 @@ const eslintConfig = defineConfig([
     "out/**",
     "build/**",
     "next-env.d.ts",
+    // Release staging copies carry their own .next build output; the root-only
+    // ".next/**" pattern above does not reach into dist/.
+    "dist/**",
   ]),
 ]);
 
