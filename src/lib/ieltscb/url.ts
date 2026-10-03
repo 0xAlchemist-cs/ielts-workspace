@@ -41,7 +41,9 @@ export function parseIeltscbReportUrl(input: string): IeltscbUrlParseResult {
   if (host !== "www.ieltscb.com" && host !== "ieltscb.com") {
     return { ok: false, code: "UNSUPPORTED_URL", message: "Only ieltscb.com report links are supported." };
   }
-  if (!url.pathname.startsWith("/Report/")) {
+  // The live site serves /report/ and /Report/ identically — accept both,
+  // since users paste whatever casing their browser address bar shows.
+  if (!url.pathname.toLowerCase().startsWith("/report/")) {
     return { ok: false, code: "UNSUPPORTED_URL", message: "Link must be an ieltscb.com /Report/ page." };
   }
 

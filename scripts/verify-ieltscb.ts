@@ -46,6 +46,8 @@ async function main() {
     check("① URL parser rejects missing tid", !rej2.ok && rej2.code === "INVALID_PARAMS");
     const rej3 = parseIeltscbReportUrl("https://www.ieltscb.com/Other/x?paper_id=1&classify=2&chapters_id=3&p_type=4&tid=5");
     check("① URL parser rejects non-Report paths", !rej3.ok && rej3.code === "UNSUPPORTED_URL");
+    const p2 = parseIeltscbReportUrl(REAL_URL.replace("/Report/", "/report/"));
+    check("① URL parser accepts lowercase /report/ (browser address bar form)", p2.ok && p2.params.paperId === 121);
 
     /* ── 2 · envelope validation ────────────────────────────────────────── */
     check("② envelope accepts e=9999", validateIeltscbEnvelope({ e: "9999", m: "ok", data: { question_list: {} } as never }).ok);
