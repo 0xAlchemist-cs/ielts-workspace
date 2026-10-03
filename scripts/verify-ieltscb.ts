@@ -265,6 +265,79 @@ async function main() {
       check("⑪ LIVE round-trip skipped (set IELTSCB_LIVE=1)", true);
     }
 
+    /* ── 15 · saved-HTML import (site renders reports from login session;
+     *      no tid in URLs anymore — the user saves the rendered page) ──── */
+    const { htmlAnswerIsCorrect, parseIeltscbHtmlReport } = await import("../src/lib/ieltscb/html-report");
+    const { confirmIeltscbHtmlImport } = await import("../src/server/services/ieltscb-import");
+
+    const FIXTURE_HTML = `<!DOCTYPE html><!-- saved from url=(0089)https://www.ieltscb.com/report/indexread?classify=9&chapters_id=906&paper_id=131&p_type=8 -->
+<html><head><title>TEST report</title></head><body>
+<script>window.scene = 4; window.classify = '9'; window.chapters_id = '906'; window.paper_id = '131'; window.p_type = '8'; window.tid = '';</script>
+<div class="report-read-dtk">: 正确率 40 % 正确数量 2 总耗时 3分5秒 <button>只看错题</button></div>
+<div class="report-read-cont-right-box-table"><table>
+<tr><td>题号</td><td>对/错</td><td>正确答案</td><td>我的答案</td><td>解析</td></tr>
+<tr><td>1</td><td><span class="error"></span></td><td><span>D</span></td><td><span>D</span></td><td>查看解析</td></tr>
+<tr><td>2</td><td><span class="error"></span></td><td><span>B. Egyptians</span></td><td><span>A. Babylonians</span></td><td>查看解析</td></tr>
+<tr><td>3</td><td><span class="error"></span></td><td><span>anchor / an anchor</span></td><td><span class="my-answer-error">yet</span></td><td>查看解析</td></tr>
+<tr><td>4</td><td><span class="error"></span></td><td><span>wheel</span></td><td><span class="my-answer-error">no</span></td><td>查看解析</td></tr>
+<tr><td>5</td><td><span class="error"></span></td><td><span>Pendulum</span></td><td><span>pendulum&nbsp;</span></td><td>查看解析</td></tr>
+</table></div></body></html>`;
+
+    const hp = parseIeltscbHtmlReport(FIXTURE_HTML);
+    check("⑮ HTML parser extracts params from window.* vars", hp.ok && hp.report.params.classify === 9 && hp.report.params.chaptersId === 906 && hp.report.params.paperId === 131 && hp.report.params.pType === 8);
+    check("⑮ HTML parser extracts saved-from URL", hp.ok && hp.report.sourceUrl === "https://www.ieltscb.com/report/indexread?classify=9&chapters_id=906&paper_id=131&p_type=8");
+    check("⑮ HTML parser parses stats banner", hp.ok && hp.report.stats.rightCount === 2 && hp.report.stats.durationSeconds === 185 && hp.report.stats.correctRate === 40);
+    check("⑮ HTML parser: blank markers (no/not/yet) cleaned to empty", hp.ok && hp.report.rows.length === 5 && hp.report.rows[2].userAnswer === "" && hp.report.rows[3].userAnswer === "");
+    check("⑮ grading: letter / letter+text / variants / case-insensitive",
+      htmlAnswerIsCorrect("D", "D") && htmlAnswerIsCorrect("A. Babylonians", "B. Egyptians") === false &&
+      htmlAnswerIsCorrect("an anchor", "anchor / an anchor") && htmlAnswerIsCorrect("pendulum", "Pendulum") && htmlAnswerIsCorrect("", "wheel") === false);
+    const notIeltscb = parseIeltscbHtmlReport("<html><body>hello</body></html>");
+    check("⑮ HTML parser rejects non-ieltscb pages", !notIeltscb.ok && notIeltscb.code === "NOT_IELTSCB_PAGE");
+
+    // integration: attach a saved-HTML attempt onto an existing import
+    if (uid != null) {
+      const before = await confirmIeltscbHtmlImport(uid, FIXTURE_HTML);
+      check("⑮ HTML import without prior material → MATERIAL_NOT_IMPORTED", !before.ok && before.code === "MATERIAL_NOT_IMPORTED");
+
+      // seed a minimal import of the SAME test key (chapters 906/paper 131) the API path would have created
+      const [seedTask] = await db.insert(ieltsTasks).values({
+        taskType: "reading_passage", skill: "reading", difficulty: 3, topic: "general",
+        prompt: "fixture passage", content: "fixture", questions: [], source: "ieltscb",
+      }).returning();
+      await db.insert(ieltscbImports).values({
+        userId: uid, taskId: seedTask.id, paperId: 131, chaptersId: 906, pType: 8, tid: 990002222, classify: 9,
+        sourceUrl: "https://www.ieltscb.com/Report/indexread?paper_id=131&classify=9&chapters_id=906&p_type=8&tid=990002222",
+        title: "Fixture Passage", breadcrumb: "Cambridge FIXTURE", parserVersion: "test",
+        rawHash: "fixture",
+        canonical: {
+          title: "Fixture Passage", breadcrumb: "Cambridge FIXTURE", sourceUrl: "",
+          passage: { subtitle: null, paragraphs: [] }, groups: [],
+          questions: [
+            { number: 1, type: "matching_information", questionText: "", options: [], correctAnswer: "D", acceptedAnswers: ["D"], userAnswer: null, isCorrect: null, evidence: [], explanation: null, paraphrases: [], rawMeta: {} },
+            { number: 2, type: "matching_classification", questionText: "", options: [], correctAnswer: "B. Egyptians", acceptedAnswers: ["B"], userAnswer: null, isCorrect: null, evidence: [], explanation: null, paraphrases: [], rawMeta: {} },
+            { number: 3, type: "sentence_completion", questionText: "", options: [], correctAnswer: "anchor / an anchor", acceptedAnswers: ["anchor"], userAnswer: null, isCorrect: null, evidence: [], explanation: null, paraphrases: [], rawMeta: {} },
+            { number: 4, type: "sentence_completion", questionText: "", options: [], correctAnswer: "wheel", acceptedAnswers: ["wheel"], userAnswer: null, isCorrect: null, evidence: [], explanation: null, paraphrases: [], rawMeta: {} },
+            { number: 5, type: "sentence_completion", questionText: "", options: [], correctAnswer: "Pendulum", acceptedAnswers: ["pendulum"], userAnswer: null, isCorrect: null, evidence: [], explanation: null, paraphrases: [], rawMeta: {} },
+          ],
+          synonyms: [], coreWords: [], officialGuide: null,
+          summary: { totalQuestions: 5, correctCount: null, rightNumText: null, durationSeconds: null },
+          warnings: [],
+        } as never,
+      });
+      const after = await confirmIeltscbHtmlImport(uid, FIXTURE_HTML);
+      check("⑮ HTML import attaches attempt to existing material", after.ok && after.action === "attempt-added");
+      if (after.ok) {
+        const [row] = await db.select().from(ieltsAttempts).where(eq(ieltsAttempts.id, after.attemptId));
+        // 2 correct of 5 graded (blank rows count as wrong — site semantics)
+        check("⑮ HTML attempt scores like the site (blanks wrong, variants ok)", row.score === 40 && row.band != null);
+        const resp = row.responses as { answers: Record<string, string> };
+        check("⑮ HTML attempt carries answers + via=saved-html", resp.answers["0"] === "D" && resp.answers["3"] === "" && (resp as { external?: { via?: string } }).external?.via === "saved-html");
+      }
+      // cleanup seeded fixture rows (the shared finally cleans uid's attempts/imports/tasks/errors)
+      await db.delete(ieltscbImports).where(and(eq(ieltscbImports.userId, uid), eq(ieltscbImports.paperId, 131)));
+      await db.delete(ieltsTasks).where(eq(ieltsTasks.id, seedTask.id));
+    }
+
     console.log(`\n${pass} passed, ${fail} failed`);
   } finally {
     // ── cleanup: temp user + everything the import wrote ──────────────────

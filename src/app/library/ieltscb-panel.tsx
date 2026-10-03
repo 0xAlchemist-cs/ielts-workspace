@@ -1,8 +1,8 @@
 "use client";
 
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { useRouter } from "next/navigation";
-import { Check, CircleAlert, CircleCheck, ExternalLink, Globe, Loader2, TriangleAlert } from "lucide-react";
+import { Check, CircleAlert, CircleCheck, ExternalLink, Globe, Loader2, TriangleAlert, Upload } from "lucide-react";
 import { T } from "@/components/i18n";
 import { toast } from "@/components/motion";
 import { IELTSCB_READING_URL } from "@/lib/external-coaches";
@@ -47,15 +47,52 @@ const ERROR_TEXT: Record<string, { en: string; zh: string }> = {
   PARSE_ERROR: { en: "ieltscb returned data we can't parse yet.", zh: "ieltscb 返回了暂无法解析的数据。" },
   MISSING_PASSAGE: { en: "The report has no passage.", zh: "报告里没有文章。" },
   MISSING_QUESTIONS: { en: "The report has no questions.", zh: "报告里没有题目。" },
+  NOT_IELTSCB_PAGE: { en: "This file is not an ieltscb.com report page — save the report page (Ctrl+S) and try again.", zh: "这个文件不是 ieltscb.com 的报告页——请在报告页按 Ctrl+S 保存后再试。" },
+  MISSING_PARAMS: { en: "Page info missing — save again as “Webpage, HTML Only” (not single file / screenshot).", zh: "页面信息缺失——请用“网页，仅 HTML”方式重新保存（不要用单个文件/截图）。" },
+  NO_ANSWER_TABLE: { en: "No answer table found — make sure the report (with your answers) is visible when saving.", zh: "没找到答题记录表——保存时请确保页面已显示答案与做题记录。" },
+  EMPTY_TABLE: { en: "The answer table was empty when the page was saved.", zh: "保存页面时答题记录表是空的。" },
+  MATERIAL_NOT_IMPORTED: { en: "This passage's official material hasn't been imported before. Import it once with a live report link (with tid), then saved-page attempts can be attached.", zh: "这篇文章的官方资料还没导入过。请先用带 tid 的有效报告链接完整导入一次，之后保存页的做题记录就能直接挂上。" },
 };
 
 export function IeltscbImport() {
   const router = useRouter();
+  const fileRef = useRef<HTMLInputElement>(null);
   const [url, setUrl] = useState("");
   const [loading, setLoading] = useState(false);
   const [importing, setImporting] = useState(false);
+  const [uploading, setUploading] = useState(false);
   const [preview, setPreview] = useState<PreviewResponse | null>(null);
   const [error, setError] = useState<{ code: string; message?: string } | null>(null);
+
+  /* Saved-page import: for reports whose link no longer carries a tid (the
+   * site now renders them from the login session), the user saves the
+   * rendered report page and uploads it; the attempt joins onto previously
+   * imported official material of the same test. */
+  const uploadSavedPage = async (file: File) => {
+    setUploading(true);
+    setError(null);
+    try {
+      const html = await file.text();
+      const res = await fetch("/api/import/reading/ieltscb/html", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ html }),
+      });
+      const data = await res.json();
+      if (data.error) {
+        setError({ code: data.error as string, message: data.message });
+        return;
+      }
+      toast("New attempt recorded for this passage", "success");
+      if (data.reportUrl) router.push(data.reportUrl);
+      else router.refresh();
+    } catch {
+      setError({ code: "NETWORK_ERROR" });
+    } finally {
+      setUploading(false);
+      if (fileRef.current) fileRef.current.value = "";
+    }
+  };
 
   const parse = async () => {
     if (!url.trim()) return;
@@ -157,6 +194,34 @@ export function IeltscbImport() {
         <button type="button" onClick={parse} disabled={loading || !url.trim()} className="btn-apple press h-[42px] rounded-lg px-5 text-[13.5px] font-medium text-white disabled:opacity-50">
           {loading ? <Loader2 size={15} className="animate-spin" /> : <T en="Parse" zh="解析" />}
         </button>
+      </div>
+
+      {/* link has no tid (site change) → the saved page still carries the
+       *  rendered answers; upload it and the attempt joins onto the imported
+       *  official material of the same test */}
+      <div className="mt-2.5 flex flex-wrap items-center gap-x-2 gap-y-1 text-[12px] text-ink-3">
+        <span>
+          <T en="Link rejected (no tid)?" zh="链接不行（没有 tid）？" />
+        </span>
+        <button
+          type="button"
+          onClick={() => fileRef.current?.click()}
+          disabled={uploading}
+          className="press inline-flex items-center gap-1 font-medium text-accent-text underline decoration-accent/30 underline-offset-2 disabled:opacity-50"
+        >
+          {uploading ? <Loader2 size={12} className="animate-spin" /> : <Upload size={12} />}
+          <T en={uploading ? "Importing saved page…" : "Import the saved report page"} zh={uploading ? "正在导入保存页…" : "导入保存的报告页（Ctrl+S）"} />
+        </button>
+        <input
+          ref={fileRef}
+          type="file"
+          accept=".html,.htm,text/html"
+          className="hidden"
+          onChange={(e) => {
+            const f = e.target.files?.[0];
+            if (f) void uploadSavedPage(f);
+          }}
+        />
       </div>
 
       {error && (

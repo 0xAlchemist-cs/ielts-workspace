@@ -10,6 +10,7 @@ import { ieltscbImports, ieltsAttempts, ieltsTasks } from "@/db/schema";
 import { fetchIeltscbReport } from "@/lib/ieltscb/client";
 import { adaptIeltscbReport, buildImportDiagnostics, buildPassageDisplay } from "@/lib/ieltscb/adapter";
 import { parseIeltscbReportUrl, type IeltscbReportParams } from "@/lib/ieltscb/url";
+import { htmlAnswerIsCorrect, parseIeltscbHtmlReport } from "@/lib/ieltscb/html-report";
 import { IELTSCB_PARSER_VERSION, type CanonicalQuestion, type CanonicalReadingTest, type IeltscbImportPreview, type IeltscbReportData } from "@/lib/ieltscb/types";
 import { addError } from "./bank";
 
@@ -419,4 +420,134 @@ export async function routeIeltscbErrors(userId: number, questions: CanonicalQue
     }
   }
   return routed;
+}
+
+/* ── Saved-HTML import (V16.1) ─────────────────────────────────────────────
+ *  Since ~Oct 2026 ieltscb renders reports from the login session and the
+ *  report URL no longer carries a tid, so the server cannot fetch them. The
+ *  user saves the rendered page (Ctrl+S) instead; we extract THIS attempt
+ *  (answers + grading banner) and join it onto the canonical material of a
+ *  previous API import of the same test (chapters_id+paper_id+p_type). */
+
+export type IeltscbHtmlConfirmResult =
+  | { ok: true; action: "attempt-added"; taskId: number; attemptId: number; reportUrl: string }
+  | { ok: false; code: string; message: string };
+
+export async function confirmIeltscbHtmlImport(userId: number, html: string): Promise<IeltscbHtmlConfirmResult> {
+  const parsed = parseIeltscbHtmlReport(html);
+  if (!parsed.ok) return { ok: false, code: parsed.code, message: parsed.message };
+  const report = parsed.report;
+
+  /* Match the material by test key — tid deliberately ignored (HTML reports
+   * carry none; every import of this test shares the material). */
+  const [existing] = await db
+    .select()
+    .from(ieltscbImports)
+    .where(
+      and(
+        eq(ieltscbImports.userId, userId),
+        eq(ieltscbImports.chaptersId, report.params.chaptersId),
+        eq(ieltscbImports.paperId, report.params.paperId),
+        eq(ieltscbImports.pType, report.params.pType),
+      ),
+    )
+    .limit(1);
+  if (!existing) {
+    return {
+      ok: false,
+      code: "MATERIAL_NOT_IMPORTED",
+      message: "This passage's official material (questions/explanations) has never been imported via a live report link — a tid-capable import is needed once before saved-HTML attempts can be attached.",
+    };
+  }
+  const canonical = existing.canonical as CanonicalReadingTest | null;
+  if (!canonical || !Array.isArray(canonical.questions)) {
+    return { ok: false, code: "MATERIAL_NOT_IMPORTED", message: "The stored import for this test has no canonical material." };
+  }
+
+  /* Merge: this HTML attempt's user answers/grading onto the official
+   * material. correctAnswer cross-checked against the table (site truth
+   * wins on mismatch — recorded as a warning, not a failure). */
+  const byNumber = new Map(report.rows.map((r) => [r.number, r]));
+  const warnings: string[] = [];
+  const questions: CanonicalQuestion[] = canonical.questions.map((q) => {
+    const row = byNumber.get(q.number);
+    // no table row for this question at all → honest null (site didn't grade)
+    if (!row) return { ...q, userAnswer: null, isCorrect: null };
+    if (row.correctAnswer && q.correctAnswer && !htmlAnswerIsCorrect(row.correctAnswer, q.correctAnswer) && row.correctAnswer.toLowerCase() !== q.correctAnswer.toLowerCase()) {
+      warnings.push(`Q${q.number}: HTML correct answer "${row.correctAnswer}" differs from imported material "${q.correctAnswer}"`);
+    }
+    const userAnswer = row.userAnswer || null;
+    // a graded row with a blank answer = officially wrong (the site's 对/错
+    // column marks blanks as errors — rightNumText counts them, so we do too)
+    const isCorrect = userAnswer != null ? htmlAnswerIsCorrect(userAnswer, row.correctAnswer || q.correctAnswer) : false;
+    return { ...q, userAnswer, isCorrect };
+  });
+
+  const graded = questions.filter((q) => q.isCorrect != null);
+  const correctCount = graded.filter((q) => q.isCorrect === true).length;
+  const total = graded.length;
+  const score = total ? Math.round((correctCount / total) * 100) : null;
+  const band = total ? passageBand(correctCount, total) : null;
+
+  const subSkillResults = questions.map((q) => ({
+    skill: q.type,
+    correct: q.isCorrect === true,
+    note: q.isCorrect === false ? `Expected: "${q.correctAnswer}", got: "${q.userAnswer || "(blank)"}"` : "",
+  }));
+
+  const strategyIssues: string[] = [];
+  for (const q of questions) {
+    if (q.isCorrect !== false) continue;
+    if (!q.userAnswer) strategyIssues.push(`Q${q.number}: left blank — possible time management issue`);
+    else if (!q.paraphrases.length) strategyIssues.push(`Q${q.number} (${q.type}): missed — see official guide`);
+  }
+
+  const durationMinutes = report.stats.durationSeconds ? Math.round(report.stats.durationSeconds / 60) : 0;
+
+  const [attempt] = await db
+    .insert(ieltsAttempts)
+    .values({
+      userId,
+      taskId: existing.taskId,
+      mode: "exam",
+      responses: {
+        taskSkill: "reading",
+        source: "ieltscb",
+        external: {
+          url: report.sourceUrl ?? existing.sourceUrl,
+          via: "saved-html",
+          paperId: report.params.paperId,
+          chaptersId: report.params.chaptersId,
+          pType: report.params.pType,
+          classify: report.params.classify,
+          rightNumText: report.stats.rightCount != null ? `${report.stats.rightCount}/${report.stats.totalQuestions}` : null,
+          durationSeconds: report.stats.durationSeconds,
+          bandBasis:
+            canonical.summary.totalQuestions >= 40
+              ? "Practice Reading Estimate — full 40-question test"
+              : "passage practice reference — scaled to the 40-question Cambridge AC table; not an official IELTS band",
+          mergeWarnings: warnings,
+        },
+        answers: Object.fromEntries(questions.map((q) => [String(q.number - 1), q.userAnswer ?? ""])),
+      },
+      score,
+      band,
+      subSkillResults,
+      transferResults: [],
+      strategyIssues,
+      languageErrors: [],
+      durationMinutes,
+    })
+    .returning();
+
+  /* Registry: newest attempt pointer only — tid/rawSnapshot/canonical keep
+   * the original API import (the material source of truth). */
+  await db
+    .update(ieltscbImports)
+    .set({ attemptId: attempt.id, updatedAt: Date.now() })
+    .where(eq(ieltscbImports.id, existing.id));
+
+  await routeIeltscbErrors(userId, questions);
+
+  return { ok: true, action: "attempt-added", taskId: existing.taskId, attemptId: attempt.id, reportUrl: `/ielts/report/${attempt.id}` };
 }
