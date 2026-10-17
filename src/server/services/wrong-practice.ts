@@ -6,9 +6,9 @@
  *    guards; the original error row is NEVER modified. */
 
 import { randomUUID } from "node:crypto";
-import { and, eq } from "drizzle-orm";
+import { and, eq, lt } from "drizzle-orm";
 import { db } from "@/db";
-import { errors as errorsT, retrievalItems, wrongPracticeLog } from "@/db/schema";
+import { errors as errorsT, retrievalItems, wrongPracticeLog, wrongPracticeSessions } from "@/db/schema";
 import { getProvider } from "@/lib/ai";
 import { mockDrills } from "@/lib/ai/mock-drills";
 import type { DrillSet } from "@/lib/types";
@@ -39,7 +39,7 @@ export type WrongPracticeSubmitResult =
       targetAnswer: string;
       next: "transfer" | "done" | "review-queue";
     }
-  | { ok: false; code: "NOT_FOUND" | "DUPLICATE_STAGE" | "STAGE_ORDER" | "GRADING_FAILED"; message: string };
+  | { ok: false; code: "NOT_FOUND" | "SESSION_NOT_ISSUED" | "SESSION_MISMATCH" | "DUPLICATE_STAGE" | "STAGE_ORDER" | "GRADING_FAILED"; message: string };
 
 function describeSource(err: typeof errorsT.$inferSelect): { source: string; sourceQuestion: string | null; why: { en: string; zh: string } } {
   const qMatch = (err.explanation ?? "").match(/\bQ(\d{1,2})\b/);
@@ -93,9 +93,20 @@ export async function startWrongPractice(userId: number, errorId: number): Promi
   }
 
   const { why } = describeSource(err);
+  // issue-then-use: persist the session so a later submission can prove the
+  // id was really issued (to THIS learner, for THIS error); sweep this
+  // learner's stale sessions (>24h) while we're here
+  const sessionId = randomUUID();
+  await db
+    .delete(wrongPracticeSessions)
+    .where(and(
+      eq(wrongPracticeSessions.userId, userId),
+      lt(wrongPracticeSessions.createdAt, Date.now() - 24 * 3_600_000),
+    ));
+  await db.insert(wrongPracticeSessions).values({ sessionId, userId, errorId: err.id });
   return {
     ok: true,
-    sessionId: randomUUID(),
+    sessionId,
     errorId: err.id,
     wrongForm: err.wrongForm,
     category: err.category,
@@ -122,6 +133,17 @@ export async function submitWrongPractice(
     .where(and(eq(errorsT.id, errorId), eq(errorsT.userId, userId)))
     .limit(1);
   if (!err) return { ok: false, code: "NOT_FOUND", message: "Error not found for this learner." };
+
+  // issuance proof (hardening): the session id must be one the server issued
+  // to THIS learner for THIS error — a fabricated id (or one borrowed from a
+  // different mistake's session) can no longer fabricate practice evidence
+  const [issued] = await db
+    .select()
+    .from(wrongPracticeSessions)
+    .where(and(eq(wrongPracticeSessions.sessionId, sessionId), eq(wrongPracticeSessions.userId, userId)))
+    .limit(1);
+  if (!issued) return { ok: false, code: "SESSION_NOT_ISSUED", message: "Unknown practice session — start a new one." };
+  if (issued.errorId !== errorId) return { ok: false, code: "SESSION_MISMATCH", message: "This session belongs to a different mistake." };
 
   // duplicate-stage guard — one attempt per stage per session
   const [dupe] = await db

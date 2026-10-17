@@ -201,7 +201,11 @@ export async function generateReviewQueue(
 
   for (const item of items) {
     const ls = item.learningState;
-    const retentionDue = nextRetentionCheckDue(item);
+    // nextRetentionCheckDue returns a TIMESTAMP (possibly far in the future),
+    // never a boolean — a raw truthiness check would treat every retention
+    // item as due. Compare against now, exactly like getReviewBalance.
+    const retentionDueAt = nextRetentionCheckDue(item);
+    const retentionDue = retentionDueAt !== null && retentionDueAt <= now;
     const isOverdue = item.dueAt <= now;
     const overdueDays = isOverdue ? Math.floor((now - item.dueAt) / DAY) : 0;
     const totalAttempts = item.successCount + item.failCount;

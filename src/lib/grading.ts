@@ -1,4 +1,5 @@
 import { lemmaCandidates, normalizeText } from "@/lib/text";
+import { CHUNK_DETECT } from "@/lib/chunk-detect";
 import type { RetrievalGrade } from "@/lib/types";
 
 // ── Local retrieval grader (deterministic, works offline) ───────────────────
@@ -75,28 +76,40 @@ export function gradeRetrieval(target: GradeTarget, response: string): Retrieval
     return { quality, correct: quality === 5, verdict, targetAnswer: head, missingPieces: quality === 5 ? [] : [head], isMock: true };
   }
 
-  // chunk / grammar — token coverage against the core of the expression
+  // chunk / grammar — token coverage against the core of the expression,
+  // PLUS order: full quality requires the core tokens in the expression's own
+  // order (greedy subsequence) — "role crucial play" holds every piece of
+  // "play a crucial role" but is not the expression.
   const text = target.chunkText ?? target.pattern ?? "";
   const targets = coreTokens(text);
   if (!targets.length) {
     return { quality: 0, correct: false, verdict: "Nothing to compare.", targetAnswer: text, missingPieces: [], isMock: true };
   }
+  const userTokens = userNorm.split(" ").filter(Boolean);
   const missing: string[] = [];
   let hit = 0;
+  let ordered = 0;
+  let cursor = 0;
   for (const t of targets) {
-    let found = false;
-    for (const u of userTokenSet) {
-      if (tokenMatches(u, t)) {
-        found = true;
+    let foundAt = -1;
+    for (let i = 0; i < userTokens.length; i++) {
+      if (tokenMatches(userTokens[i], t)) {
+        foundAt = i;
         break;
       }
     }
-    if (found) hit++;
-    else missing.push(t);
+    if (foundAt >= 0) {
+      hit++;
+      if (foundAt >= cursor) {
+        ordered++;
+        cursor = foundAt + 1;
+      }
+    } else missing.push(t);
   }
   const ratio = hit / targets.length;
+  const orderRatio = ordered / targets.length;
   let quality: 0 | 3 | 5 = 0;
-  if (ratio >= 0.85) quality = 5;
+  if (ratio >= 0.85 && orderRatio >= 0.85) quality = 5;
   else if (ratio >= 0.5) quality = 3;
 
   const example = target.examples?.[0] ?? text;
@@ -104,7 +117,31 @@ export function gradeRetrieval(target: GradeTarget, response: string): Retrieval
     quality === 5
       ? `Retrieved — "${text}" used correctly.`
       : quality === 3
-        ? `Partially retrieved — you missed: ${missing.map((m) => `"${m}"`).join(", ")}.`
+        ? `Partially retrieved — ${
+            missing.length
+              ? `you missed: ${missing.map((m) => `"${m}"`).join(", ")}`
+              : "you have all the pieces, but in the wrong order"
+          }.`
         : `Not retrieved yet. The target expression was "${text}".`;
   return { quality, correct: quality === 5, verdict, targetAnswer: example, missingPieces: missing, isMock: true };
+}
+
+/** Quality of a chunk's usage inside produced text (writing/speaking labs).
+ * 5 = produced cleanly; 3 = produced, but the usage span overlaps an
+ * AI-flagged erroneous quote — a grammatically flawed production is usage
+ * evidence, never mastery evidence. `errorQuotes` are exact quotes from the
+ * text, already gated for authenticity and "genuinely wrong" kind by the
+ * caller. Only invoked for chunks detected as used; a not-found span (should
+ * not happen) is graded 5 by the caller's own detection contract. */
+export function gradeChunkUsage(chunkText: string, producedText: string, errorQuotes: string[]): 3 | 5 {
+  const re = CHUNK_DETECT[chunkText];
+  const match = re ? producedText.match(re) : null;
+  const start = match ? (match.index ?? -1) : producedText.indexOf(chunkText);
+  if (start < 0) return 5;
+  const end = start + (match ? match[0].length : chunkText.length);
+  for (const q of errorQuotes) {
+    const at = producedText.indexOf(q);
+    if (at >= 0 && at < end && at + q.length > start) return 3; // spans overlap
+  }
+  return 5;
 }

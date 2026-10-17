@@ -6,7 +6,7 @@ import { and, eq } from "drizzle-orm";
 import { db } from "../src/db";
 import {
   errors as errorsT, learningProfiles, retrievalItems, reviewHistory,
-  users, wrongPracticeLog,
+  users, wrongPracticeLog, wrongPracticeSessions,
 } from "../src/db/schema";
 import { addError } from "../src/server/services/bank";
 import { startWrongPractice, submitWrongPractice } from "../src/server/services/wrong-practice";
@@ -112,6 +112,26 @@ async function main() {
     const crossSubmit = await submitWrongPractice(cetUid, "00000000-0000-0000-0000-000000000000", banked.id, "retrieval", "agriculture");
     check("⑩ CET user cannot start or submit an IELTS error", !cross.ok && !crossSubmit.ok);
 
+    /* ── 10b · session issuance (hardening): a submission must present a
+       session id the server actually ISSUED for THIS error. Fabricated ids
+       used to fabricate practice evidence (review counts + SM-2 churn). ── */
+    const fabricated = await submitWrongPractice(uid, "11111111-2222-3333-4444-555555555556", banked.id, "retrieval", "agriculture");
+    check("⑩b never-issued sessionId rejected", !fabricated.ok && fabricated.code === "SESSION_NOT_ISSUED", JSON.stringify(fabricated));
+    const err2 = await addError(uid, {
+      category: "grammar", wrongForm: "discuss about", correctForm: "discuss",
+      explanation: "preposition", sourceModule: "writing",
+    });
+    const sOther = await startWrongPractice(uid, err2.id);
+    const mismatch = sOther.ok
+      ? await submitWrongPractice(uid, sOther.sessionId, banked.id, "retrieval", "agriculture")
+      : { ok: false as const, code: "start-failed" as string };
+    check("⑩b session issued for ANOTHER error rejected (mismatch)", !mismatch.ok && mismatch.code === "SESSION_MISMATCH", JSON.stringify(mismatch));
+    // and the legitimate flow is unaffected: err2's own session grades fine
+    const legit = sOther.ok
+      ? await submitWrongPractice(uid, sOther.sessionId, err2.id, "retrieval", "discuss")
+      : { ok: false as const };
+    check("⑩b issued session submits normally for its own error", legit.ok, JSON.stringify(legit));
+
     /* ── 11 · AI fallback: generation works with no provider at all ───── */
     const fb = mockDrills({ wrongForm: "discuss about", correctForm: "discuss", category: "grammar" });
     check("⑪ mock/fallback drills are usable (2+ contexts, blank present)", fb.items.length >= 2 && fb.items.every((d) => d.context.includes("____")));
@@ -119,6 +139,7 @@ async function main() {
     console.log(`\n${pass} passed, ${fail} failed`);
   } finally {
     if (uid != null) {
+      await db.delete(wrongPracticeSessions).where(eq(wrongPracticeSessions.userId, uid));
       await db.delete(wrongPracticeLog).where(eq(wrongPracticeLog.userId, uid));
       await db.delete(reviewHistory).where(eq(reviewHistory.userId, uid));
       await db.delete(retrievalItems).where(eq(retrievalItems.userId, uid));

@@ -4,9 +4,9 @@
  * Run: npm run test:import */
 import { readFile, rm, readdir } from "node:fs/promises";
 import path from "node:path";
-import { and, eq, inArray } from "drizzle-orm";
+import { and, eq } from "drizzle-orm";
 import { db } from "../src/db";
-import { contents as contentsT, importedResources, learningProfiles, users } from "../src/db/schema";
+import { contents as contentsT, importedResources, learningProfiles, sentences as sentencesT, users } from "../src/db/schema";
 import { importFile, readUpload, listImports, importSummary, deleteAllImports } from "../src/server/services/import-resource";
 import { sniffFormat } from "../src/lib/import/extract";
 
@@ -133,6 +133,39 @@ async function main() {
     check("listImports returns rows with status", list.length >= 5 && list.every((r) => "status" in r && "fileName" in r));
     check("summary counts add up", summary.total === list.length && summary.ready + summary.needsAttention === summary.total);
 
+    // 17b · P0 regression: a duplicate import only REFERENCES pre-existing
+    // content (a paste, a seeded corpus row, an earlier import) — delete-all
+    // must never remove content the import didn't create. Shape it exactly
+    // like the bug report: the content row exists FIRST, then a file with
+    // identical text dedupes onto it.
+    const { getActiveExam } = await import("../src/server/current-user");
+    const { contentFingerprint } = await import("../src/server/services/content-selection");
+    const preBody =
+      (await fx("essay.txt")).toString("utf-8") +
+      "\n\nA unique pre-existing paragraph that no other fixture contains, so this fingerprint belongs to this row alone.\n";
+    const [preExisting] = await db
+      .insert(contentsT)
+      .values({
+        type: "reading",
+        title: "__p0_preexisting__",
+        topic: "imported",
+        cefr: "B2",
+        difficulty: 3,
+        body: preBody,
+        minutes: 5,
+        fingerprint: contentFingerprint(preBody),
+        examProfile: await getActiveExam(),
+      })
+      .returning({ id: contentsT.id });
+    madeContentIds.push(preExisting.id);
+    const dupRef = await importFile(userId, { fileName: "preexisting-copy.txt", buf: Buffer.from(preBody, "utf-8") });
+    if (dupRef.resourceId) madeResourceIds.push(dupRef.resourceId);
+    check(
+      "identical text dedupes onto pre-existing content",
+      dupRef.ok && dupRef.status === "duplicate" && dupRef.contentId === preExisting.id,
+      JSON.stringify({ status: dupRef.status, contentId: dupRef.contentId, want: preExisting.id }),
+    );
+
     // 18 · delete-all: removes registry + created contents + files, leaves seeded corpus
     const seededBefore = await db.select({ n: contentsT.id }).from(contentsT);
     const before = seededBefore.length;
@@ -141,12 +174,16 @@ async function main() {
     const myKeys = (
       await db.select({ k: importedResources.storageKey }).from(importedResources).where(eq(importedResources.userId, userId))
     ).map((r) => r.k);
+    // summary was captured before 17b added its duplicate row — re-read now
+    const summaryAtDelete = await importSummary(userId);
     const del = await deleteAllImports(userId);
-    check("deleteAllImports reports counts", del.files === summary.total && del.contents >= 1, JSON.stringify(del));
+    check("deleteAllImports reports counts", del.files === summaryAtDelete.total && del.contents >= 1, JSON.stringify(del));
     const after = await importSummary(userId);
     check("registry empty after delete-all", after.total === 0);
     const seededAfter = await db.select({ n: contentsT.id }).from(contentsT);
     check("seeded corpus untouched (only imported contents removed)", seededAfter.length === before - del.contents, `${before} → ${seededAfter.length}, del.contents=${del.contents}`);
+    const [preRow] = await db.select().from(contentsT).where(eq(contentsT.id, preExisting.id));
+    check("P0: referenced-but-not-owned content survives delete-all", !!preRow && preRow.body === preBody);
     const uploadsLeft = await readdir(UPLOAD_DIR).catch(() => [] as string[]);
     const mineLeft = uploadsLeft.filter((f) => myKeys.some((k) => f === k || k.endsWith(`/${f}`)));
     check("upload files removed", mineLeft.length === 0, mineLeft.join(","));
@@ -161,10 +198,47 @@ async function main() {
     const del2 = await deleteAllImports(userId);
     check("delete-all idempotent", del2.files === 1);
 
+    // 21 · P2 regression: attachTranscript REPLACES the sentence cache and
+    // refreshes the local analysis — the old rows belong to the old body and
+    // would otherwise duplicate/contradict the new transcript
+    const { attachTranscriptAction } = await import("../src/app/actions");
+    const [listenContent] = await db
+      .insert(contentsT)
+      .values({
+        type: "listening", title: "__attach_verify__", topic: "imported", cefr: "B2",
+        difficulty: 3, body: "", minutes: 5, examProfile: await getActiveExam(),
+      })
+      .returning({ id: contentsT.id });
+    madeContentIds.push(listenContent.id);
+    await db.insert(sentencesT).values([
+      { contentId: listenContent.id, orderNo: 0, text: "Old cached sentence one." },
+      { contentId: listenContent.id, orderNo: 1, text: "Old cached sentence two." },
+    ]);
+    const TRANSCRIPT =
+      "Welcome to the programme. Today we explore how urban gardening has changed neighbourhood life across many cities. " +
+      "Our first guest explains why small plots matter so much for local families. " +
+      "She also describes the economic effects of community farms in different regions. " +
+      "Finally we consider what the future holds for growers everywhere.";
+    const attach = await attachTranscriptAction({ contentId: listenContent.id, transcript: TRANSCRIPT }).catch(
+      (e: Error) => ({ ok: false as const, error: e.message }),
+    );
+    check("attachTranscript ok", attach.ok, "error" in attach ? attach.error : "");
+    const rowsNow = await db.select().from(sentencesT).where(eq(sentencesT.contentId, listenContent.id));
+    check("P2: old cached sentences gone", rowsNow.every((r) => !r.text.includes("Old cached")), JSON.stringify(rowsNow.map((r) => r.text)));
+    check("P2: new transcript sentences cached", rowsNow.length >= 3 && rowsNow.every((r) => TRANSCRIPT.includes(r.text)));
+    const ordered = [...rowsNow].sort((a, b) => a.orderNo - b.orderNo);
+    check("P2: sentence order renumbered from 0", ordered.every((r, i) => r.orderNo === i), JSON.stringify(ordered.map((r) => r.orderNo)));
+    const [afterContent] = await db.select().from(contentsT).where(eq(contentsT.id, listenContent.id));
+    check("P2: body + summary refreshed to the transcript",
+      afterContent?.body === TRANSCRIPT && afterContent?.summaryEn === TRANSCRIPT.slice(0, 160));
+
     console.log(`\n${pass} passed, ${fail} failed`);
   } finally {
     // ── cleanup: rows, contents, upload files, temp user ─────────────────
-    for (const id of madeContentIds) await db.delete(contentsT).where(eq(contentsT.id, id));
+    for (const id of madeContentIds) {
+      await db.delete(sentencesT).where(eq(sentencesT.contentId, id));
+      await db.delete(contentsT).where(eq(contentsT.id, id));
+    }
     await db.delete(importedResources).where(eq(importedResources.userId, userId));
     await db.delete(learningProfiles).where(eq(learningProfiles.userId, userId));
     await db.delete(users).where(and(eq(users.id, userId), eq(users.name, "__import_verify__")));

@@ -115,6 +115,11 @@ export const importedResources = sqliteTable(
     examProfile: text("exam_profile").$type<"ielts" | "cet4" | "cet6">().notNull().default("ielts"),
     error: text("error"),
     contentId: integer("content_id"), // resulting contents row, when ready
+    /** P0 ownership contract: true → THIS import created the contentId row
+     * (delete-all may remove it); false → contentId only references content
+     * that existed first (duplicate of a paste/seed/other import — never
+     * delete). NULL on legacy rows → callers derive from status. */
+    ownsContent: integer("owns_content", { mode: "boolean" }),
     meta: text("meta", { mode: "json" })
       .$type<{ pages?: number; durationMs?: number; ocrConfidence?: number; cues?: number; folder?: string }>()
       .notNull()
@@ -731,6 +736,21 @@ export const wrongPracticeLog = sqliteTable(
     index("idx_wrong_practice_user").on(t.userId),
     index("idx_wrong_practice_session_stage").on(t.sessionId, t.practiceType),
   ],
+);
+
+/** Hardening: practice sessions ISSUED by startWrongPractice. A submission
+ *  must present an id this table issued to the same learner for the same
+ *  error — fabricated ids can no longer fabricate practice evidence (review
+ *  counts, SM-2 churn). Rows are swept 24h after issue (next start). */
+export const wrongPracticeSessions = sqliteTable(
+  "wrong_practice_sessions",
+  {
+    sessionId: text("session_id").primaryKey(),
+    userId: integer("user_id").notNull(),
+    errorId: integer("error_id").notNull(),
+    createdAt: integer("created_at").notNull().$defaultFn(() => Date.now()),
+  },
+  (t) => [index("idx_wp_sessions_user").on(t.userId)],
 );
 
 /** Per-skill IELTS tracking — IELTS Performance ≠ Language Ability. */

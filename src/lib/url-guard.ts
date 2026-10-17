@@ -73,3 +73,66 @@ export async function checkPublicHttpUrl(
   }
   return { ok: true, url: u.toString().replace(/\/+$/, "") };
 }
+
+/** Guard signature (injectable so tests can simulate an already-validated
+ * first hop and prove every REDIRECT hop goes back through the real check). */
+export type PublicUrlGuard = typeof checkPublicHttpUrl;
+
+const MAX_REDIRECT_HOPS = 5;
+const MAX_BODY_CHARS = 5 * 1024 * 1024;
+
+/** Fetch a user-supplied page the safe way: every URL — the initial one AND
+ * each redirect hop — passes checkPublicHttpUrl (DNS re-resolution included)
+ * before any request is made. Redirects are followed manually (never by the
+ * fetch runtime, which would skip the guard), capped at 5 hops; the body read
+ * is capped so a hostile page cannot exhaust memory. */
+export async function fetchPublicPage(
+  raw: string,
+  opts: { guard?: PublicUrlGuard; headers?: Record<string, string> } = {},
+): Promise<{ ok: true; url: string; status: number; text: string } | { ok: false; error: string }> {
+  const guard = opts.guard ?? checkPublicHttpUrl;
+  let current = raw;
+  for (let hop = 0; hop <= MAX_REDIRECT_HOPS; hop++) {
+    const check = await guard(current);
+    if (!check.ok) return { ok: false, error: check.error };
+    let res: Response;
+    try {
+      res = await fetch(check.url, {
+        headers: opts.headers,
+        redirect: "manual",
+        signal: AbortSignal.timeout(20_000),
+      });
+    } catch {
+      return { ok: false, error: `Cannot reach host 无法访问: ${new URL(check.url).hostname}` };
+    }
+    if (res.status >= 300 && res.status < 400) {
+      const loc = res.headers.get("location");
+      if (!loc) return { ok: false, error: "Redirect without a Location header（重定向缺少目标地址）" };
+      try {
+        current = new URL(loc, check.url).toString();
+      } catch {
+        return { ok: false, error: "Redirect to an invalid URL（重定向地址无效）" };
+      }
+      continue;
+    }
+    return { ok: true, url: check.url, status: res.status, text: await readCapped(res) };
+  }
+  return { ok: false, error: "Too many redirects 重定向次数过多" };
+}
+
+async function readCapped(res: Response): Promise<string> {
+  const reader = res.body?.getReader();
+  if (!reader) return res.text();
+  const decoder = new TextDecoder();
+  let out = "";
+  for (;;) {
+    const { done, value } = await reader.read();
+    if (done) break;
+    out += decoder.decode(value, { stream: true });
+    if (out.length > MAX_BODY_CHARS) {
+      await reader.cancel();
+      return out.slice(0, MAX_BODY_CHARS);
+    }
+  }
+  return out + decoder.decode();
+}

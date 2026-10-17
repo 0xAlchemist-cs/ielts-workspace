@@ -71,6 +71,17 @@ async function main() {
       learningState: LS({ state: "retention" }),
     }).where(eq(retrievalItems.id, retention.itemId));
 
+    /* P1-3 regression: a retention item whose check is NOT yet due (checked
+       yesterday, 30-day interval → due in 29 days) must stay OUT of today's
+       queue. dueAt is also pushed far out so the 1-day almost-due grace can't
+       pull it in — this isolates the future-timestamp-treated-as-truthy bug. */
+    const notYetDue = await seedChunk(uid, "bear in mind that");
+    await db.update(retrievalItems).set({
+      dueAt: Date.now() + 25 * DAY, successCount: 3, intervalDays: 30,
+      lastRetentionCheckAt: Date.now() - DAY, retentionCheckInterval: 30,
+      learningState: LS({ state: "retention" }),
+    }).where(eq(retrievalItems.id, notYetDue.itemId));
+
     // the error ALSO carries a wrong-practice failure → overdue + recurring_error + wrong_practice
     await db.update(retrievalItems).set({ dueAt: Date.now() - DAY, failCount: 2 }).where(eq(retrievalItems.id, errItem.id));
     await db.insert(wrongPracticeLog).values({
@@ -88,6 +99,8 @@ async function main() {
     check("③ recurring error → unified queue (Error Revenge = a category, not an engine)", byItem.has(errItem.id) && byItem.get(errItem.id)!.reasons.includes("recurring_error"));
     check("④ forgetting → unified queue", byItem.has(forgetting.itemId) && byItem.get(forgetting.itemId)!.reasons.includes("forgettingDetected"));
     check("⑤ retention → unified queue", byItem.has(retention.itemId) && byItem.get(retention.itemId)!.reasons.includes("retention_check"));
+    check("⑤b not-yet-due retention check stays OUT of today's queue", !byItem.has(notYetDue.itemId),
+      byItem.has(notYetDue.itemId) ? `leaked with reasons=${JSON.stringify(byItem.get(notYetDue.itemId)!.reasons)}` : "");
     check("⑥ wrong-practice failure → unified queue as a reason (no second queue)", byItem.get(errItem.id)!.reasons.includes("wrong_practice"));
 
     /* ── one item, many reasons; never many entries ────────────────────── */

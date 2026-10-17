@@ -109,7 +109,7 @@ async function main() {
     await db.delete(contents).where(eq(contents.id, importRes.id));
   }
   const ssrf = await importContentAction({ url: "http://127.0.0.1/x" });
-  check("⑤ SSRF guard rejects loopback", !ssrf.ok && /拒绝/.test(ssrf.error ?? ""));
+  check("⑤ SSRF guard rejects loopback", !ssrf.ok && /拒绝|not allowed/.test(ssrf.error ?? ""));
   const short = await importContentAction({ text: "too short" });
   check("⑤ rejects <50 words", !short.ok);
 

@@ -34,6 +34,18 @@ function bandState(mean: number, target: number): ReadinessState {
   return "needs_work";
 }
 
+/** The AI's overall band lives at the TOP LEVEL of the saved feedback object;
+ * the routes save feedback.ielts (sub-scores only) into ieltsScores. Read the
+ * feedback column first — ieltsScores.overallEstimate stays as a fallback for
+ * legacy rows written under the old shape. */
+function bandOf(row: { feedback: unknown; scores: unknown }): number | undefined {
+  const fromFeedback = (row.feedback as { overallEstimate?: unknown } | null)?.overallEstimate;
+  if (typeof fromFeedback === "number" && fromFeedback > 0) return fromFeedback;
+  const fromScores = (row.scores as { overallEstimate?: unknown } | null)?.overallEstimate;
+  if (typeof fromScores === "number" && fromScores > 0) return fromScores;
+  return undefined;
+}
+
 function bandWhy(mean: number, target: number, count: number, state: ReadinessState) {
   if (state === "none") return { en: "Complete a few sessions to build a clearer picture.", zh: "完成几次练习就能形成更清晰的画像。" };
   if (state === "building") return { en: `Only ${count} attempt${count > 1 ? "s" : ""} so far — a few more will make this reliable.`, zh: `目前只有 ${count} 次——再多几次就可靠了。` };
@@ -56,13 +68,13 @@ export async function buildReadiness(userId: number, exam: ExamProfile): Promise
   if (exam === "ielts") {
     // ── Writing: AI-banded attempts ─────────────────────────────────────
     const writes = await db
-      .select({ scores: writingAttempts.ieltsScores })
+      .select({ feedback: writingAttempts.feedback, scores: writingAttempts.ieltsScores })
       .from(writingAttempts)
       .where(eq(writingAttempts.userId, userId))
       .orderBy(desc(writingAttempts.createdAt))
       .limit(10);
     const writeBands = writes
-      .map((w) => (w.scores as { overallEstimate?: number } | null)?.overallEstimate)
+      .map((w) => bandOf(w))
       .filter((b): b is number => typeof b === "number" && b > 0);
     const wState: ReadinessState =
       writeBands.length === 0 ? "none"
@@ -86,14 +98,13 @@ export async function buildReadiness(userId: number, exam: ExamProfile): Promise
       .orderBy(desc(ieltsAttempts.createdAt))
       .limit(30);
     for (const skill of ["reading", "listening"] as const) {
-      // each attempt's task skill is recorded in responses; attempts without
-      // skill attribution (old rows) fall back to mode inference: reading tasks
-      // = reading skill; listening = listening
+      // each attempt's task skill is recorded in responses; old rows WITHOUT
+      // attribution can't be honestly assigned to either skill — they are
+      // excluded here rather than counted into both (P2 fix)
       const relevant = attempts.filter((a) => {
         const r = a.responses as Record<string, unknown> | null;
         const taskSkill = r && typeof r.taskSkill === "string" ? (r.taskSkill as string) : null;
-        if (taskSkill) return taskSkill === skill;
-        return a.mode !== "mock" && (skill === "reading" ? true : false) === (skill === "reading");
+        return taskSkill === skill;
       }).filter((a) => typeof a.band === "number" && (a.band as number) > 0);
       const bands = relevant.map((a) => a.band as number);
       const rState: ReadinessState =
@@ -111,16 +122,18 @@ export async function buildReadiness(userId: number, exam: ExamProfile): Promise
 
     // ── Speaking: AI-banded attempts + logged external sessions ──────────
     const speaks = await db
-      .select({ scores: speakingAttempts.ieltsScores })
+      .select({ feedback: speakingAttempts.feedback, scores: speakingAttempts.ieltsScores })
       .from(speakingAttempts)
       .where(eq(speakingAttempts.userId, userId))
       .limit(10);
+    // external sessions carry their own skill tag — only speaking-skill
+    // sessions are speaking evidence (P2 fix: they all used to count here)
     const extSessions = await db
       .select({ n: sql<number>`count(*)` })
       .from(externalSessions)
-      .where(eq(externalSessions.userId, userId));
+      .where(and(eq(externalSessions.userId, userId), eq(externalSessions.skill, "speaking")));
     const speakBands = speaks
-      .map((s) => (s.scores as { overallEstimate?: number } | null)?.overallEstimate)
+      .map((s) => bandOf(s))
       .filter((b): b is number => typeof b === "number" && b > 0);
     const extCount = extSessions[0]?.n ?? 0;
     const totalSpeak = speakBands.length + extCount;
@@ -151,10 +164,6 @@ export async function buildReadiness(userId: number, exam: ExamProfile): Promise
       .select({ n: sql<number>`count(*)` })
       .from(writingAttempts)
       .where(eq(writingAttempts.userId, userId));
-    const exts = await db
-      .select({ n: sql<number>`count(*)` })
-      .from(externalSessions)
-      .where(eq(externalSessions.userId, userId));
 
     // V12.2: real CET task evidence — objective sections get accuracy-based
     // needs_work/on_track/building (NO score conversion, ever)

@@ -1,4 +1,5 @@
-import { checkPublicHttpUrl } from "../src/lib/url-guard";
+import http from "node:http";
+import { checkPublicHttpUrl, fetchPublicPage } from "../src/lib/url-guard";
 
 /* One-shot verification of the SSRF guard (run: npx tsx scripts/url-guard-test.ts). */
 
@@ -19,15 +20,71 @@ const cases: Array<[string, boolean]> = [
 ];
 
 let fails = 0;
+function report(name: string, pass: boolean, detail = "") {
+  if (!pass) fails++;
+  console.log(pass ? "PASS" : "FAIL", name, detail);
+}
+
+/** Deterministic offline tests for the article-fetch path: a local server on
+ * 127.0.0.1 plays both "attacker redirector" and "honest page". The guard is
+ * injectable so hop 1 can be simulated as already-validated — hop 2 must
+ * still go through the REAL guard (per-hop re-validation, the redirect gap). */
+async function fetchPageTests(): Promise<void> {
+  const srv = http.createServer((req, res) => {
+    const port = (srv.address() as { port: number }).port;
+    if (req.url?.startsWith("/redirect")) {
+      // attacker shape: public-looking page that 301s to a loopback target
+      res.writeHead(301, { location: `http://127.0.0.1:${port}/target` });
+      res.end();
+    } else if (req.url?.startsWith("/loop")) {
+      res.writeHead(301, { location: `http://127.0.0.1:${port}/loop` }); // never resolves
+      res.end();
+    } else {
+      res.writeHead(200, { "content-type": "text/html" });
+      res.end("<html><body>public article body</body></html>");
+    }
+  });
+  await new Promise<void>((resolve) => srv.listen(0, "127.0.0.1", resolve));
+  const port = (srv.address() as { port: number }).port;
+  const firstUrl = `http://127.0.0.1:${port}/redirect`;
+  try {
+    // 1 · loopback literal — the real guard must block hop 1 outright
+    const r1 = await fetchPublicPage(firstUrl);
+    report("fetchPublicPage: loopback blocked before any fetch", r1.ok === false);
+
+    // 2 · redirect re-validation — stub lets hop 1 pass, hop 2 (Location →
+    //     127.0.0.1) must be re-checked by the real guard and rejected
+    const stubGuard = (raw: string) =>
+      raw === firstUrl ? Promise.resolve({ ok: true as const, url: raw }) : checkPublicHttpUrl(raw);
+    const r2 = await fetchPublicPage(firstUrl, { guard: stubGuard });
+    report("fetchPublicPage: redirect to internal address blocked at hop 2", r2.ok === false);
+
+    // 3 · redirect cap — permissive guard, self-redirecting loop → cap error
+    const allowAll = (raw: string) => Promise.resolve({ ok: true as const, url: raw });
+    const r3 = await fetchPublicPage(`http://127.0.0.1:${port}/loop`, { guard: allowAll });
+    report("fetchPublicPage: endless redirect chain capped", r3.ok === false);
+
+    // 4 · happy path — validated 200 page returns its body
+    const r4 = await fetchPublicPage(`http://127.0.0.1:${port}/page`, { guard: allowAll });
+    report(
+      "fetchPublicPage: guarded fetch returns body",
+      r4.ok === true && r4.status === 200 && r4.text.includes("public article body"),
+      JSON.stringify(r4.ok ? r4.status : r4.error),
+    );
+  } finally {
+    srv.close();
+  }
+}
+
 async function main() {
   for (const [raw, expectOk] of cases) {
     const r = await checkPublicHttpUrl(raw);
-    const pass = r.ok === expectOk;
-    if (!pass) fails++;
-    console.log(pass ? "PASS" : "FAIL", raw, "->", r.ok ? r.url : r.error.slice(0, 60));
+    report(raw + " -> " + (r.ok ? r.url : r.error.slice(0, 60)), r.ok === expectOk);
   }
   const dns = await checkPublicHttpUrl("https://www.baidu.com");
-  console.log(dns.ok ? "PASS dns public" : "FAIL dns", dns.ok ? dns.url : dns.error);
-  process.exit(fails === 0 && dns.ok ? 0 : 1);
+  report("dns public " + (dns.ok ? dns.url : dns.error), dns.ok);
+
+  await fetchPageTests();
+  process.exit(fails === 0 ? 0 : 1);
 }
 void main();

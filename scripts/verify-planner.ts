@@ -34,6 +34,47 @@ async function main() {
   check("struggle scenario adds failed-today resets", t.struggleCount === 5);
   check("projection lines are human", t.successLine.en.includes("3 items") && t.struggleLine.zh.includes("5"));
 
+  // ── 2b · deep-step chunk selection (pure; P1-4 regression) ────────────────
+  // Engine targets are PERSONAL-bank copies while notice rows are corpus rows —
+  // the ID spaces never overlap, so anchoring must happen by TEXT.
+  const { pickDeepChunkIds } = await import("../src/server/services/mission");
+  const noticeA = [
+    { id: 101, text: "play a key role in" },
+    { id: 102, text: "as a result" },
+    { id: 103, text: "keep up with" },
+  ];
+  const deepPick = (texts: string[], lite = false) =>
+    pickDeepChunkIds(noticeA, new Set(texts), lite);
+  check(
+    "deep: engine target (personal copy) anchors by TEXT, not ID",
+    JSON.stringify(deepPick(["as a result"])) === JSON.stringify([102]),
+  );
+  check(
+    "deep: two engine targets → both, in notice order",
+    JSON.stringify(deepPick(["keep up with", "as a result"])) === JSON.stringify([102, 103]),
+  );
+  check(
+    "deep: engine targets unrelated to today → first-noticed fallback (never empty)",
+    JSON.stringify(deepPick(["some unrelated chunk"])) === JSON.stringify([101, 102]),
+  );
+  check("deep: no engine targets → same fallback", JSON.stringify(deepPick([])) === JSON.stringify([101, 102]));
+  check("deep: lite day → empty", deepPick(["as a result"], true).length === 0);
+
+  // ── 2c · adaptive engine (P1-8): urgency-driven length + honest content mapping
+  const { recommendLength } = await import("../src/server/services/priority-engine");
+  const { pickPrimaryContentType } = await import("../src/server/services/mission");
+  check("length: base by minutes (30 → standard)", recommendLength(30, 40) === "standard");
+  check("length: base by minutes (10 → quick)", recommendLength(10, 40) === "quick");
+  check("length: high engine urgency bumps one level (30min, totalWeighted 80 → deep)",
+    recommendLength(30, 80) === "deep");
+  check("length: 10-min day never exceeds quick, however urgent", recommendLength(10, 90) === "quick");
+  check("content: reading primary keeps the reading slot", pickPrimaryContentType("reading", 3, 7) === "reading");
+  check("content: listening primary keeps the listening slot", pickPrimaryContentType("listening", 3, 7) === "listening");
+  check("content: writing primary → lesser-practiced input skill (7 reading vs 3 listening → listening)",
+    pickPrimaryContentType("writing", 7, 3) === "listening");
+  check("content: speaking primary with equal counts → reading (stable tie-break)",
+    pickPrimaryContentType("speaking", 2, 2) === "reading");
+
   // ── 3 · interval evolution: simulated D0..D7 learner (service-level) ─────
   const [u] = await db.insert(users).values({ name: "__planner_verify__", examProfile: "ielts" }).returning();
   const userId = u.id;
@@ -64,6 +105,12 @@ async function main() {
     await submitRetentionReview(userId, itemId, "production", "without a second thought");
     const [after3] = await db.select().from(retrievalItems).where(eq(retrievalItems.id, itemId));
     check("recovery extends the interval again", after3.intervalDays > after2.intervalDays);
+
+    // ── engine decision (P1-8): factor weights must sum to exactly 100% ────
+    const { computeMissionDecision } = await import("../src/server/services/priority-engine");
+    const decision = await computeMissionDecision(userId);
+    const wSum = decision.factors.reduce((a, f) => a + f.weight, 0);
+    check("engine: factor weights normalized to 100%", Math.abs(wSum - 1) < 1e-9, String(wSum));
 
     // ── 4 · plan adapts with pressure (service-level) ───────────────────────
     const planCalm = await buildDailyPlan(userId);

@@ -32,6 +32,16 @@ export interface MissionDecision {
 
 const SKILL_ROTATION = ["reading", "listening", "speaking", "writing", "retrieval"] as const;
 
+/** Daily length: the time budget first, then the engine's overall urgency —
+ * a screaming day (totalWeighted ≥ 70) earns one more level of practice; a
+ * 15-minute day never exceeds quick however urgent. Pure — unit-tested. */
+export function recommendLength(dailyMinutes: number, totalWeighted: number): "quick" | "standard" | "deep" {
+  const levels = ["quick", "standard", "deep"] as const;
+  let idx = dailyMinutes <= 15 ? 0 : dailyMinutes <= 40 ? 1 : 2;
+  if (totalWeighted >= 70 && dailyMinutes > 15) idx = Math.min(2, idx + 1);
+  return levels[idx];
+}
+
 export async function computeMissionDecision(userId: number): Promise<MissionDecision> {
   // ── Fetch all decision inputs ────────────────────────────────────────────
   const [fullProfile, errorPatterns, dueItems, activeErrors, recentReviews, pastMissions, [profile]] =
@@ -189,9 +199,20 @@ export async function computeMissionDecision(userId: number): Promise<MissionDec
     diversityNote = (diversityNote ?? "") + ` ${adjustedSkill} is accelerating — shifting focus to ${altSkill} to balance growth.`;
   }
 
+  // ── Normalize factor weights to exactly 100%, then let overall urgency
+  // co-decide the day's length. The declared shares are relative magnitudes
+  // (they historically summed to 110%); the rationale UI displays both weight
+  // and weightedScore, so both must live on a true 0-1 scale. ──────────────
+  const factors = [weaknessFactor, errorRiskFactor, urgencyFactor, ieltsFactor, transferFactor, decayFactor];
+  const weightSum = factors.reduce((a, f) => a + f.weight, 0);
+  for (const f of factors) {
+    f.weight = f.weight / weightSum;
+    f.weightedScore = f.rawScore * f.weight;
+  }
+  const totalWeighted = factors.reduce((a, f) => a + f.weightedScore, 0);
+
   // ── Length recommendation ────────────────────────────────────────────────
-  const recommendedLength: "quick" | "standard" | "deep" =
-    dailyMinutes <= 15 ? "quick" : dailyMinutes <= 40 ? "standard" : "deep";
+  const recommendedLength = recommendLength(dailyMinutes, totalWeighted);
 
   // ── Select retrieval items (priority-weighted) ───────────────────────────
   const retrievalItemIds = dueItems
@@ -221,10 +242,6 @@ export async function computeMissionDecision(userId: number): Promise<MissionDec
   const targetErrorIds = activeErrors.slice(0, 3).map((e) => e.id);
 
   // ── Compose rationale ────────────────────────────────────────────────────
-  const totalWeighted = weaknessFactor.weightedScore + errorRiskFactor.weightedScore +
-    urgencyFactor.weightedScore + ieltsFactor.weightedScore + transferFactor.weightedScore +
-    decayFactor.weightedScore;
-
   const urgentItems: string[] = [];
   if (overdueCount > 0) urgentItems.push(`${plural(overdueCount, "item")} overdue for retrieval`);
   if (highSeverityCount > 0) urgentItems.push(`${plural(highSeverityCount, "high-severity error pattern")} active`);

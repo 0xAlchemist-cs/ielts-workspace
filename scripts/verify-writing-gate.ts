@@ -1,4 +1,5 @@
 import { mockProvider } from "../src/lib/ai";
+import { gradeChunkUsage } from "../src/lib/grading";
 import type { RewriteTask } from "../src/lib/types";
 
 /* Verifies the Error-Bank gate (mirrors src/app/api/ai/writing/route.ts):
@@ -42,10 +43,31 @@ async function main() {
   ];
   for (const [label, pass] of probes) console.log(pass ? "  ✓" : "  ✗", label);
 
+  // ── chunk-usage quality (P1-5 regression): a chunk produced inside an
+  // AI-flagged erroneous span is usage evidence (3), never mastery (5) ─────
+  const CLEAN =
+    "Technology plays a key role in modern education because it helps students keep up with change every day.";
+  const FLAWED =
+    "Technology plays a key role in modern education, but it are not always good for young learners.";
+  const usageProbes: [string, boolean][] = [
+    ["clean usage → quality 5", gradeChunkUsage("play a role in", CLEAN, ["but it are not always good"]) === 5],
+    ["chunk inside flagged error quote → quality 3 (no mastery credit)",
+      gradeChunkUsage("play a role in", FLAWED, ["plays a key role in modern education, but it are"]) === 3],
+    ["unrelated error doesn't taint a clean chunk",
+      gradeChunkUsage("keep up with", CLEAN, ["plays a key role in modern education"]) === 5],
+    ["chunk not in CHUNK_DETECT falls back to exact-match (flawed → 3)",
+      gradeChunkUsage("beyond all reasonable doubt", "This proves the point beyond all reasonable doubt, isn't it?",
+        ["beyond all reasonable doubt, isn't it"]) === 3],
+    ["non-error (style) quotes are never passed by the route — clean stays 5",
+      gradeChunkUsage("play a role in", CLEAN, []) === 5],
+  ];
+  for (const [label, pass] of usageProbes) console.log(pass ? "  ✓" : "  ✗", label);
+
   const ok =
     banked.length >= 1 &&
     filtered.some((t) => /average sentence|didn't use/i.test(t.original)) &&
-    probes.every(([, pass]) => pass);
+    probes.every(([, pass]) => pass) &&
+    usageProbes.every(([, pass]) => pass);
   console.log(ok ? "GATE OK — template rows filtered, kind gate holds, real errors banked" : "GATE FAIL");
   process.exit(ok ? 0 : 1);
 }

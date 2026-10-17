@@ -20,6 +20,7 @@ import { getActiveExam, getCurrentUser, setActiveExam } from "@/server/current-u
 import { isExamProfile } from "@/lib/exam-profiles";
 import { generateTodayMission, getTodayMission, markStepDone, toggleTodayLite } from "@/server/services/mission";
 import { contentFingerprint, markContentCompleted, markContentUsed } from "@/server/services/content-selection";
+import { analyzeContent } from "@/server/services/content-analysis";
 import { recordEvent } from "@/server/services/progress";
 import {
   addError,
@@ -35,7 +36,7 @@ import { logChunkEvent } from "@/server/services/events";
 import { ensureRetrievalItem } from "@/server/services/retrieval";
 import { ieltsQuestionFor, transferPromptFor } from "@/lib/banks";
 import { getAIProviderStatus, invalidateAIConfigCache, loadAIProviderConfig } from "@/lib/ai";
-import { checkPublicHttpUrl } from "@/lib/url-guard";
+import { checkPublicHttpUrl, fetchPublicPage } from "@/lib/url-guard";
 import type { CEFR, ErrorCategory } from "@/lib/types";
 
 // ── Immersion level (topbar quick switch) ──────────────────────────────────
@@ -369,11 +370,24 @@ export async function attachTranscriptAction(input: {
     .limit(1);
   if (!row) return { ok: false, error: "内容不存在" };
 
+  // refresh the local analysis on the NEW text — cefr/difficulty/minutes on an
+  // untranscribed import were placeholders ("B2"/3/default minutes)
+  const analysis = await analyzeContent(input.transcript);
   await db
     .update(contents)
-    .set({ body: input.transcript.trim(), summaryEn: input.transcript.trim().slice(0, 160) })
+    .set({
+      body: input.transcript.trim(),
+      summaryEn: input.transcript.trim().slice(0, 160),
+      cefr: analysis.cefr as (typeof contents.$inferInsert)["cefr"],
+      difficulty: analysis.difficulty,
+      minutes: Math.max(1, Math.round(words / 130)),
+      ...(analysis.topic ? { topic: analysis.topic } : {}),
+    })
     .where(eq(contents.id, input.contentId));
 
+  // the cached sentences belong to the OLD body — replace them wholesale so
+  // they can't duplicate or contradict the new transcript
+  await db.delete(sentencesT).where(eq(sentencesT.contentId, input.contentId));
   const sents = splitSentences(input.transcript);
   if (sents.length) {
     await db.insert(sentencesT).values(sents.map((text, i) => ({ contentId: input.contentId, orderNo: i, text })));
@@ -388,31 +402,6 @@ export async function attachTranscriptAction(input: {
 }
 
 // ── Content import (paste text or public URL) ──────────────────────────────
-
-function assertPublicHttpUrl(raw: string): URL {
-  let u: URL;
-  try {
-    u = new URL(raw.trim());
-  } catch {
-    throw new Error("URL 格式不正确");
-  }
-  if (u.protocol !== "http:" && u.protocol !== "https:") throw new Error("仅支持 http/https 链接");
-  const h = u.hostname.toLowerCase();
-  const blocked =
-    h === "localhost" ||
-    h.endsWith(".localhost") ||
-    h === "0.0.0.0" ||
-    h === "::1" ||
-    h === "[::1]" ||
-    /^(127|10)\./.test(h) ||
-    /^192\.168\./.test(h) ||
-    /^172\.(1[6-9]|2\d|3[01])\./.test(h) ||
-    /^169\.254\./.test(h) ||
-    h.endsWith(".internal") ||
-    h.endsWith(".local");
-  if (blocked) throw new Error("仅允许访问公网地址，本地/内网链接被拒绝");
-  return u;
-}
 
 function extractReadable(html: string): { title: string; text: string } {
   const titleMatch = html.match(/<title[^>]*>([\s\S]*?)<\/title>/i);
@@ -486,21 +475,18 @@ export async function importContentAction(input: {
   let sourceNote = "";
 
   if (!body && input.url?.trim()) {
-    try {
-      const u = assertPublicHttpUrl(input.url);
-      const res = await fetch(u.toString(), {
-        headers: { "User-Agent": "Mozilla/5.0 (compatible; IELTSWorkspace/1.0)" },
-        signal: AbortSignal.timeout(20_000),
-      });
-      if (!res.ok) return { ok: false, error: `抓取失败：HTTP ${res.status}` };
-      const html = await res.text();
-      const parsed = extractReadable(html);
-      body = parsed.text;
-      if (!title) title = parsed.title;
-      sourceNote = ` (source: ${u.hostname})`;
-    } catch (e) {
-      return { ok: false, error: `抓取失败：${(e as Error).message}` };
-    }
+    // SSRF-safe fetch: the strong guard (hostname + DNS resolution) validates
+    // the URL AND every redirect hop; redirects are followed manually, never
+    // by the fetch runtime (which would skip the guard).
+    const res = await fetchPublicPage(input.url, {
+      headers: { "User-Agent": "Mozilla/5.0 (compatible; IELTSWorkspace/1.0)" },
+    });
+    if (!res.ok) return { ok: false, error: `抓取失败：${res.error}` };
+    if (res.status !== 200) return { ok: false, error: `抓取失败：HTTP ${res.status}` };
+    const parsed = extractReadable(res.text);
+    body = parsed.text;
+    if (!title) title = parsed.title;
+    sourceNote = ` (source: ${new URL(res.url).hostname})`;
   }
 
   const words = tokenizeWords(body).length;
@@ -654,10 +640,12 @@ export async function saveWritingAction(input: {
 export async function saveWritingRevisionAction(attemptId: number, revision: string): Promise<void> {
   const cu = await getCurrentUser();
   if (!cu) return;
+  // attemptId alone would find ANY goal's row — scope to the current user so
+  // a revision can never cross into another exam profile's attempt
   await db
     .update(writingAttempts)
     .set({ revisionText: revision })
-    .where(eq(writingAttempts.id, attemptId));
+    .where(and(eq(writingAttempts.id, attemptId), eq(writingAttempts.userId, cu.user.id)));
   revalidatePath("/writing");
 }
 

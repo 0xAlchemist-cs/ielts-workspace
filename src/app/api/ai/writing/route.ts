@@ -4,6 +4,7 @@ import { db } from "@/db";
 import { chunks as chunksT, retrievalItems } from "@/db/schema";
 import { getProvider } from "@/lib/ai";
 import { CHUNK_DETECT } from "@/lib/chunk-detect";
+import { gradeChunkUsage } from "@/lib/grading";
 import { advanceState, decideFormat, holisticStrength } from "@/lib/retrieval-engine";
 import { getUserIdOrNull } from "@/server/current-user";
 import { saveWritingAction } from "@/app/actions";
@@ -59,6 +60,13 @@ export async function POST(req: Request) {
   const feedback = await getProvider().writing({ prompt, text, targetChunks });
 
   // ── LanguageItem detection & state advancement ────────────────────────────
+  // Error quotes for usage grading — same authenticity gate as the Error Bank
+  // below: a real quote from the essay AND a genuinely-wrong kind (register/
+  // style notes are preferences, not mistakes).
+  const errorQuotes = (feedback.rewriteTasks ?? [])
+    .filter((t) => t.original && text.includes(t.original) && (!t.kind || t.kind === "error"))
+    .map((t) => t.original as string);
+
   const usedChunkIds: number[] = [];
   const usedChunkTexts: string[] = [];
   for (const c of myChunks) {
@@ -102,7 +110,10 @@ export async function POST(req: Request) {
         productionHits: 0, productionMisses: 0, contextualHits: 0, contextualMisses: 0,
       };
       const format = decideFormat("chunk", ls);
-      const newLs = advanceState(ls, format, 5, context);
+      // Usage inside an AI-flagged erroneous span earns 3, not 5 — producing
+      // the expression in broken grammar must not count as mastery.
+      const chunkText = myChunks.find((mc) => mc.id === chunkId)?.text ?? "";
+      const newLs = advanceState(ls, format, gradeChunkUsage(chunkText, text, errorQuotes), context);
       const strength = holisticStrength(newLs);
       await db
         .update(retrievalItems)

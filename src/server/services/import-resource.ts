@@ -167,6 +167,7 @@ async function importFileInner(
     await db.insert(importedResources).values({
       userId, fileName, resourceType: kind, format, mimeType: MIME_OF[format],
         fileSize: buf.length, contentHash: hash, storageKey, status, error, examProfile: exam,
+        ownsContent: false, // failed/needs-attention rows never create content
         meta: { ...baseMeta, ...meta },
     });
     return { ok: status !== "failed", status, error, format, kind, meta };
@@ -184,7 +185,7 @@ async function importFileInner(
         .values({
           userId, fileName, resourceType: kind, format, mimeType: MIME_OF[format],
           fileSize: buf.length, contentHash: hash, storageKey, status: "needs_transcription",
-          examProfile: exam,
+          examProfile: exam, ownsContent: true,
           meta: { ...baseMeta, ...(durationMs ? { durationMs } : {}) },
         })
         .returning({ id: importedResources.id });
@@ -251,7 +252,8 @@ async function importFileInner(
       await db.insert(importedResources).values({
         userId, fileName, resourceType: kind, format, mimeType: MIME_OF[format],
         fileSize: buf.length, contentHash: hash, storageKey, status: "duplicate",
-        contentId: dupContent.id, examProfile: exam, meta: { ...baseMeta, ...normalized.meta },
+        contentId: dupContent.id, examProfile: exam, ownsContent: false, // references pre-existing content — never delete it on our behalf
+        meta: { ...baseMeta, ...normalized.meta },
       });
       return {
         ok: true, status: "duplicate", contentId: dupContent.id, duplicate: true,
@@ -269,7 +271,7 @@ async function importFileInner(
       .values({
         userId, fileName, resourceType: kind, format, mimeType: MIME_OF[format],
         fileSize: buf.length, contentHash: hash, storageKey, status: "ready",
-        examProfile: exam,
+        examProfile: exam, ownsContent: true,
         meta: { ...baseMeta, ...normalized.meta },
       })
       .returning({ id: importedResources.id });
@@ -380,14 +382,38 @@ export async function importSummary(userId: number): Promise<ImportSummary> {
 }
 
 /** One-click delete: removes ONLY V6-imported material — registry rows, the
- * contents they created (plus their cached sentences/history), and uploaded
- * files. The seeded Cambridge corpus is untouched (it has no registry rows). */
+ * contents the imports CREATED (plus their cached sentences/history), and
+ * uploaded files. Duplicate imports merely REFERENCE pre-existing content
+ * (a paste, a seeded corpus row, an earlier import) — that content and its
+ * learning history always stay. */
 export async function deleteAllImports(userId: number): Promise<{ files: number; contents: number; bytesFreed: number }> {
   const rows = await db.select().from(importedResources).where(eq(importedResources.userId, userId));
+  // P0 ownership: a registry row may only take its contentId with it when the
+  // import CREATED that content. Duplicates point at content that existed
+  // first. Legacy rows (ownsContent NULL, written before the column existed)
+  // derive the same answer from their status.
+  const ownsContent = (r: typeof importedResources.$inferSelect) =>
+    !!r.contentId && (r.ownsContent ?? r.status !== "duplicate");
+  const ownedContentIds = [...new Set(rows.filter(ownsContent).map((r) => r.contentId!))];
+
+  // All DB mutations are one atomic unit — a half-deleted library must never
+  // survive a mid-run failure. (better-sqlite3 transactions are synchronous:
+  // each statement runs immediately via .run(), no awaits inside.)
+  db.transaction((tx) => {
+    if (ownedContentIds.length) {
+      tx.delete(sentences).where(inArray(sentences.contentId, ownedContentIds)).run();
+      tx.delete(contentHistory).where(inArray(contentHistory.contentId, ownedContentIds)).run();
+      tx.delete(contentsT).where(inArray(contentsT.id, ownedContentIds)).run();
+      // keep the user's saved expressions — only detach them from deleted sources
+      tx.update(chunks).set({ sourceContentId: null }).where(inArray(chunks.sourceContentId, ownedContentIds)).run();
+    }
+    tx.delete(importedResources).where(eq(importedResources.userId, userId)).run();
+  });
+
+  // Files go last, only after the DB commit — a failed unlink then leaves an
+  // orphan file on disk, never a dangling registry row.
   let bytes = 0;
-  const contentIds: number[] = [];
   for (const r of rows) {
-    if (r.contentId) contentIds.push(r.contentId);
     bytes += r.fileSize;
     try {
       await unlink(path.join(UPLOAD_DIR, path.basename(r.storageKey)));
@@ -395,18 +421,7 @@ export async function deleteAllImports(userId: number): Promise<{ files: number;
       /* already gone */
     }
   }
-  for (const cid of contentIds) {
-    await db.delete(sentences).where(eq(sentences.contentId, cid));
-    await db.delete(contentHistory).where(eq(contentHistory.contentId, cid));
-    await db.delete(contentsT).where(eq(contentsT.id, cid));
-  }
-  // keep the user's saved expressions — only detach them from deleted sources
-  const uniqueContentIds = [...new Set(contentIds)];
-  if (uniqueContentIds.length) {
-    await db.update(chunks).set({ sourceContentId: null }).where(inArray(chunks.sourceContentId, uniqueContentIds));
-  }
-  await db.delete(importedResources).where(eq(importedResources.userId, userId));
-  return { files: rows.length, contents: uniqueContentIds.length, bytesFreed: bytes };
+  return { files: rows.length, contents: ownedContentIds.length, bytesFreed: bytes };
 }
 
 /** Public wrapper: importFileInner + folder metadata in every outcome. */

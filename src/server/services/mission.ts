@@ -1,6 +1,6 @@
-import { and, eq, isNull, or } from "drizzle-orm";
+import { and, eq, inArray, isNull, or, sql } from "drizzle-orm";
 import { db } from "@/db";
-import { chunks, contents, dailyMissions, errors, learningProfiles, retrievalItems, type DailyMission } from "@/db/schema";
+import { chunks, contentHistory, contents, dailyMissions, errors, learningProfiles, retrievalItems, type DailyMission } from "@/db/schema";
 import { selectNextContent } from "@/server/services/content-selection";
 import { CHUNK_DETECT } from "@/lib/chunk-detect";
 import { cueCards, genericSpeakingPrompts, speakingPromptByChunk } from "@/lib/banks";
@@ -38,6 +38,37 @@ async function noticeChunksFor(contentId: number, body: string) {
   );
   // source-attached chunks first, then text matches, cap at 8
   return hits.sort((a, b) => (b.sourceContentId === contentId ? 1 : 0) - (a.sourceContentId === contentId ? 1 : 0)).slice(0, 8);
+}
+
+/** Deep-study targets: engine-prioritized when its due chunks appear among
+ * today's noticed material, first-noticed chunks otherwise. The match is by
+ * TEXT — engine targets are personal-bank COPIES of corpus chunks (their own
+ * row ids) while notice rows are corpus rows; the two ID spaces never
+ * overlap, so an id-intersection is always empty. Pure — unit-tested. */
+/** Content-slot mapping for the mission's two input slots: content-skill
+ * primaries (reading/listening) drive their slot directly. Production or
+ * retrieval primaries (writing/speaking/retrieval) have no content slot of
+ * their own — take the LESS-practiced input skill instead of silently
+ * defaulting to reading (P1-8: a writing-weakest day was silently becoming a
+ * reading day). Pure — unit-tested. */
+export function pickPrimaryContentType(
+  primarySkill: "listening" | "reading" | "speaking" | "writing" | "retrieval",
+  readingSessions: number,
+  listeningSessions: number,
+): "reading" | "listening" {
+  if (primarySkill === "reading") return "reading";
+  if (primarySkill === "listening") return "listening";
+  return readingSessions <= listeningSessions ? "reading" : "listening";
+}
+
+export function pickDeepChunkIds(
+  notice: { id: number; text: string }[],
+  engineTargetTexts: ReadonlySet<string>,
+  lite: boolean,
+): number[] {
+  if (lite) return [];
+  const anchored = notice.filter((c) => engineTargetTexts.has(c.text)).slice(0, 2).map((c) => c.id);
+  return anchored.length ? anchored : notice.slice(0, 2).map((c) => c.id);
 }
 
 export async function generateTodayMission(userId: number, liteOverride?: boolean): Promise<DailyMission> {
@@ -93,9 +124,26 @@ export async function generateTodayMission(userId: number, liteOverride?: boolea
   const recommendedLength = decision.recommendedLength;
   const actualLite = lite ?? recommendedLength === "quick";
 
-  // ── Content selection: prefer content matching the primary skill ────────
-  const primaryType = primarySkill === "listening" ? "listening" : "reading";
+  // ── Content selection: content-skill primaries drive their slot; production
+  // primaries (writing/speaking/retrieval) take the lesser-practiced input ──
+  const inputCounts = await db
+    .select({ skill: contentHistory.skill, n: sql<number>`count(*)` })
+    .from(contentHistory)
+    .where(eq(contentHistory.userId, userId))
+    .groupBy(contentHistory.skill);
+  const readingSessions = Number(inputCounts.find((r) => r.skill === "reading")?.n ?? 0);
+  const listeningSessions = Number(inputCounts.find((r) => r.skill === "listening")?.n ?? 0);
+  const primaryType = pickPrimaryContentType(primarySkill, readingSessions, listeningSessions);
   const secondaryType = primaryType === "listening" ? "reading" : "listening";
+  // and say it like it is: on a production-focus day the reading/listening
+  // slots are supporting input, not the focus itself
+  const focusNote =
+    primarySkill === "writing" || primarySkill === "speaking" || primarySkill === "retrieval"
+      ? {
+          en: `Today's focus is ${primarySkill === "retrieval" ? "retrieval review" : `${primarySkill} practice`} — the reading/listening slots are supporting input.`,
+          zh: `今日主攻${primarySkill === "writing" ? "写作" : primarySkill === "speaking" ? "口语" : "检索复习"}——阅读/听力材料作为配套输入。`,
+        }
+      : null;
 
   const primarySel = await pickContent(primaryType, userId);
   // Secondary slot must differ from the primary pick when alternatives exist.
@@ -112,10 +160,16 @@ export async function generateTodayMission(userId: number, liteOverride?: boolea
 
   const noticeRows = reading ? await noticeChunksFor(reading.id, reading.body) : [];
   const noticeIds = noticeRows.map((c) => c.id);
-  // Engine-selected target chunks override default deep picks
-  const deepIds = decision.targetChunkIds.length
-    ? noticeIds.filter((id) => decision.targetChunkIds.includes(id)).slice(0, 2)
-    : (actualLite ? [] : noticeIds.slice(0, 2));
+  // Engine-selected target chunks prioritize the deep picks when they appear
+  // in today's material — matched by TEXT (engine ids are personal copies,
+  // notice ids are corpus rows; see pickDeepChunkIds).
+  const engineTargetTexts = decision.targetChunkIds.length
+    ? new Set(
+        (await db.select({ text: chunks.text }).from(chunks).where(inArray(chunks.id, decision.targetChunkIds)))
+          .map((r) => r.text),
+      )
+    : new Set<string>();
+  const deepIds = pickDeepChunkIds(noticeRows, engineTargetTexts, actualLite);
 
   // ── Retrieval: V15.2 — the mission batch comes from the SAME canonical
   // review queue as /review (one scheduling path); the planner's budget caps
@@ -143,8 +197,8 @@ export async function generateTodayMission(userId: number, liteOverride?: boolea
       ...decision.rationale,
       planWhy: {
         mode: budget.mode,
-        en: readinessNote ? `${budget.whyEn} ${readinessNote.en}` : budget.whyEn,
-        zh: readinessNote ? `${budget.whyZh} ${readinessNote.zh}` : budget.whyZh,
+        en: [budget.whyEn, readinessNote?.en, focusNote?.en].filter(Boolean).join(" "),
+        zh: [budget.whyZh, readinessNote?.zh, focusNote?.zh].filter(Boolean).join(" "),
       },
     },
     reading: reading

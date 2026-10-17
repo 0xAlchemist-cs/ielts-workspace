@@ -78,6 +78,26 @@ async function main() {
   const fErr = decideFormat("error", fresh);
   check("error always production", fErr.mode === "production", fErr.mode);
 
+  console.log("── Retrieval grading: order matters (P1-6) ──");
+  const { gradeRetrieval } = await import("../src/lib/grading");
+  const T = { itemType: "chunk" as const, chunkText: "play a crucial role" };
+  check(
+    "scrambled tokens (role crucial play) → NOT quality 5",
+    gradeRetrieval(T, "the role crucial play in society today").quality !== 5,
+    `got ${gradeRetrieval(T, "the role crucial play in society today").quality}`,
+  );
+  check(
+    "scrambled tokens still earn partial credit (3) — all pieces present",
+    gradeRetrieval(T, "the role crucial play in society today").quality === 3,
+  );
+  check(
+    "inflection + insertion in natural order → 5",
+    gradeRetrieval(T, "technology has played a really crucial role in education").quality === 5,
+  );
+  check("exact production → 5", gradeRetrieval(T, "play a crucial role").quality === 5);
+  check("partial coverage (2/3 tokens) → 3", gradeRetrieval(T, "play role").quality === 3);
+  check("nothing relevant → 0", gradeRetrieval(T, "an unrelated sentence entirely").quality === 0);
+
   console.log(`\n${pass} passed, ${fail} failed`);
   if (fail > 0) process.exit(1);
   process.exit(0);
