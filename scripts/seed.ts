@@ -1,10 +1,13 @@
+import { eq } from "drizzle-orm";
 import { db } from "../src/db";
 import {
   chunks,
   contents,
+  learningProfiles,
   lexicalRelations,
   listeningClips,
   sentences,
+  users,
   vocabularies,
 } from "../src/db/schema";
 import { splitSentences } from "../src/lib/text";
@@ -135,6 +138,17 @@ async function main() {
     }
   }
   console.log(`  [network] ${corpusWords.length} corpus words, ${relCount} relations`);
+
+  // 3. Exam-profile users — what the app's /welcome first-run creates for the
+  // ACTIVE exam; suites and CI switch exams, so all three profiles must
+  // resolve a learning memory. Idempotent per profile. ─────────────────────
+  for (const exam of ["ielts", "cet4", "cet6"] as const) {
+    const existing = await db.select({ id: users.id }).from(users).where(eq(users.examProfile, exam)).limit(1);
+    if (existing.length) continue;
+    const [u] = await db.insert(users).values({ name: "Learner", examProfile: exam }).returning();
+    await db.insert(learningProfiles).values({ userId: u.id, cefr: "B1", immersionLevel: 1, dailyMinutes: 45 });
+  }
+  console.log("  [users] one learner per exam profile (ielts/cet4/cet6)");
 
   console.log("Seed complete.");
 }

@@ -1,0 +1,732 @@
+{
+ "part1": [
+  {
+   "topic": "Friends",
+   "questions": [
+    "Do you have a friend you have known for a long time?",
+    "What do you usually do with your friends?",
+    "Where do you often meet each other?",
+    "How often do you go out with your friends?",
+    "How important are friends to you?",
+    "Do you prefer to spend time with one friend or with a group of friends?",
+    "Would you invite friends to your home?",
+    "Is there a difference between where you meet friends now and where you used to meet them in the past?",
+    "Why are some places suitable for meeting while others are not?"
+   ]
+  },
+  {
+   "topic": "Staying with old people",
+   "questions": [
+    "Have you ever worked with old people?",
+    "Are you happy to work with people who are older than you?",
+    "What are the benefits of being friends with or working with old people?",
+    "Do you enjoy spending time with old people?"
+   ]
+  },
+  {
+   "topic": "Museum",
+   "questions": [
+    "Do you think museums are important?",
+    "Are there many museums in your hometown?",
+    "Do you often visit a museum?",
+    "When was the last time you visited a museum?"
+   ]
+  },
+  {
+   "topic": "Crowded place",
+   "questions": [
+    "Is the city where you live crowded?",
+    "Is there a crowded place near where you live?",
+    "Do you like crowded places?",
+    "Do most people like crowded places?",
+    "When was the last time you were in a crowded place?"
+   ]
+  },
+  {
+   "topic": "Public places",
+   "questions": [
+    "Have you ever talked with someone you don't know in public places?",
+    "Do you wear headphones in public places?",
+    "Would you like to see more public places near where you live?",
+    "Do you often go to public places with your friends?"
+   ]
+  },
+  {
+   "topic": "Sharing",
+   "questions": [
+    "Did your parents teach you to share when you were a child?",
+    "What kind of things do you like to share with others?",
+    "What kind of things are not suitable for sharing?",
+    "Do you have anything to share with others recently?",
+    "Who is the first person you would like to share good news with?",
+    "Do you prefer to share news with your friends or your parents?"
+   ]
+  },
+  {
+   "topic": "Borrowing/lending",
+   "questions": [
+    "Have you borrowed books from others?",
+    "Have you ever borrowed money from others?",
+    "Do you like to lend things to others?",
+    "How do you feel when people don't return things they borrowed from you?",
+    "Do you mind if others borrow money from you?"
+   ]
+  },
+  {
+   "topic": "Chatting",
+   "questions": [
+    "Do you like chatting with friends?",
+    "What do you usually chat about with friends?",
+    "Do you prefer to chat with a group of people or with only one friend?",
+    "Do you prefer to communicate face-to-face or via social media?",
+    "Do you argue with friends?"
+   ]
+  },
+  {
+   "topic": "Having a break",
+   "questions": [
+    "How often do you take a rest or a break?",
+    "What do you usually do when you are resting?",
+    "Do you take a nap when you are taking your rest?",
+    "How do you feel after taking a nap?"
+   ]
+  },
+  {
+   "topic": "Growing vegetables/fruits",
+   "questions": [
+    "Are you interested in growing vegetables and fruits?",
+    "Is growing vegetables popular in your country?",
+    "Do many people grow vegetables in your city?",
+    "Do you think it's easy to grow vegetables?",
+    "Should schools teach students how to grow vegetables?"
+   ]
+  },
+  {
+   "topic": "Going out",
+   "questions": [
+    "Do you bring food or snacks with you when going out?",
+    "Do you always take your mobile phone with you when going out?",
+    "Do you often bring cash with you?",
+    "How often do you use cash?"
+   ]
+  },
+  {
+   "topic": "Doing something well",
+   "questions": [
+    "Do you have an experience when you did something well?",
+    "Do you have an experience when your teacher thought you did a good job?",
+    "Do you often tell your friends when they do something well?"
+   ]
+  },
+  {
+   "topic": "Advertisement",
+   "questions": [
+    "Is there an advertisement that made an impression on you when you were a child?",
+    "Do you see a lot of advertising on trains or other transport?",
+    "Do you like advertisements?",
+    "What kind of advertising do you like?",
+    "Do you often see advertisements when you are on your phone or computer?"
+   ]
+  },
+  {
+   "topic": "Rules",
+   "questions": [
+    "Are there any rules for students at your school?",
+    "Do you think students would benefit more from more rules?",
+    "Have you ever had a really dedicated teacher?",
+    "Do you prefer to have more or fewer rules at school?",
+    "Have you ever had a really strict teacher?",
+    "Would you like to work as a teacher in a rule-free school?"
+   ]
+  },
+  {
+   "topic": "Shoes",
+   "questions": [
+    "Do you like buying shoes? How often?",
+    "Have you ever bought shoes online?",
+    "How much money do you usually spend on shoes?",
+    "Which do you prefer, fashionable shoes or comfortable shoes?"
+   ]
+  },
+  {
+   "topic": "Plants",
+   "questions": [
+    "Do you keep plants at home?",
+    "What plant did you grow when you were young?",
+    "Do you know anything about growing a plant?",
+    "Do Chinese people send plants as gifts?"
+   ]
+  }
+ ],
+ "part2": [
+  {
+   "cue": "Describe a good friend who is important to you",
+   "hints": [
+    "Who he/she is",
+    "How/where you got to know him/her",
+    "How long you have known each other",
+    "And explain why he/she is important to you"
+   ]
+  },
+  {
+   "cue": "Describe a popular person",
+   "hints": [
+    "Who this person is",
+    "What kind of person he or she is",
+    "When you see him/her normally",
+    "And explain why you think this person is popular"
+   ]
+  },
+  {
+   "cue": "Describe a friend of yours who is a good musician",
+   "hints": [
+    "Who this friend is",
+    "What kind of music they play",
+    "How often you see them play",
+    "And explain why you think they are a good musician"
+   ]
+  },
+  {
+   "cue": "Describe a creative person (e.g. an artist, a musician, an architect, etc.) you admire",
+   "hints": [
+    "Who he/she is",
+    "How you knew him/her",
+    "What his/her greatest achievement is",
+    "And explain why you think he/she is creative"
+   ]
+  },
+  {
+   "cue": "Describe a person you know who enjoys working for a family business (e.g. a shop, etc.)",
+   "hints": [
+    "Who he/she is",
+    "What the business is",
+    "What his/her job is",
+    "And explain why he/she enjoys working there"
+   ]
+  },
+  {
+   "cue": "Describe a successful sportsperson you admire",
+   "hints": [
+    "Who he/she is",
+    "What you know about him/her",
+    "What he/she is like in real life",
+    "What achievement he/she has made"
+   ]
+  },
+  {
+   "cue": "Describe a natural place (e.g. parks, mountains, etc.)",
+   "hints": [
+    "Where this place is",
+    "How you knew this place",
+    "What it is like",
+    "And explain why you like to visit it"
+   ]
+  },
+  {
+   "cue": "Describe an exciting activity you have tried for the first time",
+   "hints": [
+    "What it is",
+    "When/where you did it",
+    "Why you thought it was exciting",
+    "And explain how you felt about it"
+   ]
+  },
+  {
+   "cue": "Describe a positive change that you have made recently in your daily routine",
+   "hints": [
+    "What the change is",
+    "How you have changed the routine",
+    "Why you think it is a positive change",
+    "And explain how you feel about the change"
+   ]
+  },
+  {
+   "cue": "Describe an unusual meal you had",
+   "hints": [
+    "When you had it",
+    "Where you had it",
+    "Whom you had it with",
+    "And explain why it was unusual"
+   ]
+  },
+  {
+   "cue": "Describe an important decision made with the help of other people",
+   "hints": [
+    "What the decision was",
+    "Why you made the decision",
+    "Who helped you make the decision",
+    "And how you felt about it"
+   ]
+  },
+  {
+   "cue": "Describe a time when you waited for something special that would happen",
+   "hints": [
+    "What you waited for",
+    "Where you waited",
+    "Why it was special",
+    "And explain how you felt while you were waiting"
+   ]
+  },
+  {
+   "cue": "Describe a time when you received good service in a shop/store",
+   "hints": [
+    "Where the shop is",
+    "When you went to the shop",
+    "What service you received from the staff",
+    "And explain how you felt about the service"
+   ]
+  },
+  {
+   "cue": "Describe the time when you first talked in a foreign language",
+   "hints": [
+    "Where you were",
+    "Who you were with",
+    "What you talked about",
+    "And explain how you felt about it"
+   ]
+  },
+  {
+   "cue": "Describe a time you saw something interesting on social media",
+   "hints": [
+    "When it was",
+    "Where you saw it",
+    "What you saw",
+    "And explain why you think it was interesting"
+   ]
+  },
+  {
+   "cue": "Describe a time when you broke something",
+   "hints": [
+    "What it was",
+    "When/where that happened",
+    "How you broke it",
+    "And explain what you did after that"
+   ]
+  },
+  {
+   "cue": "Describe a time when someone apologized to you",
+   "hints": [
+    "When it was",
+    "Who this person is",
+    "Why he or she apologized to you",
+    "And how you felt about it"
+   ]
+  },
+  {
+   "cue": "Describe a good habit your friend has and you want to develop",
+   "hints": [
+    "Who your friend is",
+    "What habit he/she has",
+    "When you noticed this habit",
+    "And explain why you want to develop this habit"
+   ]
+  },
+  {
+   "cue": "Describe a time when the electricity suddenly went off",
+   "hints": [
+    "When/where it happened",
+    "How long it lasted",
+    "What you did during that time",
+    "And explain how you felt about it"
+   ]
+  },
+  {
+   "cue": "Describe an occasion when you lost your way",
+   "hints": [
+    "Where you were",
+    "What happened",
+    "How you felt",
+    "And explain how you found your way"
+   ]
+  },
+  {
+   "cue": "Describe a great dinner you and your friends or family members enjoyed",
+   "hints": [
+    "What you had",
+    "Who you had the dinner with",
+    "What you talked about during the dinner",
+    "And explain why you enjoyed it"
+   ]
+  },
+  {
+   "cue": "Describe a long journey you had and would like to take again",
+   "hints": [
+    "When/where you went",
+    "Who you had the journey with",
+    "Why you had the journey",
+    "And explain why you would like to have it again"
+   ]
+  },
+  {
+   "cue": "Describe an area/subject of science (biology, robotics, etc.) that you are interested in and would like to learn more about",
+   "hints": [
+    "Which area/subject it is",
+    "When and where you came to know this area/subject",
+    "How you get information about this area/subject",
+    "And explain why you are interested in this area/subject"
+   ]
+  },
+  {
+   "cue": "Describe a book you read that you found useful",
+   "hints": [
+    "What it is",
+    "When you read it",
+    "Why you think it is useful",
+    "And explain how you felt about it"
+   ]
+  },
+  {
+   "cue": "Describe a toy you liked in your childhood",
+   "hints": [
+    "What kind of toy it is",
+    "When you received it",
+    "How you played it",
+    "And how you felt about it"
+   ]
+  },
+  {
+   "cue": "Describe an important old thing that your family has kept for a long time",
+   "hints": [
+    "What it is",
+    "How/when your family first got this thing",
+    "How long your family has kept it",
+    "And explain why this thing is important to your family"
+   ]
+  },
+  {
+   "cue": "Describe a wild animal that you want to learn more about",
+   "hints": [
+    "What it is",
+    "When/where you saw it",
+    "Why you want to learn more about it",
+    "And explain what you want to learn more about it"
+   ]
+  },
+  {
+   "cue": "Describe a natural talent (sports, music, etc.) you want to improve",
+   "hints": [
+    "What it is",
+    "When you discovered it",
+    "How you want to improve it",
+    "And how you feel about it"
+   ]
+  },
+  {
+   "cue": "Describe an interesting traditional story",
+   "hints": [
+    "What the story is about",
+    "When/how you knew it",
+    "Who told you the story",
+    "And explain how you felt when you first heard it"
+   ]
+  }
+ ],
+ "part3": [
+  {
+   "topic": "重要的好朋友",
+   "questions": [
+    "How do children make friends at school?",
+    "How do children make friends when they are not at school?",
+    "Do you think it is better for children to have a few close friends or many casual friends?",
+    "Do you think a child's relationship with friends can be replaced by that with other people, like parents or other family members?",
+    "What are the differences between friends made inside and outside the workplace?",
+    "Do you think it's possible for bosses and their employees to become friends?"
+   ]
+  },
+  {
+   "topic": "受欢迎的人",
+   "questions": [
+    "Why are some students popular in school?",
+    "Is it important for a teacher to be popular?",
+    "Do you think good teachers are always popular among students?",
+    "What are the qualities of being a good teacher?",
+    "Is it easier to become popular nowadays?",
+    "Why do people want to be popular?"
+   ]
+  },
+  {
+   "topic": "擅长音乐的朋友",
+   "questions": [
+    "What kind of music is popular in your country?",
+    "Do you think it's important for schools to have music classes?",
+    "Do you think technology has changed the way we listen to music?",
+    "Is it better to learn music at a young age or as an adult?",
+    "What are the benefits of being able to play a musical instrument?",
+    "Do you think famous musicians have a responsibility to be good role models?"
+   ]
+  },
+  {
+   "topic": "钦佩的有创造力的人",
+   "questions": [
+    "Do you think children should learn to play musical instruments?",
+    "How do artists acquire inspiration?",
+    "Do you think pictures and videos in news reports are important?",
+    "What can we do to help children keep creative?",
+    "How does drawing help to enhance children's creativity?",
+    "What kind of jobs require creativity?"
+   ]
+  },
+  {
+   "topic": "在家族企业工作的人",
+   "questions": [
+    "Would you like to start a family business?",
+    "Would you like to work for a family business?",
+    "Why do some people choose to start their own company?",
+    "What are the advantages and disadvantages of family businesses?",
+    "What family businesses do you know in your local area?",
+    "What makes a successful family business?"
+   ]
+  },
+  {
+   "topic": "钦佩的运动员",
+   "questions": [
+    "Should students have physical education and do sports at school?",
+    "What qualities should an athlete have?",
+    "Is talent important in sports?",
+    "Is it easy to identify children's talents?",
+    "What is the most popular sport in your country?",
+    "Why are there so few top athletes?"
+   ]
+  },
+  {
+   "topic": "自然之地",
+   "questions": [
+    "What kind of people like to visit natural places?",
+    "What are the differences between a natural place and a city?",
+    "Do you think going to the park is the only way to get close to nature?",
+    "What can people gain from going to natural places?",
+    "Are there any wild animals in the city?",
+    "Do you think it is a good idea to let animals stay in local parks for people to see?"
+   ]
+  },
+  {
+   "topic": "第一次尝试的兴奋活动",
+   "questions": [
+    "Why are some people unwilling to try new things?",
+    "Do you think fear stops people from trying new things?",
+    "Why are some people keen on doing dangerous activities?",
+    "Do you think that children adapt to new things more easily than adults?",
+    "What can people learn from doing dangerous activities?",
+    "What are the benefits of trying new things?"
+   ]
+  },
+  {
+   "topic": "近期日常改变",
+   "questions": [
+    "What do people normally plan in their daily lives?",
+    "Is time management very important in our daily lives?",
+    "What changes would people often make?",
+    "Do you think it is good to change jobs frequently?",
+    "Who do you think would make changes more often, young people or old people?",
+    "Who should get more promotion opportunities in the workplace, young people or older people?"
+   ]
+  },
+  {
+   "topic": "不寻常的一餐",
+   "questions": [
+    "What are the advantages and disadvantages of eating in restaurants?",
+    "What fast food restaurants are there in your country?",
+    "Do people eat fast food at home?",
+    "Why do some people choose to eat out instead of ordering takeout?",
+    "Do people in your country socialize in restaurants? Why?",
+    "Do people in your country value food culture?"
+   ]
+  },
+  {
+   "topic": "别人帮忙做的决定",
+   "questions": [
+    "What kind of decisions do you think are meaningful?",
+    "What important decisions should be made by teenagers themselves?",
+    "Why are some people unwilling to make quick decisions?",
+    "Do people like to ask for advice more for their personal life or their work?",
+    "Why do some people like to ask others for advice?"
+   ]
+  },
+  {
+   "topic": "购物服务",
+   "questions": [
+    "Why are shopping malls so popular in China?",
+    "What are the advantages and disadvantages of shopping in small shops?",
+    "Why do some people not like shopping in small shops?",
+    "What are the differences between online shopping and in-store shopping?",
+    "What are the advantages and disadvantages of shopping online?",
+    "Can consumption drive economic growth?"
+   ]
+  },
+  {
+   "topic": "第一次用外语",
+   "questions": [
+    "At what age should children start learning a foreign language?",
+    "Which skill is more important, speaking or writing?",
+    "Does a person still need to learn other languages, if he or she is good at English?",
+    "Do you think minority languages will disappear?",
+    "Does learning a foreign language help in finding a job?",
+    "Which stage of life do you think is the best for learning a foreign language?"
+   ]
+  },
+  {
+   "topic": "社交媒体趣事",
+   "questions": [
+    "Why do people like to use social media?",
+    "What kinds of things are popular on social media?",
+    "What are the advantages and disadvantages of using social media?",
+    "What do you think of making friends on social network?",
+    "Are there any people who shouldn't use social media?",
+    "Do you think people spend too much time on social media?"
+   ]
+  },
+  {
+   "topic": "弄坏东西",
+   "questions": [
+    "What kind of things are more likely to be broken by people at home?",
+    "What kind of people like to fix things by themselves?",
+    "Do you think clothes produced in the factory are of better quality than those made by hand?",
+    "Do you think handmade clothes are more valuable?",
+    "Is the older generation better at fixing things?",
+    "Do you think elderly people should teach young people how to fix things?"
+   ]
+  },
+  {
+   "topic": "别人向你道歉",
+   "questions": [
+    "Do you think people should apologize for anything wrong they do?",
+    "Do people in your country like to say \"sorry\"?",
+    "On what occasion do people usually apologize to others?",
+    "Why do some people refuse to say \"sorry\" to others?",
+    "Do you think every \"sorry\" is from the bottom of the heart?",
+    "Are women better than men at recognizing emotions?"
+   ]
+  },
+  {
+   "topic": "学习朋友好习惯",
+   "questions": [
+    "What habits should children have?",
+    "What should parents do to teach their children good habits?",
+    "What influences do children with bad habits have on other children?",
+    "Why do some habits change when people get older?",
+    "How do we develop bad habits?",
+    "What can we do to get rid of bad habits?"
+   ]
+  },
+  {
+   "topic": "突然停电",
+   "questions": [
+    "Which is better, electric bicycles or ordinary bicycles?",
+    "Do you think electric bicycles will replace ordinary bicycles in the future?",
+    "Which is better, electric cars or petrol cars?",
+    "How did people manage to live without electricity in the ancient world?",
+    "Is it difficult for the government to replace all the petrol cars with electric cars?",
+    "Do people use more electricity now than before?"
+   ]
+  },
+  {
+   "topic": "迷路",
+   "questions": [
+    "Why do some people get lost more easily than others?",
+    "Do you think it is important to be able to read a map?",
+    "Do you think it is important to do some preparation before you travel to new places?",
+    "How can people find their way when they are lost?",
+    "Is a paper map still necessary?",
+    "How do people react when they get lost?"
+   ]
+  },
+  {
+   "topic": "和亲友享受的晚餐",
+   "questions": [
+    "Do people prefer to eat out at restaurants or eat at home during the Spring Festival?",
+    "What food do you eat on special occasions, like during the Spring Festival or the Mid-autumn Festival?",
+    "Why do people like to have meals together during important festivals?",
+    "Is it a hassle to prepare a meal at home?",
+    "What do people often talk about during meals?",
+    "People are spending less and less time having meals with their families these days. Is this good or bad?"
+   ]
+  },
+  {
+   "topic": "想再去一次的远行",
+   "questions": [
+    "Do you think it is a good choice to travel by plane?",
+    "What are the differences between group travelling and travelling alone?",
+    "What do we need to prepare for a long journey?",
+    "Why do some people prefer to travel in their own country?",
+    "Why do some people prefer to travel abroad?"
+   ]
+  },
+  {
+   "topic": "感兴趣的科学学科/领域",
+   "questions": [
+    "Why do some children not like learning science at school?",
+    "Is it important to study science at school?",
+    "Which science subject is the most important for children to learn?",
+    "Should people continue to study science after graduating from school?",
+    "How do you get to know about scientific news?",
+    "Should scientists explain the research process to the public?"
+   ]
+  },
+  {
+   "topic": "有用的书",
+   "questions": [
+    "What are the types of books that young people like to read?",
+    "What should the government do to make libraries better?",
+    "Do you think old people spend more time reading than young people?",
+    "Which one is better, paper books or e-books?",
+    "Have libraries changed a lot with the development of the internet?",
+    "What should we do to prevent modern libraries from closing down?"
+   ]
+  },
+  {
+   "topic": "童年喜欢的玩具",
+   "questions": [
+    "How do advertisements influence children?",
+    "Should advertising aimed at kids be prohibited?",
+    "What's the difference between the toys kids play now and those they played in the past?",
+    "Do you think parents should buy more toys for their kids or spend more time with them?",
+    "What's the difference between the toys boys play with and girls play with?",
+    "What are the advantages and disadvantages of modern toys?"
+   ]
+  },
+  {
+   "topic": "家中老物件",
+   "questions": [
+    "What kind of old things do people in your country like to keep?",
+    "Why do people keep old things?",
+    "What are the differences between the things old people keep and those young people keep?",
+    "What are the differences between the things that people keep today and the things that people kept in the past?",
+    "What can we see in a museum?",
+    "What can we learn from a museum?"
+   ]
+  },
+  {
+   "topic": "想多了解的野生动物",
+   "questions": [
+    "Why should we protect wild animals?",
+    "Why are some people more willing to protect wild animals than others?",
+    "Do you think it's important to take children to the zoo to see animals?",
+    "Why do some people attach more importance to protecting rare animals?",
+    "Should people educate children to protect wild animals?",
+    "Is it more important to protect wild animals or the environment?"
+   ]
+  },
+  {
+   "topic": "想提升的天赋",
+   "questions": [
+    "Do you think artists with talents should focus on their talents?",
+    "Is it possible for us to know whether children who are 3 or 4 years old will become musicians and painters when they grow up?",
+    "Why do people like to watch talent shows?",
+    "Do you think it is more interesting to watch famous people's or ordinary people's shows?",
+    "Do you think it's important to develop children's talents?",
+    "Why do some people like to show their talents online?"
+   ]
+  },
+  {
+   "topic": "传统故事",
+   "questions": [
+    "What kind of stories do children like?",
+    "What are the benefits of bedtime stories for children?",
+    "Why do most children like listening to stories before bedtime?",
+    "What can children learn from stories?",
+    "Do all stories for children have happy endings?",
+    "Is a good storyline important for a movie?"
+   ]
+  }
+ ]
+}

@@ -1,0 +1,47 @@
+[
+ {
+  "date": "2022.01.08",
+  "categoryZh": "教育类，讨论类",
+  "prompt": "Some people say that the best way to be successful is to get a university education. Others disagree and think that nowadays this is not true. Discuss both views and give your own opinion."
+ },
+ {
+  "date": "2022.01.20",
+  "categoryZh": "文化类，讨论类",
+  "prompt": "Some people think the increasing business and cultural contact between countries brings many positive effects. Others say it causes the loss of national identities. Discuss both views and give your own opinion."
+ },
+ {
+  "date": "2022.01.22",
+  "categoryZh": "政府类，观点类",
+  "prompt": "In many countries, children are becoming overweight and unhealthy. Some people think that it is the government’s responsibility. To what extent do you agree or disagree?"
+ },
+ {
+  "date": "2022.02.12",
+  "categoryZh": "社会类，利弊类",
+  "prompt": "In some countries, old people who retire from work spend the money on themselves (e.g.holiday) rather than save money for their children. Is this a positive or negative development?"
+ },
+ {
+  "date": "2022.02.17",
+  "categoryZh": "交通类，报告类",
+  "prompt": "Some countries invest more money to make it easier to use bicycles in cities. Why? Is it the best way to solve the transport problem?"
+ },
+ {
+  "date": "2022.03.12",
+  "categoryZh": "社会类，观点类",
+  "prompt": "People living in 21st century have a better life quality than the people who lived in the previous centuries. To what extent do you agree or disagree?"
+ },
+ {
+  "date": "2022.04.16",
+  "categoryZh": "科技类，观点类",
+  "prompt": "More and more people are using computers and electric devices to access information, therefore there is no need to print books, magazines and newspapers on paper. To what extent do you agree or disagree?"
+ },
+ {
+  "date": "2022.04.21",
+  "categoryZh": "社会类，利弊类",
+  "prompt": "In some countries, too much money is spent by both the government and individuals on national festivals, such as New Year. To what extent do you agree or disagree?"
+ },
+ {
+  "date": "2022.04.30",
+  "categoryZh": "社会类，报告类",
+  "prompt": "People in many countries spend more and more time far away from their families. Why does this happen and what effects will it have on them and their families ？"
+ }
+]

@@ -1,0 +1,3 @@
+persuade/4998 -> persuaded,persuading,persuades
+convince/2174 -> convinced,convincing,convinces
+garment/1257 -> garments

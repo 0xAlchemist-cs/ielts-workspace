@@ -3,6 +3,10 @@
  * Source: https://github.com/skywind3000/ECDICT (Apache-2.0)
  * Run: npm run db:dict   (downloads nothing — fetch the files first, see README)
  *
+ * DICT_CSV / DICT_LEMMA override the source paths — CI imports the tiny
+ * committed subset under data/test-fixtures/dict/ instead of the full 66MB
+ * corpus (only the headwords the verify suites actually look up).
+ *
  * All inserts use prepared statements with bound parameters. */
 import fs from "node:fs";
 import path from "node:path";
@@ -41,7 +45,7 @@ function isPlainWord(w: string): boolean {
 }
 
 function importDictionary() {
-  const csvPath = path.join(DATA, "ecdict.csv");
+  const csvPath = process.env.DICT_CSV ? path.resolve(process.env.DICT_CSV) : path.join(DATA, "ecdict.csv");
   if (!fs.existsSync(csvPath)) {
     console.error(`Missing ${csvPath} — download it first (see README).`);
     process.exit(1);
@@ -112,7 +116,7 @@ function importDictionary() {
 }
 
 function importLemmas() {
-  const lemmaPath = path.join(DATA, "lemma.en.txt");
+  const lemmaPath = process.env.DICT_LEMMA ? path.resolve(process.env.DICT_LEMMA) : path.join(DATA, "lemma.en.txt");
   if (!fs.existsSync(lemmaPath)) {
     console.error(`Missing ${lemmaPath} — download it first (see README).`);
     process.exit(1);

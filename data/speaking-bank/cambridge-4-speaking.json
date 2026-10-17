@@ -1,0 +1,91 @@
+{
+ "part1": [
+  {
+   "topic": "Friends",
+   "questions": [
+    "The last time you saw your friends, what did you do together?",
+    "In what ways are your friends important to you?"
+   ]
+  }
+ ],
+ "part2": [
+  {
+   "cue": "Describe an interesting historic place.",
+   "hints": [
+    "what it is",
+    "where it is located",
+    "what you can see there now",
+    "and explain why this place is interesting"
+   ]
+  },
+  {
+   "cue": "Describe an interest or hobby that you enjoy.",
+   "hints": [
+    "how you became interested in it",
+    "how long you have been doing it",
+    "why you enjoy it",
+    "and explain what benefits you get from this interest or hobby"
+   ]
+  },
+  {
+   "cue": "Describe a river, lake or sea which you like.",
+   "hints": [
+    "what the river, lake or sea is called",
+    "where it is",
+    "what the land near it is like",
+    "and explain why you like this river, lake or sea"
+   ]
+  },
+  {
+   "cue": "Describe a useful website you have visited.",
+   "hints": [
+    "what the website was",
+    "how you found the address for this website",
+    "what the website contained",
+    "and explain why it was useful to you"
+   ]
+  }
+ ],
+ "part3": [
+  {
+   "topic": "Looking after historic places",
+   "questions": [
+    "How do people in your country feel about protecting historic buildings?",
+    "Do you think an area can benefit from having an interesting historic place locally?",
+    "What do you think will happen to historic places or buildings in the future?",
+    "The teaching of history at school *Example questions:* How were you taught history when you were at school?",
+    "Are there other ways people can learn about history, apart from at school?"
+   ]
+  },
+  {
+   "topic": "The social benefits of hobbies",
+   "questions": [
+    "Do you think having a hobby is good for people’s social life?",
+    "Are there any negative effects of a person spending too much time on their hobby?",
+    "Why do you think people need to have an interest or hobby?",
+    "Leisure time *Example questions:* In your country, how much time do people spend on work and how much time on leisure?",
+    "Is this a good balance, do you think?"
+   ]
+  },
+  {
+   "topic": "Water-based leisure activities",
+   "questions": [
+    "What do people enjoy doing when they visit rivers, lakes or the sea?",
+    "Why do you think these activities are popular?",
+    "What benefits do you think people get from the activities they enjoy in the water?",
+    "What are the different advantages of going to the sea or to a swimming pool to enjoy yourself?",
+    "What do you think the disadvantages are?"
+   ]
+  },
+  {
+   "topic": "The internet and communication",
+   "questions": [
+    "What effect has the internet had on the way people generally communicate with each other?",
+    "Why do you think the internet is being used more and more for communication?",
+    "How reliable do you think information from the internet is?",
+    "What about the news on the internet?",
+    "The internet and shopping *Example questions:* Why do you think some people use the internet for shopping?"
+   ]
+  }
+ ]
+}

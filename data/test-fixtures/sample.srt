@@ -1,0 +1,19 @@
+1
+00:00:01,000 --> 00:00:04,200
+Welcome back to the programme.
+
+2
+00:00:04,500 --> 00:00:08,000
+Today we are discussing urban gardening.
+
+3
+00:00:08,300 --> 00:00:12,100
+Cities around the world are planting vegetables on rooftops.
+
+4
+00:00:12,400 --> 00:00:16,000
+The benefits include fresher food and cooler buildings.
+
+5
+00:00:16,300 --> 00:00:20,500
+Critics argue that soil costs more than the harvest is worth.

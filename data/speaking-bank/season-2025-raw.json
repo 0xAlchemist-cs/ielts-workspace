@@ -1,0 +1,1645 @@
+{
+ "part1": [
+  {
+   "topic": "Friends",
+   "category": "人物题",
+   "status": "New",
+   "questions": [
+    "Do you have a friend you have known for a long time?",
+    "What do you usually do with your friends?",
+    "Where do you often meet each other?",
+    "How often do you go out with your friends?",
+    "How important are friends to you?",
+    "Do you prefer to spend time with one friend or with a group of friends?",
+    "Would you invite friends to your home?",
+    "Is there a difference between where you meet friends now and where you used to meet them in the past?",
+    "Why are some places suitable for meeting while others are not?"
+   ]
+  },
+  {
+   "topic": "Staying with old people",
+   "category": "事件题",
+   "status": "New",
+   "questions": [
+    "Have you ever worked with old people?",
+    "Are you happy to work with people who are older than you?",
+    "What are the benefits of being friends with or working with old people?",
+    "Do you enjoy spending time with old people?"
+   ]
+  },
+  {
+   "topic": "Museum",
+   "category": "地点题",
+   "status": "New",
+   "questions": [
+    "Do you think museums are important?",
+    "Are there many museums in your hometown?",
+    "Do you often visit a museum?",
+    "When was the last time you visited a museum?"
+   ]
+  },
+  {
+   "topic": "Crowded place",
+   "category": "地点题",
+   "status": "New",
+   "questions": [
+    "Is the city where you live crowded?",
+    "Is there a crowded place near where you live?",
+    "Do you like crowded places?",
+    "Do most people like crowded places?",
+    "When was the last time you were in a crowded place?"
+   ]
+  },
+  {
+   "topic": "Public places",
+   "category": "地点题",
+   "status": "New",
+   "questions": [
+    "Have you ever talked with someone you don't know in public places?",
+    "Do you wear headphones in public places?",
+    "Would you like to see more public places near where you live?",
+    "Do you often go to public places with your friends?"
+   ]
+  },
+  {
+   "topic": "Sharing",
+   "category": "事件题",
+   "status": "New",
+   "questions": [
+    "Did your parents teach you to share when you were a child?",
+    "What kind of things do you like to share with others?",
+    "What kind of things are not suitable for sharing?",
+    "Do you have anything to share with others recently?",
+    "Who is the first person you would like to share good news with?",
+    "Do you prefer to share news with your friends or your parents?"
+   ]
+  },
+  {
+   "topic": "Borrowing/lending",
+   "category": "事件题",
+   "status": "New",
+   "questions": [
+    "Have you borrowed books from others?",
+    "Have you ever borrowed money from others?",
+    "Do you like to lend things to others?",
+    "How do you feel when people don't return things they borrowed from you?",
+    "Do you mind if others borrow money from you?"
+   ]
+  },
+  {
+   "topic": "Chatting",
+   "category": "事件题",
+   "status": "New",
+   "questions": [
+    "Do you like chatting with friends?",
+    "What do you usually chat about with friends?",
+    "Do you prefer to chat with a group of people or with only one friend?",
+    "Do you prefer to communicate face-to-face or via social media?",
+    "Do you argue with friends?"
+   ]
+  },
+  {
+   "topic": "Having a break",
+   "category": "事件题",
+   "status": "New",
+   "questions": [
+    "How often do you take a rest or a break?",
+    "What do you usually do when you are resting?",
+    "Do you take a nap when you are taking your rest?",
+    "How do you feel after taking a nap?"
+   ]
+  },
+  {
+   "topic": "Growing vegetables/fruits",
+   "category": "事件题",
+   "status": "New",
+   "questions": [
+    "Are you interested in growing vegetables and fruits?",
+    "Is growing vegetables popular in your country?",
+    "Do many people grow vegetables in your city?",
+    "Do you think it's easy to grow vegetables?",
+    "Should schools teach students how to grow vegetables?"
+   ]
+  },
+  {
+   "topic": "Going out",
+   "category": "事件题",
+   "status": "New",
+   "questions": [
+    "Do you bring food or snacks with you when going out?",
+    "Do you always take your mobile phone with you when going out?",
+    "Do you often bring cash with you?",
+    "How often do you use cash?"
+   ]
+  },
+  {
+   "topic": "Doing something well",
+   "category": "事件题",
+   "status": "New",
+   "questions": [
+    "Do you have an experience when you did something well?",
+    "Do you have an experience when your teacher thought you did a good job?",
+    "Do you often tell your friends when they do something well?"
+   ]
+  },
+  {
+   "topic": "Advertisement",
+   "category": "事物题",
+   "status": "New",
+   "questions": [
+    "Is there an advertisement that made an impression on you when you were a child?",
+    "Do you see a lot of advertising on trains or other transport?",
+    "Do you like advertisements?",
+    "What kind of advertising do you like?",
+    "Do you often see advertisements when you are on your phone or computer?"
+   ]
+  },
+  {
+   "topic": "Rules",
+   "category": "事物题",
+   "status": "New",
+   "questions": [
+    "Are there any rules for students at your school?",
+    "Do you think students would benefit more from more rules?",
+    "Have you ever had a really dedicated teacher?",
+    "Do you prefer to have more or fewer rules at school?",
+    "Have you ever had a really strict teacher?",
+    "Would you like to work as a teacher in a rule-free school?"
+   ]
+  },
+  {
+   "topic": "Shoes",
+   "category": "事物题",
+   "status": "New",
+   "questions": [
+    "Do you like buying shoes? How often?",
+    "Have you ever bought shoes online?",
+    "How much money do you usually spend on shoes?",
+    "Which do you prefer, fashionable shoes or comfortable shoes?"
+   ]
+  },
+  {
+   "topic": "Plants",
+   "category": "事物题",
+   "status": "New",
+   "questions": [
+    "Do you keep plants at home?",
+    "What plant did you grow when you were young?",
+    "Do you know anything about growing a plant?",
+    "Do Chinese people send plants as gifts?"
+   ]
+  }
+ ],
+ "part2": [
+  {
+   "title": "重要的好朋友",
+   "category": "人物题",
+   "status": "New",
+   "part2Title": "Describe a good friend who is important to you",
+   "part2Description": "You should say:",
+   "part2Prompts": [
+    "Who he/she is",
+    "How/where you got to know him/her",
+    "How long you have known each other",
+    "And explain why he/she is important to you"
+   ],
+   "questions": [
+    "How do children make friends at school?",
+    "How do children make friends when they are not at school?",
+    "Do you think it is better for children to have a few close friends or many casual friends?",
+    "Do you think a child's relationship with friends can be replaced by that with other people, like parents or other family members?",
+    "What are the differences between friends made inside and outside the workplace?",
+    "Do you think it's possible for bosses and their employees to become friends?"
+   ],
+   "sampleAnswers": [
+    {
+     "question": "Part 2: Describe a good friend who is important to you",
+     "versions": [
+      {
+       "score": "5",
+       "answer": [
+        "I want to talk about my good friend. Her name is Lin. She is my roommate at school. She is very tall and beautiful.",
+        "We met in the dormitory. At first, I was a little lonely. But she talked to me a lot. She made me feel happy.",
+        "We found out we both like to play the same games. She takes good care of me. She shares her snacks with me. When I am sad, she tells me jokes. She also helps me with my homework.",
+        "She is like a sister to me. She is very important. I hope our friendship will last forever."
+       ]
+      },
+      {
+       "score": "5.5",
+       "answer": [
+        "I would like to describe my best friend, Lin. We are university roommates. She is a tall and kind person, and she has a very warm smile.",
+        "We first met when we were assigned to the same dormitory room. I was a bit nervous and lonely at first, but she was very friendly and started conversations with me, which really helped me feel more comfortable and happy.",
+        "We soon discovered we share many hobbies, like playing online games. She is very caring. For instance, she often shares her snacks with me and always tries to cheer me up with jokes when I'm feeling down. She's also very helpful with academics; sometimes she explains difficult concepts to me.",
+        "To me, she's more than just a friend; she's like a sister. Her support means a lot to me, and that's why she is so important. I truly cherish our friendship and hope it lasts a lifetime."
+       ]
+      },
+      {
+       "score": "6.5",
+       "answer": [
+        "I'm going to talk about my closest friend, Lin, who has become an incredibly important person in my life. We're currently roommates at university. She has a wonderful personality—very outgoing and considerate, and she's also quite tall with a radiant smile that can instantly brighten your day.",
+        "Our friendship began in our dormitory. I remember feeling quite overwhelmed and lonely during the first few days of university, but Lin immediately made me feel at ease. She was proactive in starting conversations and including me in activities, which was a huge comfort.",
+        "We bonded quickly over shared interests, particularly our love for the same video games. What makes her such a great friend is her incredible kindness. She is always looking out for me, whether it's sharing her favorite snacks or telling me hilarious jokes to lift my spirits when I'm stressed. She is also my go-to person for academic help; she has a real talent for explaining complex topics in a simple way.",
+        "Honestly, our bond feels more like family than just friendship. She's the sister I never had, and her constant support and positive energy are invaluable to me. That's why she is so important, and I truly hope we'll be friends for the rest of our lives."
+       ]
+      }
+     ]
+    },
+    {
+     "question": "How do children make friends at school?",
+     "versions": [
+      {
+       "score": "5",
+       "answer": "I think children make friends at school in class. They sit together and talk. They also make friends when they play games together, like basketball. They spend a lot of time together at school, so it is easy to make friends."
+      },
+      {
+       "score": "5.5",
+       "answer": "In my opinion, children at school primarily make friends through shared activities. In the classroom, they become friends with their deskmates by talking and helping each other. During breaks, they form friendships on the playground while playing games like basketball. Because they spend so much time together, it's quite natural for them to connect."
+      },
+      {
+       "score": "6.5",
+       "answer": "Children typically form friendships at school through a combination of proximity and shared interests. Initially, they might befriend the students they sit next to in class simply because they interact daily. However, more durable friendships are often forged during less structured times, such as recess or physical education classes. Activities like playing sports or working on group projects create common ground and allow children to discover classmates with similar personalities and hobbies, which is the foundation of a strong friendship."
+      }
+     ]
+    },
+    {
+     "question": "How do children make friends when they are not at school?",
+     "versions": [
+      {
+       "score": "5",
+       "answer": "Outside of school, children can make friends in their neighborhood. They can play together in the park. They can also make friends in hobby classes, like a piano class."
+      }
+     ]
+    },
+    {
+     "question": "Do you think it is better for children to have a few close friends or many casual friends?",
+     "versions": [
+      {
+       "score": "5",
+       "answer": "I think it is better to have a few close friends. A close friend can help you when you are sad. You can tell them your secrets. This is better than having many friends you don't know well."
+      }
+     ]
+    },
+    {
+     "question": "Do you think a child's relationship with friends can be replaced by that with other people, like parents or other family members?",
+     "versions": [
+      {
+       "score": "5",
+       "answer": "I think friends are different from family. Friends are the same age. You can share things with friends that you can't share with parents. So friends are very important and cannot be replaced."
+      }
+     ]
+    },
+    {
+     "question": "What are the differences between friends made inside and outside the workplace?",
+     "versions": [
+      {
+       "score": "5",
+       "answer": "Friends at work talk about work. Friends outside work talk about hobbies, like movies or sports. The friendship outside work is usually more relaxed."
+      }
+     ]
+    },
+    {
+     "question": "Do you think it's possible for bosses and their employees to become friends?",
+     "versions": [
+      {
+       "score": "5",
+       "answer": "I think it is possible, but it is difficult. The boss has power. This can make the friendship strange. For example, it is hard for other workers if the boss is friends with only one person."
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "title": "受欢迎的人",
+   "category": "人物题",
+   "status": "New",
+   "part2Title": "Describe a popular person",
+   "part2Description": "You should say:",
+   "part2Prompts": [
+    "Who this person is",
+    "What kind of person he or she is",
+    "When you see him/her normally",
+    "And explain why you think this person is popular"
+   ],
+   "questions": [
+    "Why are some students popular in school?",
+    "Is it important for a teacher to be popular?",
+    "Do you think good teachers are always popular among students?",
+    "What are the qualities of being a good teacher?",
+    "Is it easier to become popular nowadays?",
+    "Why do people want to be popular?"
+   ],
+   "sampleAnswers": []
+  },
+  {
+   "title": "擅长音乐的朋友",
+   "category": "人物题",
+   "status": "New",
+   "part2Title": "Describe a friend of yours who is a good musician",
+   "part2Description": "You should say:",
+   "part2Prompts": [
+    "Who this friend is",
+    "What kind of music they play",
+    "How often you see them play",
+    "And explain why you think they are a good musician"
+   ],
+   "questions": [
+    "What kind of music is popular in your country?",
+    "Do you think it's important for schools to have music classes?",
+    "Do you think technology has changed the way we listen to music?",
+    "Is it better to learn music at a young age or as an adult?",
+    "What are the benefits of being able to play a musical instrument?",
+    "Do you think famous musicians have a responsibility to be good role models?"
+   ],
+   "sampleAnswers": [
+    {
+     "question": "Part 2: Describe a friend of yours who is a good musician",
+     "versions": [
+      {
+       "score": "5",
+       "answer": [
+        "I'd like to talk about my good friend, Wang Lei. He is a very good musician. We have been friends for three years.",
+        "Wang Lei plays the guitar. He also writes his own songs. His songs are about daily life. I think they are very good.",
+        "I often see him play. He performs at school events. When we are with friends, he sometimes brings his guitar and plays for us. It is very nice.",
+        "I think he is a good musician because he plays with a lot of feeling. When you listen to his music, you can feel if he is happy or sad. He also practices every day. He works very hard."
+       ]
+      }
+     ]
+    },
+    {
+     "question": "What kind of music is popular in your country?",
+     "versions": [
+      {
+       "score": "5",
+       "answer": "In my country, pop music is very popular, especially with young people. The songs are easy to sing. You can hear pop music everywhere, in shops and cafes."
+      }
+     ]
+    },
+    {
+     "question": "Do you think it's important for schools to have music classes?",
+     "versions": [
+      {
+       "score": "5",
+       "answer": "Yes, I think it is important. Music classes can help students relax. It is a good break from study. Students can also learn to be creative."
+      }
+     ]
+    },
+    {
+     "question": "Do you think technology has changed the way we listen to music?",
+     "versions": [
+      {
+       "score": "5",
+       "answer": "Yes, I think so. Now we use our phones to listen to music. We use apps. We can listen to any song we want, anytime. In the past, we had to buy CDs."
+      }
+     ]
+    },
+    {
+     "question": "Is it better to learn music at a young age or as an adult?",
+     "versions": [
+      {
+       "score": "5",
+       "answer": "I think it is better to learn music when you are young. Children have more time to practice. It is also easier for them to learn new things. Adults are very busy."
+      }
+     ]
+    },
+    {
+     "question": "What are the benefits of being able to play a musical instrument?",
+     "versions": [
+      {
+       "score": "5",
+       "answer": "Playing an instrument is good. It can make you more patient because you need to practice a lot. It is also a good way to show your feelings. For example, you can play a happy song when you feel happy."
+      }
+     ]
+    },
+    {
+     "question": "Do you think famous musicians have a responsibility to be good role models?",
+     "versions": [
+      {
+       "score": "5",
+       "answer": "Yes, I think they should be good role models. Many young people like them and copy them. So, if a musician does good things, like helping people, their fans will learn from them."
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "title": "钦佩的有创造力的人",
+   "category": "人物题",
+   "status": "New",
+   "part2Title": "Describe a creative person (e.g. an artist, a musician, an architect, etc.) you admire",
+   "part2Description": "You should say:",
+   "part2Prompts": [
+    "Who he/she is",
+    "How you knew him/her",
+    "What his/her greatest achievement is",
+    "And explain why you think he/she is creative"
+   ],
+   "questions": [
+    "Do you think children should learn to play musical instruments?",
+    "How do artists acquire inspiration?",
+    "Do you think pictures and videos in news reports are important?",
+    "What can we do to help children keep creative?",
+    "How does drawing help to enhance children's creativity?",
+    "What kind of jobs require creativity?"
+   ],
+   "sampleAnswers": []
+  },
+  {
+   "title": "在家族企业工作的人",
+   "category": "人物题",
+   "status": "New",
+   "part2Title": "Describe a person you know who enjoys working for a family business (e.g. a shop, etc.)",
+   "part2Description": "You should say:",
+   "part2Prompts": [
+    "Who he/she is",
+    "What the business is",
+    "What his/her job is",
+    "And explain why he/she enjoys working there"
+   ],
+   "questions": [
+    "Would you like to start a family business?",
+    "Would you like to work for a family business?",
+    "Why do some people choose to start their own company?",
+    "What are the advantages and disadvantages of family businesses?",
+    "What family businesses do you know in your local area?",
+    "What makes a successful family business?"
+   ],
+   "sampleAnswers": []
+  },
+  {
+   "title": "钦佩的运动员",
+   "category": "人物题",
+   "status": "New",
+   "part2Title": "Describe a successful sportsperson you admire",
+   "part2Description": "You should say:",
+   "part2Prompts": [
+    "Who he/she is",
+    "What you know about him/her",
+    "What he/she is like in real life",
+    "What achievement he/she has made",
+    "And explain why you admire him/her"
+   ],
+   "questions": [
+    "Should students have physical education and do sports at school?",
+    "What qualities should an athlete have?",
+    "Is talent important in sports?",
+    "Is it easy to identify children's talents?",
+    "What is the most popular sport in your country?",
+    "Why are there so few top athletes?"
+   ],
+   "sampleAnswers": []
+  },
+  {
+   "title": "自然之地",
+   "category": "地点题",
+   "status": "New",
+   "part2Title": "Describe a natural place (e.g. parks, mountains, etc.)",
+   "part2Description": "You should say:",
+   "part2Prompts": [
+    "Where this place is",
+    "How you knew this place",
+    "What it is like",
+    "And explain why you like to visit it"
+   ],
+   "questions": [
+    "What kind of people like to visit natural places?",
+    "What are the differences between a natural place and a city?",
+    "Do you think going to the park is the only way to get close to nature?",
+    "What can people gain from going to natural places?",
+    "Are there any wild animals in the city?",
+    "Do you think it is a good idea to let animals stay in local parks for people to see?"
+   ],
+   "sampleAnswers": [
+    {
+     "question": "Describe a natural place (e.g. parks, mountains, etc.)",
+     "versions": [
+      {
+       "score": "5.0",
+       "answer": "I want to talk about a natural place I visited. It is Yellow Mountain. This is a very famous mountain in China. It is in Anhui province. It is not close to my city. I took a train to go there with my family. It was a long trip but very fun.<br/><br/>I knew this place from my school. My geography teacher showed us some pictures of it. The pictures were very beautiful. My teacher said it is one of the most beautiful mountains in our country. I always wanted to go there. So, last summer, I finally went. I was very happy about this trip.<br/><br/>The mountain is very big and high. There are many green trees and plants. The air on the mountain is very fresh and clean. It feels very good to breathe it. The rocks on Yellow Mountain are very special. They have strange shapes. Some look like animals, and some look like people. There are also many old pine trees. They grow on the rocks and look very strong. When you stand on the top, you can see clouds below you, like a sea of clouds. The view is amazing.<br/><br/>I like to visit this place because it is very different from my city. My city is noisy and has many people. But the mountain is quiet and peaceful. When I was there, I felt very relaxed. I could forget my stress from school. I also enjoyed walking on the mountain with my family. It was good exercise. Being in nature made me feel very happy. That is why I like Yellow Mountain very much. I want to visit it again one day."
+      },
+      {
+       "score": "5.5",
+       "answer": "I'm going to talk about a wonderful natural place I visited, which is Yellow Mountain, or Huangshan in Chinese. It's a very famous mountain in Anhui province. Many people, including tourists from other countries, go there every year because it is so beautiful.<br/><br/>I first learned about Yellow Mountain in my high school geography class. My teacher showed us many beautiful photos of the mountain. The pictures of the tall rocks and the sea of clouds were very impressive. From that moment, I told myself that I had to see it with my own eyes. So, I was very excited when my parents and I planned a trip there last summer vacation.<br/><br/>The mountain is really amazing. It has many tall peaks. The whole area is covered with green trees. The old pine trees are very special because they grow in strange places, like right on the rocks. The air there is very fresh and clean, which is a big change from the city. The most unforgettable thing for me was the view from the top. Looking down, you can see a thick layer of clouds that looks like an ocean. It's a view I will never forget.<br/><br/>The main reason I love this place is the feeling of peace it gives me. City life is always busy and sometimes stressful. But on the mountain, everything is quiet and calm. Walking on the trails and being surrounded by beautiful nature is a great way to relax and clear my mind. It's a perfect place to get away from my daily routine. It helps me feel refreshed and full of energy again. I really enjoyed my time there."
+      },
+      {
+       "score": "6.0",
+       "answer": "Today, I'd like to tell you about a beautiful natural place I visited, which is Huangshan, also known as Yellow Mountain. It’s a well-known mountain range in Anhui province and is famous all over China for its incredible scenery.<br/><br/>I first came to know about this place by watching a documentary a few years ago. I was really attracted by the beautiful shots of its unique landscape, especially the sharp peaks and the famous pine trees. It looked so amazing that I decided I must visit. I finally made the trip last year with a few of my friends, and it was even better than I had expected.<br/><br/>Being on the mountain is a wonderful experience. It's famous for its oddly-shaped rocks, old pine trees, and the 'sea of clouds'. The air feels so clean and fresh. We hiked along the paths and everywhere we looked, the view was beautiful, just like in a traditional Chinese painting. One of the best moments was getting up early to watch the sunrise. Seeing the sun come up over the clouds and light up the sky was a truly magical moment that I will always remember.<br/><br/>For me, the best part about visiting Huangshan is that it's a total escape from the busy city life. It is a place where you can really connect with nature and enjoy the quietness. The peaceful environment helps me to clear my head and just relax. It’s not just a physical trip, but also a good break for the mind. This feeling of being refreshed is why I found the trip so enjoyable and why I would love to go back.",
+       "analysis": [
+        {
+         "type": "vocab",
+         "text": "well-known",
+         "explanation": "adj. 著名的，广为人知的"
+        },
+        {
+         "type": "vocab",
+         "text": "scenery",
+         "explanation": "n. 风景，景色"
+        },
+        {
+         "type": "vocab",
+         "text": "attracted",
+         "explanation": "v. 被吸引"
+        },
+        {
+         "type": "phrase",
+         "text": "magical moment",
+         "explanation": "phr. 神奇的时刻"
+        },
+        {
+         "type": "phrase",
+         "text": "total escape",
+         "explanation": "phr. 完全的逃离"
+        },
+        {
+         "type": "phrase",
+         "text": "connect with nature",
+         "explanation": "phr. 与自然连接"
+        },
+        {
+         "type": "phrase",
+         "text": "clear my head",
+         "explanation": "phr. 清理我的思绪"
+        },
+        {
+         "type": "vocab",
+         "text": "refreshed",
+         "explanation": "adj. 精神焕发的"
+        }
+       ]
+      },
+      {
+       "score": "6.5",
+       "answer": "I'd like to share my experience of visiting a truly memorable natural place, which is Huangshan, or Yellow Mountain. It is a famous natural wonder in China, located in Anhui province, and is celebrated for its scenery that looks like it came straight out of a traditional painting.<br/><br/>My first encounter with this mountain was through some classic Chinese landscape paintings I saw online. I was fascinated by the beauty and the calm feeling in those artworks, and it made me really want to experience the place in person. I was lucky enough to go there with my family last summer, and it was even more amazing than I had imagined.<br/><br/>The mountain offers some of the most breathtaking views I’ve ever seen. It’s known for its granite peaks that rise high above a layer of clouds, which creates a magical, almost dream-like atmosphere. The old, tough pine trees that grow directly out of the rock are also incredible to see. The air is so pure and the environment is incredibly quiet, which is a sharp contrast to the city. The highlight for me was watching the sunrise. Seeing the sky fill with color while standing above a sea of clouds was an unforgettable experience that made me feel very small and amazed by nature.<br/><br/>The main reason this place is so special to me is the deep sense of peace it offers. It’s the perfect escape from my busy city life. Walking along the trails is more than just exercise; it feels like a form of meditation that helps me forget my worries and just enjoy the moment. It is a place that really allows you to recharge your batteries and gain a fresh perspective on life. That’s why I enjoyed it so much and would recommend it to anyone.",
+       "analysis": [
+        {
+         "type": "phrase",
+         "text": "memorable natural place",
+         "explanation": "phr. 令人难忘的自然之地"
+        },
+        {
+         "type": "phrase",
+         "text": "breathtaking views",
+         "explanation": "phr. 令人惊叹的景色"
+        },
+        {
+         "type": "phrase",
+         "text": "dream-like atmosphere",
+         "explanation": "phr. 梦幻般的氛围"
+        },
+        {
+         "type": "phrase",
+         "text": "sharp contrast",
+         "explanation": "phr. 鲜明的对比"
+        },
+        {
+         "type": "phrase",
+         "text": "unforgettable experience",
+         "explanation": "phr. 难忘的经历"
+        },
+        {
+         "type": "phrase",
+         "text": "deep sense of peace",
+         "explanation": "phr. 深深的平静感"
+        },
+        {
+         "type": "phrase",
+         "text": "escape from my busy city life",
+         "explanation": "phr. 从我繁忙的城市生活中逃离"
+        },
+        {
+         "type": "phrase",
+         "text": "recharge your batteries",
+         "explanation": "idiom. 充电，恢复精力"
+        }
+       ]
+      }
+     ]
+    },
+    {
+     "question": "What kind of people like to visit natural places?",
+     "versions": [
+      {
+       "score": "5.5",
+       "answer": "I think many different kinds of people enjoy nature. For example, city dwellers who are tired of the noisy environment often go to mountains or forests to relax. Also, families with children like to go to parks for picnics. And people who are interested in photography or hiking are also big fans of natural scenery."
+      }
+     ]
+    },
+    {
+     "question": "What are the differences between a natural place and a city?",
+     "versions": [
+      {
+       "score": "5.5",
+       "answer": "The biggest difference is the environment. Cities are full of tall buildings, traffic, and noise, while natural places are quiet and have fresh air, trees, and animals. Also, the pace of life is much faster in the city, but in nature, everything feels slower and more relaxed."
+      }
+     ]
+    },
+    {
+     "question": "Do you think going to the park is the only way to get close to nature?",
+     "versions": [
+      {
+       "score": "5.5",
+       "answer": "No, definitely not. Parks are a convenient way, especially for people living in big cities. But there are many other ways. You can go hiking in the mountains, visit a beach, or even just have some plants in your own home. Any of these can help you feel more connected to the natural world."
+      }
+     ]
+    },
+    {
+     "question": "What can people gain from going to natural places?",
+     "versions": [
+      {
+       "score": "5.5",
+       "answer": "People can gain a lot. Physically, it’s good for health because of the fresh air and the opportunity for exercise. Mentally, it's a great way to reduce stress and feel refreshed. It can also inspire creativity and give people a better appreciation for our planet."
+      }
+     ]
+    },
+    {
+     "question": "Are there any wild animals in the city?",
+     "versions": [
+      {
+       "score": "5.5",
+       "answer": "Yes, there are some, but not large ones. You can often see birds like sparrows and pigeons everywhere. In some cities with good green spaces, you might find squirrels or hedgehogs. But you won't see large wild animals like bears or tigers; it's too dangerous for them and for people."
+      }
+     ]
+    },
+    {
+     "question": "Do you think it is a good idea to let animals stay in local parks for people to see?",
+     "versions": [
+      {
+       "score": "5.5",
+       "answer": "It depends. If it's a large park that can provide a suitable and safe environment for certain animals, like squirrels or ducks in a pond, I think it's a wonderful idea. It allows city residents, especially children, to see and learn about animals. However, it wouldn't be right to keep large or wild animals that need a lot of space in a small city park."
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "title": "第一次尝试的兴奋活动",
+   "category": "事件题",
+   "status": "New",
+   "part2Title": "Describe an exciting activity you have tried for the first time",
+   "part2Description": "You should say:",
+   "part2Prompts": [
+    "What it is",
+    "When/where you did it",
+    "Why you thought it was exciting",
+    "And explain how you felt about it"
+   ],
+   "questions": [
+    "Why are some people unwilling to try new things?",
+    "Do you think fear stops people from trying new things?",
+    "Why are some people keen on doing dangerous activities?",
+    "Do you think that children adapt to new things more easily than adults?",
+    "What can people learn from doing dangerous activities?",
+    "What are the benefits of trying new things?"
+   ],
+   "sampleAnswers": [
+    {
+     "question": "Describe an exciting activity you have tried for the first time",
+     "versions": [
+      {
+       "score": "5.0",
+       "answer": [
+        "I want to talk about an exciting activity I tried. The activity was indoor rock climbing. I had never done it before, so it was a new experience for me. I think it is a very cool sport.",
+        "I did it last summer, in August. My friend asked me to go with him. We went to a big indoor climbing gym in the city center. The gym was very high and had many colorful walls. It looked very interesting and a little difficult.",
+        "I thought it was exciting because it was a challenge for me. When I looked up at the wall, it was very tall, and I was a little scared of the height. It was also exciting because it was like solving a puzzle. You have to find the right places to put your hands and feet to go up.",
+        "At first, I felt very nervous. My hands were sweating. But my friend taught me how to use the safety rope, so I knew I was safe. When I started climbing, I focused on the wall. I climbed slowly. The most difficult part was near the top. I was very tired, but I did not give up. When I finally reached the top and rang the bell, I felt so happy and proud of myself. It was a great feeling. I was not nervous anymore. I felt very strong and confident. I think I will try rock climbing again."
+       ]
+      },
+      {
+       "score": "5.5",
+       "answer": [
+        "I'd like to talk about the first time I tried indoor rock climbing, which was a very exciting activity for me. I had seen it in movies, and it always looked really cool, so I was happy to finally try it myself.",
+        "This happened last summer vacation, around July. My best friend, who is more adventurous than I am, invited me to go with him. We went to a large, modern climbing gym downtown. The place was amazing, with towering walls covered in colorful climbing holds. It was busy with many people climbing, which made the atmosphere very energetic.",
+        "The main reason I found it exciting was the combination of physical challenge and a bit of fear. Looking up at the 20-meter-high wall was quite intimidating. It was exciting because it pushed me out of my comfort zone. Also, it's not just about strength; you have to think and plan your route to the top, which makes it mentally engaging as well.",
+        "My feelings about it were a mix of nervousness and excitement. Before I started, I was quite scared, and my heart was beating fast. However, the staff gave us a good safety briefing, which helped me relax. The climb itself was tough, and my muscles started to ache halfway up. But the encouragement from my friend kept me going. When I finally touched the top, an incredible sense of accomplishment washed over me. I felt exhausted but incredibly proud. That feeling of overcoming a challenge made the whole experience unforgettable and very positive."
+       ]
+      },
+      {
+       "score": "6.0",
+       "answer": [
+        "I'm going to describe a really exciting activity I tried for the first time, which was indoor rock climbing. It’s a sport that tests both your physical strength and your problem-solving skills, and I had been curious about it for a while.",
+        "I tried it a few months ago, during the spring holiday. A friend of mine is a regular climber, and he suggested I join him at his local climbing gym. The place was impressive; it was a huge warehouse-like building with climbing walls of various difficulties, from simple vertical ones for beginners to complex, overhanging routes for experts. The atmosphere was very welcoming and supportive.",
+        "For me, the excitement came from the sense of adventure and the challenge. Staring up at the tall wall from the ground felt quite daunting, and there was definitely a rush of adrenaline. It was exciting because it was a direct confrontation with my slight fear of heights. Moreover, each climbing route is like a vertical puzzle. You need to figure out the best sequence of moves, which makes it a very engaging mental exercise, not just a physical one.",
+        "Initially, I felt a strong sense of apprehension. As the instructor was securing my harness, my palms were sweating. However, once I started climbing, I became completely focused on the task at hand. The physical exertion was intense, and there were moments I thought I couldn't go on. But pushing through that feeling and finally reaching the top was incredibly rewarding. It gave me a huge boost of confidence and a profound sense of achievement. I left the gym feeling tired but exhilarated, and I’ve been hooked on climbing ever since."
+       ]
+      },
+      {
+       "score": "6.5",
+       "answer": [
+        "An exciting activity that I tried for the first time and would love to talk about is indoor rock climbing. It's a sport that combines athleticism with strategy, and my first experience with it was truly memorable.",
+        "This was last autumn, when a friend convinced me to come along to a new bouldering gym that had just opened in our city. The facility was state-of-the-art, with creatively designed walls that mimicked real rock formations. The vibe was very cool and relaxed, with music playing and a community of climbers encouraging each other.",
+        "What made it so exciting was the unique blend of mental and physical challenges. It was thrilling to be suspended several meters above the ground, relying solely on my own strength and technique. The adrenaline rush was undeniable. Furthermore, the activity was intellectually stimulating. You have to analyze the route, plan your moves, and solve the 'problem' of the climb. This strategic element made it far more captivating than simply lifting weights at a regular gym.",
+        "My feelings about the experience evolved throughout the session. At first, I was filled with a mix of curiosity and intimidation. I felt clumsy and weak on my initial attempts. However, with some guidance from my friend, I began to understand the technique. The moment I successfully completed my first route, even though it was a very easy one, I felt an incredible surge of accomplishment. It was a powerful feeling of conquering both a physical obstacle and my own self-doubt. By the end of the day, I was physically exhausted but mentally energized and completely hooked. It was an exhilarating experience that I would highly recommend."
+       ]
+      }
+     ]
+    },
+    {
+     "question": "Why are some people unwilling to try new things?",
+     "versions": [
+      {
+       "score": "5.0",
+       "answer": "I think it is because they are scared. (Point) New things can be difficult. They don't want to fail. (Reason) For example, a person might not try a new sport because they think they will be bad at it and other people will laugh. (Example)"
+      },
+      {
+       "score": "5.5",
+       "answer": "I believe the main reason is a fear of the unknown. (Point) People often feel comfortable with their routines, and trying something new means facing uncertainty and the possibility of failure. (Reason) For instance, someone might hesitate to travel to a foreign country alone because they are worried about getting lost or not understanding the language. (Example)"
+      },
+      {
+       "score": "6.0",
+       "answer": "I would say that a primary reason is the comfort of familiarity. (Point) Most people have a natural tendency to stick to what they know because it's predictable and feels safe, whereas new experiences come with inherent risks and uncertainties. (Reason) To give an example, an office worker might stick with a job they don't love simply because the thought of learning a new role and meeting new colleagues is more intimidating than their current dissatisfaction. (Example)"
+      },
+      {
+       "score": "6.5",
+       "answer": "In my opinion, the reluctance to try new things often stems from a psychological attachment to one's comfort zone. (Point) This is because our routines provide a sense of security and predictability, while venturing into the unknown can trigger feelings of anxiety and the fear of potential failure or embarrassment. (Reason) For example, a person who has always eaten the same type of cuisine might refuse to try an exotic dish, not because they are sure they won't like it, but because they are uncomfortable with the uncertainty and prefer the guaranteed satisfaction of a familiar meal. (Example)"
+      }
+     ]
+    },
+    {
+     "question": "Do you think fear stops people from trying new things?",
+     "versions": [
+      {
+       "score": "5.0",
+       "answer": "Yes, I think so. Fear is a big reason. (Point) People are afraid of getting hurt or making a mistake. (Reason) For example, someone might not learn to ride a bike because they are afraid of falling down. (Example)"
+      },
+      {
+       "score": "5.5",
+       "answer": "Yes, definitely. Fear is a powerful emotion that often prevents people from exploring new possibilities. (Point) This could be the fear of physical harm, failure, or even just social embarrassment. (Reason) For instance, many people dream of starting their own business but are stopped by the fear of losing their money and failing publicly. (Example)"
+      },
+      {
+       "score": "6.0",
+       "answer": "Absolutely, fear is arguably the single biggest obstacle. (Point) It acts as a mental barrier, preventing individuals from taking risks, whether those risks are physical, financial, or social. (Reason) To illustrate, a talented artist might never show their work to anyone because they are paralyzed by the fear of criticism and rejection, thus stopping them from pursuing a career in art. (Example)"
+      },
+      {
+       "score": "6.5",
+       "answer": "Without a doubt, fear is a primary inhibitor that stops people from embracing new experiences. (Point) The reason is that fear, particularly the fear of failure or negative judgment, can be so paralyzing that it outweighs the potential positive outcomes of trying something new. (Reason) A perfect example is public speaking. Countless individuals with valuable ideas remain silent in meetings or avoid career opportunities simply because their fear of stumbling over words or being judged by the audience is too overwhelming to overcome. (Example)"
+      }
+     ]
+    },
+    {
+     "question": "Why are some people keen on doing dangerous activities?",
+     "versions": [
+      {
+       "score": "5.0",
+       "answer": "I think they like the exciting feeling. (Point) Doing something dangerous is not boring. It makes their heart beat fast. (Reason) For example, people who do bungee jumping like the feeling of falling. It is very exciting for them. (Example)"
+      },
+      {
+       "score": "5.5",
+       "answer": "I believe it's for the adrenaline rush and the sense of accomplishment. (Point) These activities push their limits and make them feel alive in a way that normal life doesn't. (Reason) For instance, when someone finishes a marathon or climbs a mountain, they feel a huge sense of pride for having overcome a very difficult challenge. (Example)"
+      },
+      {
+       "score": "6.0",
+       "answer": "There are several reasons, but a major one is the pursuit of an adrenaline rush. (Point) Engaging in high-risk activities triggers a 'fight or flight' response, releasing adrenaline that creates a feeling of euphoria and heightened senses. (Reason) For example, a snowboarder going down a steep, ungroomed slope is seeking that intense feeling of speed and focus, which can be very addictive. (Example)"
+      },
+      {
+       "score": "6.5",
+       "answer": "From a psychological perspective, people are drawn to dangerous activities primarily for the intense emotional and physical sensations they provide, often called 'the thrill'. (Point) The reason is that successfully navigating a high-stakes situation provides a profound sense of mastery and achievement, which can significantly boost one's self-esteem. (Reason) Take skydiving, for instance. The act of jumping out of a plane is terrifying, but safely landing gives the person an unparalleled feeling of conquering their fear, making them feel powerful and alive. (Example)"
+      }
+     ]
+    },
+    {
+     "question": "Do you think that children adapt to new things more easily than adults?",
+     "versions": [
+      {
+       "score": "5.0",
+       "answer": "Yes, I think so. Children learn fast. (Point) Their brains are still growing. They are not afraid to make mistakes. (Reason) For example, it is much easier for a child to learn a new language than for an adult. They can speak it very well. (Example)"
+      },
+      {
+       "score": "5.5",
+       "answer": "Yes, I generally believe that's true. Children seem to be more flexible and open-minded. (Point) This is because they have fewer established habits and preconceptions, so they approach new things with curiosity rather than skepticism. (Reason) For example, when a family moves to a new country, children often pick up the local language and customs much faster than their parents. (Example)"
+      },
+      {
+       "score": "6.0",
+       "answer": "Yes, I would agree that children generally have a greater capacity for adaptation. (Point) The main reason is their neuroplasticity; their brains are literally wired to learn and form new connections more efficiently than adult brains. Also, they have less fear of judgment. (Reason) A good example is learning to use new technology. A child can pick up how to use a tablet or a new app intuitively, through trial and error, while an adult might need instructions and feel more hesitant. (Example)"
+      },
+      {
+       "score": "6.5",
+       "answer": "Absolutely, it's widely observed that children adapt to new situations and skills with remarkable ease compared to adults. (Point) This is largely due to a combination of biological and psychological factors; their brains are more malleable, and they lack the ingrained habits and fear of failure that often hinder adults. (Reason) For instance, consider learning to ski. A child will often just go for it, falling and getting back up without much thought, whereas an adult is more likely to overthink the process and be inhibited by the fear of getting injured, which slows down their learning curve significantly. (Example)"
+      }
+     ]
+    },
+    {
+     "question": "What can people learn from doing dangerous activities?",
+     "versions": [
+      {
+       "score": "5.0",
+       "answer": "They can learn to be brave. (Point) They have to face their fear. This makes them stronger. (Reason) For example, after someone tries rock climbing, they might feel less scared of other challenges in life. (Example)"
+      },
+      {
+       "score": "5.5",
+       "answer": "I think people can learn a lot about themselves, like how to stay calm under pressure. (Point) These activities force you to focus completely and manage your fear, which are useful skills. (Reason) For example, a scuba diver needs to control their breathing and not panic when they are deep underwater, and this skill can help them handle stress in their job. (Example)"
+      },
+      {
+       "score": "6.0",
+       "answer": "People can learn invaluable lessons about risk management and self-reliance. (Point) This is because these activities require meticulous preparation and the ability to make critical decisions under pressure, which builds confidence and problem-solving skills. (Reason) For example, a solo hiker planning a trip through a dangerous trail must learn to read maps, predict weather, and carry the right gear. These planning and survival skills are transferable to many aspects of life. (Example)"
+      },
+      {
+       "score": "6.5",
+       "answer": "Beyond the obvious thrill, people can learn profound lessons about their own limits and capabilities. (Point) The reason is that these activities push you to your physical and mental edge, forcing a deep level of self-awareness and resilience that everyday life rarely demands. (Reason) To illustrate, someone who trains for and completes an ultramarathon through a desert learns about discipline, endurance, and the power of their own mind to overcome extreme physical discomfort. This experience can fundamentally change their perspective on what they are capable of achieving in all other areas of their life. (Example)"
+      }
+     ]
+    },
+    {
+     "question": "What are the benefits of trying new things?",
+     "versions": [
+      {
+       "score": "5.0",
+       "answer": "It makes life more interesting. (Point) If you always do the same thing, life is boring. New things are exciting. (Reason) For example, trying a new food or visiting a new place can be a very fun experience and give you a good memory. (Example)"
+      },
+      {
+       "score": "5.5",
+       "answer": "The main benefit is personal growth. (Point) Trying new things pushes you out of your comfort zone and helps you discover new skills and interests you didn't know you had. (Reason) For instance, someone might try a pottery class just for fun and discover they have a real talent for art, which could become a lifelong hobby. (Example)"
+      },
+      {
+       "score": "6.0",
+       "answer": "A significant benefit is that it builds confidence and resilience. (Point) The act of facing an unknown challenge and successfully navigating it, even on a small scale, reinforces your belief in your own abilities to handle uncertainty. (Reason) For example, traveling alone for the first time might be scary, but successfully planning the trip and solving problems along the way makes a person feel much more independent and capable. (Example)"
+      },
+      {
+       "score": "6.5",
+       "answer": "Perhaps the most profound benefit of trying new things is that it enhances cognitive flexibility and creativity. (Point) This is because new experiences create new neural pathways in the brain, which improves your ability to think in novel ways and adapt to changing circumstances. (Reason) For example, learning a musical instrument doesn't just teach you music; it improves your memory, coordination, and problem-solving skills, which can then be applied to your work or studies in unexpected ways. It keeps your mind sharp and open. (Example)"
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "title": "近期日常改变",
+   "category": "事件题",
+   "status": "New",
+   "part2Title": "Describe a positive change that you have made recently in your daily routine",
+   "part2Description": "You should say:",
+   "part2Prompts": [
+    "What the change is",
+    "How you have changed the routine",
+    "Why you think it is a positive change",
+    "And explain how you feel about the change"
+   ],
+   "questions": [
+    "What do people normally plan in their daily lives?",
+    "Is time management very important in our daily lives?",
+    "What changes would people often make?",
+    "Do you think it is good to change jobs frequently?",
+    "Who do you think would make changes more often, young people or old people?",
+    "Who should get more promotion opportunities in the workplace, young people or older people?"
+   ],
+   "sampleAnswers": [
+    {
+     "question": "Describe a positive change that you have made recently in your daily routine",
+     "versions": [
+      {
+       "score": "5.0",
+       "answer": [
+        "A positive change I made is I wake up early now. Before, I wake up at 7:30. Now, I wake up at 7:00. So I have 30 minutes more in the morning.",
+        "In this time, I read a book. I do not check my phone. My old routine was checking my phone first, it was bad. Now I just sit quietly and read.",
+        "I think it is a positive change because my morning is not busy. Reading a book is good for my brain. I feel calm and I can learn something new. It is much better than looking at my phone.",
+        "I feel very good about this new habit. At first, it was hard to wake up. But now I like it. I am happier and I can focus better on my studies during the day. It is a very good change for me."
+       ]
+      },
+      {
+       "score": "5.5",
+       "answer": [
+        "I'd like to talk about a recent positive change in my daily routine, which is waking up earlier. I used to get up at 7:30 AM, but for the last month, I've been setting my alarm for 7:00 AM.",
+        "I changed my routine by using this extra half-hour to read. Instead of grabbing my phone to check messages like I used to, I now make a cup of tea and read a chapter of a book. This has become my quiet time before the day gets busy.",
+        "I believe this is a positive change because it makes my morning much more peaceful. I'm not rushing anymore, and I start the day feeling calm and focused. Reading also helps to wake up my mind, so I feel more prepared for my studies.",
+        "I feel really happy about making this change. It was a bit difficult for the first week, but now I really enjoy this quiet time in the morning. It has had a good effect on my whole day, making me feel more productive and less stressed."
+       ]
+      },
+      {
+       "score": "6.0",
+       "answer": [
+        "I'm going to talk about a positive adjustment I've recently made to my daily schedule, which is waking up 30 minutes earlier every day. I was someone who always hit the snooze button, but now I make sure to get out of bed at 7 AM sharp.",
+        "So, how I've changed my routine is quite simple. Instead of my old habit of immediately checking social media on my phone, I now dedicate that extra half-hour to reading. I'll sit by the window with a book and just enjoy the quiet start to the day.",
+        "I think this is a very positive change for a couple of reasons. Firstly, it allows me to begin my day in a much more mindful and calm manner, rather than being hit with the stress of news and notifications. Secondly, I feel it has boosted my productivity. By the time I start studying, my mind is already active and focused.",
+        "Overall, I feel fantastic about this new routine. Although it was a bit of a struggle at the beginning, it has now become a habit that I genuinely look forward to. It has definitely improved my mood and my ability to concentrate throughout the day."
+       ]
+      },
+      {
+       "score": "6.5",
+       "answer": [
+        "One of the most beneficial changes I've recently incorporated into my daily routine is the habit of waking up half an hour earlier. Previously, my morning would start at 7:30 AM, often in a frantic rush. Now, I consistently wake up at 7:00 AM.",
+        "I've consciously altered my routine by replacing my old habit of scrolling through my phone first thing in the morning with reading. This extra 30 minutes has become my protected time for personal development, away from any digital distractions.",
+        "This is an incredibly positive change because it has transformed my mornings from a chaotic scramble into a peaceful and intentional start to the day. It helps me gather my thoughts and sets a productive tone for the hours ahead. Furthermore, it has reignited my passion for reading, which I had been neglecting.",
+        "Honestly, I feel wonderful about this adjustment. Initially, it required a fair bit of self-discipline to resist the snooze button, but the benefits have been so significant that it now feels completely natural. I'm calmer, more focused, and I feel like I'm investing in myself every single day, which is a great feeling."
+       ]
+      }
+     ]
+    },
+    {
+     "question": "What do people normally plan in their daily lives?",
+     "versions": [
+      {
+       "score": "5.0",
+       "answer": "People plan their work. They also plan what to eat for dinner. And they plan when to meet friends. Simple plans for the day."
+      },
+      {
+       "score": "5.5",
+       "answer": "I think people usually plan their work or study schedule for the day. They also plan their meals, like what to cook or where to eat. Sometimes, they also plan social activities, for example, meeting a friend after work."
+      },
+      {
+       "score": "6.0",
+       "answer": "Well, people typically plan their main commitments, such as their work tasks or study timetable. They also plan practical things like what to eat, when to exercise, and which household chores to do. For their social life, they might plan to see friends or call family. It helps to keep the day organized."
+      },
+      {
+       "score": "6.5",
+       "answer": "In their daily lives, people generally plan around their major responsibilities, such as their work projects or academic deadlines. (Point) This is because planning helps them stay organized and feel in control. (Reason) For example, someone might create a to-do list in the morning, schedule their meetings, and also plan personal activities like going to the gym, preparing meals for the week, or arranging to see friends. (Example)"
+      }
+     ]
+    },
+    {
+     "question": "Is time management very important in our daily lives?",
+     "versions": [
+      {
+       "score": "5.0",
+       "answer": "Yes, it is very important. If you manage time well, you can do many things. You are not late for work. It is a good skill."
+      },
+      {
+       "score": "5.5",
+       "answer": "Yes, I believe it's extremely important. Good time management helps you to be more efficient and feel less stressed. For instance, if you plan your day well, you can finish all your tasks and still have free time to relax."
+      },
+      {
+       "score": "6.0",
+       "answer": "Absolutely, time management is crucial in modern life. (Point) It allows people to balance their professional and personal responsibilities effectively. (Reason) Without it, people can easily feel overwhelmed. For example, a student who manages time well can submit assignments on schedule and also enjoy their hobbies, which is vital for their well-being. (Example)"
+      },
+      {
+       "score": "6.5",
+       "answer": "Without a doubt, effective time management is essential in today's fast-paced world. (Point) The main reason is that it directly impacts our productivity and reduces stress levels. (Reason) To illustrate this, a well-organized person can prioritize tasks, meet deadlines without panicking, and still carve out time for relaxation and personal interests. This balance is key to a healthy and successful life. (Example)"
+      }
+     ]
+    },
+    {
+     "question": "What changes would people often make?",
+     "versions": [
+      {
+       "score": "5.0",
+       "answer": "People often change their habits. Like, they want to eat healthy food, or they start to do exercise. Some people change their job to get more money."
+      },
+      {
+       "score": "5.5",
+       "answer": "I think people often make changes related to their health and lifestyle. For example, many people decide to join a gym or improve their diet. Another common change is learning a new skill to get a better job, like taking an English course."
+      },
+      {
+       "score": "6.0",
+       "answer": "I think people frequently make changes related to their lifestyle and personal development. A very common one is adopting a healthier lifestyle, which could involve exercising regularly or cutting down on junk food. Another area is self-improvement, like taking an online course to gain a new skill for their career."
+      },
+      {
+       "score": "6.5",
+       "answer": "People tend to make changes in areas they feel will improve their quality of life. (Point) A major area is often health and wellness. (Reason) For example, it's very common for people to resolve to exercise more, adopt a balanced diet, or get more sleep. (Example) Another frequent change is related to personal growth, where individuals might decide to learn a new language or take up a new hobby to enrich their lives."
+      }
+     ]
+    },
+    {
+     "question": "Do you think it is good to change jobs frequently?",
+     "versions": [
+      {
+       "score": "5.0",
+       "answer": "It depends. For young people, it is okay. They can learn new things. For older people, it is not good because they need a stable job."
+      },
+      {
+       "score": "5.5",
+       "answer": "I think it has both pros and cons. On one hand, changing jobs can help you gain different experiences and a higher salary. On the other hand, staying in one company for a long time can show that you are loyal and can become an expert."
+      },
+      {
+       "score": "6.0",
+       "answer": "That's a complex question. I believe for young professionals, changing jobs every few years can be beneficial. (Point) It allows them to explore different industries and find what they are truly passionate about. (Reason) However, changing too often, like every six months, might look bad on a resume, as employers may think the person is unreliable. (Contrast)"
+      },
+      {
+       "score": "6.5",
+       "answer": "I believe it depends heavily on one's career stage and industry. (Point) In the early stages of a career, changing jobs can be advantageous because it accelerates learning and exposes a person to diverse work environments. (Reason) For instance, a young IT professional might switch jobs to master new technologies. (Example) However, for more senior roles, frequent job-hopping could be viewed as a lack of commitment, so stability becomes more valued. (Contrast)"
+      }
+     ]
+    },
+    {
+     "question": "Who do you think would make changes more often, young people or old people?",
+     "versions": [
+      {
+       "score": "5.0",
+       "answer": "I think young people. They like to try new things and are not afraid. Older people usually like their old habits and don't like changes."
+      },
+      {
+       "score": "5.5",
+       "answer": "I would say young people are much more likely to make changes. They are generally more adaptable and open-minded to new experiences. For example, they are more willing to move to a new city for a job or try a completely new hobby."
+      },
+      {
+       "score": "6.0",
+       "answer": "In my opinion, young people tend to make changes more frequently. (Point) This is because they are at a stage in life where they are still exploring their identity and career paths. (Reason) They haven't settled down, so they're more flexible and willing to take risks, like starting a business. Older people, in contrast, often value stability and routine. (Contrast)"
+      },
+      {
+       "score": "6.5",
+       "answer": "I would argue that young people are far more inclined to make frequent changes. (Point) The primary reason is that they typically have fewer responsibilities, like a mortgage or children, and a greater appetite for new experiences. (Reason) For instance, a person in their twenties is more likely to spontaneously decide to change careers or move abroad, whereas an older person would find such changes much more disruptive. (Example)"
+      }
+     ]
+    },
+    {
+     "question": "Who should get more promotion opportunities in the workplace, young people or older people?",
+     "versions": [
+      {
+       "score": "5.0",
+       "answer": "I think both should have a chance. It should be fair. It should be based on their work, not on their age."
+      },
+      {
+       "score": "5.5",
+       "answer": "I believe promotion should be based on merit, not age. If a young person works hard and has good skills, they deserve a promotion. The same is true for an older person who has a lot of experience and performs well."
+      },
+      {
+       "score": "6.0",
+       "answer": "In my view, promotion opportunities should be awarded based on performance and capability, regardless of age. (Point) A younger employee might bring fresh ideas and energy, while an older employee offers valuable experience and wisdom. (Reason) Therefore, a company should have a fair system that promotes whoever is most qualified for the new role. (Conclusion)"
+      },
+      {
+       "score": "6.5",
+       "answer": "Ideally, promotions should be entirely merit-based, independent of an employee's age. (Point) This is because both generations bring unique strengths; younger staff might excel in innovation, while senior employees provide deep industry knowledge. (Reason) A fair promotion system should evaluate candidates on their actual performance and leadership potential. For example, promoting the person who led a successful project, whether they are 25 or 55, benefits the entire organization. (Example)"
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "title": "不寻常的一餐",
+   "category": "事件题",
+   "status": "New",
+   "part2Title": "Describe an unusual meal you had",
+   "part2Description": "You should say:",
+   "part2Prompts": [
+    "When you had it",
+    "Where you had it",
+    "Whom you had it with",
+    "And explain why it was unusual"
+   ],
+   "questions": [
+    "What are the advantages and disadvantages of eating in restaurants?",
+    "What fast food restaurants are there in your country?",
+    "Do people eat fast food at home?",
+    "Why do some people choose to eat out instead of ordering takeout?",
+    "Do people in your country socialize in restaurants? Why?",
+    "Do people in your country value food culture?"
+   ],
+   "sampleAnswers": []
+  },
+  {
+   "title": "别人帮忙做的决定",
+   "category": "事件题",
+   "status": "New",
+   "part2Title": "Describe an important decision made with the help of other people",
+   "part2Description": "You should say:",
+   "part2Prompts": [
+    "What the decision was",
+    "Why you made the decision",
+    "Who helped you make the decision",
+    "And how you felt about it"
+   ],
+   "questions": [
+    "What kind of decisions do you think are meaningful?",
+    "What important decisions should be made by teenagers themselves?",
+    "Why are some people unwilling to make quick decisions?",
+    "Do people like to ask for advice more for their personal life or their work?",
+    "Why do some people like to ask others for advice?"
+   ],
+   "sampleAnswers": []
+  },
+  {
+   "title": "等待特别事情",
+   "category": "事件题",
+   "status": "New",
+   "part2Title": "Describe a time when you waited for something special that would happen",
+   "part2Description": "You should say:",
+   "part2Prompts": [
+    "What you waited for",
+    "Where you waited",
+    "Why it was special",
+    "And explain how you felt while you were waiting"
+   ],
+   "questions": [],
+   "sampleAnswers": [
+    {
+     "question": "Describe a time when you waited for something special that would happen",
+     "versions": [
+      {
+       "score": "5.0",
+       "answer": "I remember a time when I waited for a very special thing. I waited for my university acceptance result. I applied to my dream university after my final exams in high school. The university said they would post the results online on a specific day in July. It was a very important day for me.<br/><br/>I waited at home. I stayed in my room with my computer all day. I was too nervous to go outside or do anything else. I just sat in front of my desk and looked at the clock. My parents knew I was nervous, so they did not disturb me. They just brought me some food and water.<br/><br/>It was special because this result would decide my future. Going to that university was my biggest dream. I worked so hard for many years for this one moment. All my teachers and family members hoped I could get in. So, there was a lot of hope and pressure on me.<br/><br/>While I was waiting, I felt very, very nervous. My heart was beating so fast. I could not eat well or sleep the night before. I kept refreshing the university's website again and again, but nothing changed. My hands were cold and shaking. I imagined both good results and bad results. Finally, when the result came out, I saw the word 'Accepted'. I was so happy that I shouted. It was a feeling I will never forget. It was a mix of relief and great happiness."
+      },
+      {
+       "score": "5.5",
+       "answer": "I’d like to talk about a time I waited for something very special, which was my surprise 18th birthday party. My friends had been acting a bit secretive for a few weeks, and one of them accidentally mentioned they were planning something big for me. I was supposed to pretend I didn't know anything.<br/><br/>On the day of my birthday, my parents told me we were going to a nice restaurant for a quiet family dinner. So I waited at home, getting ready and feeling the excitement build up. Then we went to the restaurant. I waited in the car for a moment while my dad went inside, and then we all walked into a private room.<br/><br/>This was an incredibly special moment for me. Turning 18 is a huge milestone in my country; it means you are officially an adult. I was also very touched that my friends would go to so much trouble to organize a party for me. It showed how much they cared about me.<br/><br/>My feelings during the wait were very intense. I was a mix of excited and curious. I kept trying to guess what kind of surprise it would be. In the restaurant, as I walked towards the room, my heart was pounding. When I opened the door and everyone shouted 'Surprise!', I was so happy. It was one of the best moments of my life, a mix of shock and pure joy. Seeing all my friends and family there just for me was an amazing feeling."
+      },
+      {
+       "score": "6.0",
+       "answer": "I'm going to describe a time I was waiting for something truly special, which was the result of my university entrance application. I had applied to my dream university, and the results were scheduled to be released on a specific date. This was a hugely important moment that I had been working towards for a long time.<br/><br/>I remember that day vividly. I waited at home, mostly in my own room. I had my laptop set up on my desk, with the university's admissions portal open in a browser tab. I tried to act calm, but I was too restless to focus on anything else. I think I must have checked the website a hundred times that afternoon, hoping to see an update.<br/><br/>The reason this was so special was that it felt like a turning point in my life. Being accepted into that specific program was not just about getting a degree; it was about pursuing my passion and setting the foundation for my future career. I had poured countless hours into studying and preparing my application. Everything felt like it was leading up to this single moment.<br/><br/>While waiting, I experienced a real rollercoaster of emotions. I was incredibly anxious and my mind was racing. I kept imagining different scenarios – the joy of being accepted and the disappointment of being rejected. My hands were literally shaking as I refreshed the page for the final time. When I saw the acceptance letter on the screen, I was completely overwhelmed with happiness. It was a profound sense of relief and accomplishment, a feeling that all my hard work had finally paid off.",
+       "analysis": [
+        {
+         "type": "phrase",
+         "text": "vividly",
+         "explanation": "adv. 生动地；清晰地"
+        },
+        {
+         "type": "phrase",
+         "text": "restless",
+         "explanation": "adj. 焦躁不安的"
+        },
+        {
+         "type": "phrase",
+         "text": "turning point",
+         "explanation": "phr. 转折点"
+        },
+        {
+         "type": "phrase",
+         "text": "pursuing my passion",
+         "explanation": "phr. 追求我的热情"
+        },
+        {
+         "type": "phrase",
+         "text": "countless hours",
+         "explanation": "phr. 无数个小时"
+        },
+        {
+         "type": "phrase",
+         "text": "a rollercoaster of emotions",
+         "explanation": "idiom. 情绪的过山车，形容情绪起伏极大"
+        },
+        {
+         "type": "phrase",
+         "text": "profound sense of relief",
+         "explanation": "phr. 深深的解脱感"
+        },
+        {
+         "type": "phrase",
+         "text": "paid off",
+         "explanation": "phr. 得到回报"
+        }
+       ]
+      },
+      {
+       "score": "6.5",
+       "answer": "I'd like to share a memory of a time I waited for a very special event to happen. It was the day the admission results for my top-choice university were released. This was a pivotal moment for me, as I had spent the better part of my high school years working towards getting into their computer science program.<br/><br/>On the day the results were due, I confined myself to my room at home. I was glued to my chair, with my laptop open to the university's admissions portal. The hours seemed to drag on endlessly. I tried to distract myself with a movie, but I couldn't concentrate at all. My parents were great; they knew I needed some space and just quietly left snacks by my door.<br/><br/>This wait was so special because it represented the culmination of years of dedication. It wasn't just about getting into a good school; it was about validating all the sacrifices I had made and proving to myself that I could achieve my goals. My whole academic and future career path seemed to hang in the balance, which made the anticipation almost unbearable.<br/><br/>My feelings during that wait were a chaotic mix of anxiety and excitement. I felt like I was on pins and needles the entire day. Every notification sound from my phone made my heart jump. As the designated time approached, my palms were sweating. When I finally refreshed the page and saw the word 'Accepted', a wave of pure elation washed over me. I let out a huge shout of joy. It was an incredible feeling, a huge weight was lifted off my shoulders, and I felt like I was on top of the world.",
+       "analysis": [
+        {
+         "type": "phrase",
+         "text": "pivotal moment",
+         "explanation": "phr. 关键时刻"
+        },
+        {
+         "type": "phrase",
+         "text": "confined myself to my room",
+         "explanation": "phr. 把自己关在房间里"
+        },
+        {
+         "type": "phrase",
+         "text": "glued to my chair",
+         "explanation": "idiom. 粘在椅子上，形容非常专注"
+        },
+        {
+         "type": "phrase",
+         "text": "the culmination of years of dedication",
+         "explanation": "phr. 多年奉献的顶点"
+        },
+        {
+         "type": "phrase",
+         "text": "hang in the balance",
+         "explanation": "idiom. 悬而未决，成败未定"
+        },
+        {
+         "type": "phrase",
+         "text": "on pins and needles",
+         "explanation": "idiom. 如坐针毡，非常紧张"
+        },
+        {
+         "type": "phrase",
+         "text": "a wave of pure elation",
+         "explanation": "phr. 一阵纯粹的喜悦"
+        },
+        {
+         "type": "phrase",
+         "text": "a huge weight was lifted off my shoulders",
+         "explanation": "idiom. 如释重负"
+        }
+       ]
+      }
+     ]
+    },
+    {
+     "question": "On what occasions do people usually need to wait?",
+     "versions": [
+      {
+       "score": "5.5",
+       "answer": "People need to wait in many everyday situations. For instance, waiting in line at a supermarket checkout, waiting for public transport like a bus or train, or waiting for an appointment at a doctor's office. It's a very common part of life."
+      }
+     ]
+    },
+    {
+     "question": "Who behave better when waiting, children or adults?",
+     "versions": [
+      {
+       "score": "5.5",
+       "answer": "Generally, I think adults behave better when waiting. They have more self-control and understand that waiting is often necessary. Children, on the other hand, can get bored and restless very easily, so they might start to complain or cry."
+      }
+     ]
+    },
+    {
+     "question": "Compared to the past, are people less patient now? Why?",
+     "versions": [
+      {
+       "score": "5.5",
+       "answer": "Yes, I believe people are generally less patient now. This is probably because of modern technology. We are used to getting information, entertainment, and even food almost instantly with our smartphones. This makes us expect quick results for everything, so waiting feels more difficult."
+      }
+     ]
+    },
+    {
+     "question": "What are the positive and negative effects of waiting on society?",
+     "versions": [
+      {
+       "score": "5.5",
+       "answer": "A positive effect is that waiting can teach patience and create order. For example, queuing ensures fairness. A negative effect is that it can cause stress and frustration. Also, long waits can be a waste of valuable time, which might reduce productivity for businesses and individuals."
+      }
+     ]
+    },
+    {
+     "question": "Why are some people unwilling to wait?",
+     "versions": [
+      {
+       "score": "5.5",
+       "answer": "I think there are a few reasons. Some people have very busy lives and feel that any time spent waiting is wasted time. For others, it might just be their personality; they are naturally impatient. And as I mentioned, our fast-paced society makes it harder for everyone to wait calmly."
+      }
+     ]
+    },
+    {
+     "question": "Where do children learn to be patient, at home or at school?",
+     "versions": [
+      {
+       "score": "5.5",
+       "answer": "I think children learn to be patient in both environments. At home, parents can teach them by making them wait for their turn or for a special treat. At school, they have to learn to wait to ask a question or to share classroom materials with others. Both home and school play important roles."
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "title": "购物服务",
+   "category": "事件题",
+   "status": "New",
+   "part2Title": "Describe a time when you received good service in a shop/store",
+   "part2Description": "You should say:",
+   "part2Prompts": [
+    "Where the shop is",
+    "When you went to the shop",
+    "What service you received from the staff",
+    "And explain how you felt about the service"
+   ],
+   "questions": [
+    "Why are shopping malls so popular in China?",
+    "What are the advantages and disadvantages of shopping in small shops?",
+    "Why do some people not like shopping in small shops?",
+    "What are the differences between online shopping and in-store shopping?",
+    "What are the advantages and disadvantages of shopping online?",
+    "Can consumption drive economic growth?"
+   ],
+   "sampleAnswers": []
+  },
+  {
+   "title": "第一次用外语",
+   "category": "事件题",
+   "status": "New",
+   "part2Title": "Describe the time when you first talked in a foreign language",
+   "part2Description": "You should say:",
+   "part2Prompts": [
+    "Where you were",
+    "Who you were with",
+    "What you talked about",
+    "And explain how you felt about it"
+   ],
+   "questions": [
+    "At what age should children start learning a foreign language?",
+    "Which skill is more important, speaking or writing?",
+    "Does a person still need to learn other languages, if he or she is good at English?",
+    "Do you think minority languages will disappear?",
+    "Does learning a foreign language help in finding a job?",
+    "Which stage of life do you think is the best for learning a foreign language?"
+   ],
+   "sampleAnswers": []
+  },
+  {
+   "title": "社交媒体趣事",
+   "category": "事件题",
+   "status": "New",
+   "part2Title": "Describe a time you saw something interesting on social media",
+   "part2Description": "You should say:",
+   "part2Prompts": [
+    "When it was",
+    "Where you saw it",
+    "What you saw",
+    "And explain why you think it was interesting"
+   ],
+   "questions": [
+    "Why do people like to use social media?",
+    "What kinds of things are popular on social media?",
+    "What are the advantages and disadvantages of using social media?",
+    "What do you think of making friends on social network?",
+    "Are there any people who shouldn't use social media?",
+    "Do you think people spend too much time on social media?"
+   ],
+   "sampleAnswers": []
+  },
+  {
+   "title": "弄坏东西",
+   "category": "事件题",
+   "status": "New",
+   "part2Title": "Describe a time when you broke something",
+   "part2Description": "You should say:",
+   "part2Prompts": [
+    "What it was",
+    "When/where that happened",
+    "How you broke it",
+    "And explain what you did after that"
+   ],
+   "questions": [
+    "What kind of things are more likely to be broken by people at home?",
+    "What kind of people like to fix things by themselves?",
+    "Do you think clothes produced in the factory are of better quality than those made by hand?",
+    "Do you think handmade clothes are more valuable?",
+    "Is the older generation better at fixing things?",
+    "Do you think elderly people should teach young people how to fix things?"
+   ],
+   "sampleAnswers": []
+  },
+  {
+   "title": "别人向你道歉",
+   "category": "事件题",
+   "status": "New",
+   "part2Title": "Describe a time when someone apologized to you",
+   "part2Description": "You should say:",
+   "part2Prompts": [
+    "When it was",
+    "Who this person is",
+    "Why he or she apologized to you",
+    "And how you felt about it"
+   ],
+   "questions": [
+    "Do you think people should apologize for anything wrong they do?",
+    "Do people in your country like to say \"sorry\"?",
+    "On what occasion do people usually apologize to others?",
+    "Why do some people refuse to say \"sorry\" to others?",
+    "Do you think every \"sorry\" is from the bottom of the heart?",
+    "Are women better than men at recognizing emotions?"
+   ],
+   "sampleAnswers": []
+  },
+  {
+   "title": "学习朋友好习惯",
+   "category": "事件题",
+   "status": "New",
+   "part2Title": "Describe a good habit your friend has and you want to develop",
+   "part2Description": "You should say:",
+   "part2Prompts": [
+    "Who your friend is",
+    "What habit he/she has",
+    "When you noticed this habit",
+    "And explain why you want to develop this habit"
+   ],
+   "questions": [
+    "What habits should children have?",
+    "What should parents do to teach their children good habits?",
+    "What influences do children with bad habits have on other children?",
+    "Why do some habits change when people get older?",
+    "How do we develop bad habits?",
+    "What can we do to get rid of bad habits?"
+   ],
+   "sampleAnswers": []
+  },
+  {
+   "title": "突然停电",
+   "category": "事件题",
+   "status": "New",
+   "part2Title": "Describe a time when the electricity suddenly went off",
+   "part2Description": "You should say:",
+   "part2Prompts": [
+    "When/where it happened",
+    "How long it lasted",
+    "What you did during that time",
+    "And explain how you felt about it"
+   ],
+   "questions": [
+    "Which is better, electric bicycles or ordinary bicycles?",
+    "Do you think electric bicycles will replace ordinary bicycles in the future?",
+    "Which is better, electric cars or petrol cars?",
+    "How did people manage to live without electricity in the ancient world?",
+    "Is it difficult for the government to replace all the petrol cars with electric cars?",
+    "Do people use more electricity now than before?"
+   ],
+   "sampleAnswers": []
+  },
+  {
+   "title": "迷路",
+   "category": "事件题",
+   "status": "New",
+   "part2Title": "Describe an occasion when you lost your way",
+   "part2Description": "You should say:",
+   "part2Prompts": [
+    "Where you were",
+    "What happened",
+    "How you felt",
+    "And explain how you found your way"
+   ],
+   "questions": [
+    "Why do some people get lost more easily than others?",
+    "Do you think it is important to be able to read a map?",
+    "Do you think it is important to do some preparation before you travel to new places?",
+    "How can people find their way when they are lost?",
+    "Is a paper map still necessary?",
+    "How do people react when they get lost?"
+   ],
+   "sampleAnswers": []
+  },
+  {
+   "title": "和亲友享受的晚餐",
+   "category": "事件题",
+   "status": "New",
+   "part2Title": "Describe a great dinner you and your friends or family members enjoyed",
+   "part2Description": "You should say:",
+   "part2Prompts": [
+    "What you had",
+    "Who you had the dinner with",
+    "What you talked about during the dinner",
+    "And explain why you enjoyed it"
+   ],
+   "questions": [
+    "Do people prefer to eat out at restaurants or eat at home during the Spring Festival?",
+    "What food do you eat on special occasions, like during the Spring Festival or the Mid-autumn Festival?",
+    "Why do people like to have meals together during important festivals?",
+    "Is it a hassle to prepare a meal at home?",
+    "What do people often talk about during meals?",
+    "People are spending less and less time having meals with their families these days. Is this good or bad?"
+   ],
+   "sampleAnswers": []
+  },
+  {
+   "title": "想再去一次的远行",
+   "category": "事件题",
+   "status": "New",
+   "part2Title": "Describe a long journey you had and would like to take again",
+   "part2Description": "You should say:",
+   "part2Prompts": [
+    "When/where you went",
+    "Who you had the journey with",
+    "Why you had the journey",
+    "And explain why you would like to have it again"
+   ],
+   "questions": [
+    "Do you think it is a good choice to travel by plane?",
+    "What are the differences between group travelling and travelling alone?",
+    "What do we need to prepare for a long journey?",
+    "Why do some people prefer to travel in their own country?",
+    "Why do some people prefer to travel abroad?"
+   ],
+   "sampleAnswers": []
+  },
+  {
+   "title": "感兴趣的科学学科/领域",
+   "category": "事物题",
+   "status": "New",
+   "part2Title": "Describe an area/subject of science (biology, robotics, etc.) that you are interested in and would like to learn more about",
+   "part2Description": "You should say:",
+   "part2Prompts": [
+    "Which area/subject it is",
+    "When and where you came to know this area/subject",
+    "How you get information about this area/subject",
+    "And explain why you are interested in this area/subject"
+   ],
+   "questions": [
+    "Why do some children not like learning science at school?",
+    "Is it important to study science at school?",
+    "Which science subject is the most important for children to learn?",
+    "Should people continue to study science after graduating from school?",
+    "How do you get to know about scientific news?",
+    "Should scientists explain the research process to the public?"
+   ],
+   "sampleAnswers": []
+  },
+  {
+   "title": "有用的书",
+   "category": "事物题",
+   "status": "New",
+   "part2Title": "Describe a book you read that you found useful",
+   "part2Description": "You should say:",
+   "part2Prompts": [
+    "What it is",
+    "When you read it",
+    "Why you think it is useful",
+    "And explain how you felt about it"
+   ],
+   "questions": [
+    "What are the types of books that young people like to read?",
+    "What should the government do to make libraries better?",
+    "Do you think old people spend more time reading than young people?",
+    "Which one is better, paper books or e-books?",
+    "Have libraries changed a lot with the development of the internet?",
+    "What should we do to prevent modern libraries from closing down?"
+   ],
+   "sampleAnswers": []
+  },
+  {
+   "title": "童年喜欢的玩具",
+   "category": "事物题",
+   "status": "New",
+   "part2Title": "Describe a toy you liked in your childhood",
+   "part2Description": "You should say:",
+   "part2Prompts": [
+    "What kind of toy it is",
+    "When you received it",
+    "How you played it",
+    "And how you felt about it"
+   ],
+   "questions": [
+    "How do advertisements influence children?",
+    "Should advertising aimed at kids be prohibited?",
+    "What's the difference between the toys kids play now and those they played in the past?",
+    "Do you think parents should buy more toys for their kids or spend more time with them?",
+    "What's the difference between the toys boys play with and girls play with?",
+    "What are the advantages and disadvantages of modern toys?"
+   ],
+   "sampleAnswers": []
+  },
+  {
+   "title": "家中老物件",
+   "category": "事物题",
+   "status": "New",
+   "part2Title": "Describe an important old thing that your family has kept for a long time",
+   "part2Description": "You should say:",
+   "part2Prompts": [
+    "What it is",
+    "How/when your family first got this thing",
+    "How long your family has kept it",
+    "And explain why this thing is important to your family"
+   ],
+   "questions": [
+    "What kind of old things do people in your country like to keep?",
+    "Why do people keep old things?",
+    "What are the differences between the things old people keep and those young people keep?",
+    "What are the differences between the things that people keep today and the things that people kept in the past?",
+    "What can we see in a museum?",
+    "What can we learn from a museum?"
+   ],
+   "sampleAnswers": []
+  },
+  {
+   "title": "想多了解的野生动物",
+   "category": "事物题",
+   "status": "New",
+   "part2Title": "Describe a wild animal that you want to learn more about",
+   "part2Description": "You should say:",
+   "part2Prompts": [
+    "What it is",
+    "When/where you saw it",
+    "Why you want to learn more about it",
+    "And explain what you want to learn more about it"
+   ],
+   "questions": [
+    "Why should we protect wild animals?",
+    "Why are some people more willing to protect wild animals than others?",
+    "Do you think it's important to take children to the zoo to see animals?",
+    "Why do some people attach more importance to protecting rare animals?",
+    "Should people educate children to protect wild animals?",
+    "Is it more important to protect wild animals or the environment?"
+   ],
+   "sampleAnswers": []
+  },
+  {
+   "title": "想提升的天赋",
+   "category": "事物题",
+   "status": "New",
+   "part2Title": "Describe a natural talent (sports, music, etc.) you want to improve",
+   "part2Description": "You should say:",
+   "part2Prompts": [
+    "What it is",
+    "When you discovered it",
+    "How you want to improve it",
+    "And how you feel about it"
+   ],
+   "questions": [
+    "Do you think artists with talents should focus on their talents?",
+    "Is it possible for us to know whether children who are 3 or 4 years old will become musicians and painters when they grow up?",
+    "Why do people like to watch talent shows?",
+    "Do you think it is more interesting to watch famous people's or ordinary people's shows?",
+    "Do you think it's important to develop children's talents?",
+    "Why do some people like to show their talents online?"
+   ],
+   "sampleAnswers": []
+  },
+  {
+   "title": "传统故事",
+   "category": "事物题",
+   "status": "New",
+   "part2Title": "Describe an interesting traditional story",
+   "part2Description": "You should say:",
+   "part2Prompts": [
+    "What the story is about",
+    "When/how you knew it",
+    "Who told you the story",
+    "And explain how you felt when you first heard it"
+   ],
+   "questions": [
+    "What kind of stories do children like?",
+    "What are the benefits of bedtime stories for children?",
+    "Why do most children like listening to stories before bedtime?",
+    "What can children learn from stories?",
+    "Do all stories for children have happy endings?",
+    "Is a good storyline important for a movie?"
+   ],
+   "sampleAnswers": []
+  }
+ ]
+}

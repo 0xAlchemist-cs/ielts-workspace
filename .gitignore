@@ -40,8 +40,13 @@ yarn-error.log*
 *.tsbuildinfo
 next-env.d.ts
 
-# local sqlite data
-data/
+# local sqlite data (runtime DB, uploads, full 66MB ECDICT) — but the committed
+# test fixtures stay: the import/gate suites read them, CI included
+data/*
+!data/test-fixtures/
+!data/speaking-bank/
+!data/writing-bank/
+!data/ieltscb-samples/
 
 # but keep the example env documented
 !.env.local.example

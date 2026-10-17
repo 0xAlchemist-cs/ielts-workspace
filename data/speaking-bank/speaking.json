@@ -1,0 +1,2263 @@
+{
+ "part1": [
+  {
+   "topic": "Stories",
+   "questions": [
+    "Do you love stories in your childhood?",
+    "Do you prefer listening to stories or reading them?",
+    "Did you ever write a story when you were a child?"
+   ]
+  },
+  {
+   "topic": "Borrowing/Lending",
+   "questions": [
+    "Have you borrowed books from others?",
+    "Have you ever borrowed money from others?",
+    "Do you like to lend things to others?",
+    "How do you feel when people don't return thingsthey borrowed from you?"
+   ]
+  },
+  {
+   "topic": "Hats/caps",
+   "questions": [
+    "Is wearing hats popular in your country?",
+    "Where do you like to buy hats?",
+    "What kinds of hats do you have?",
+    "Do you like to wear hats?"
+   ]
+  },
+  {
+   "topic": "History",
+   "questions": [
+    "Have you ever studied any history?",
+    "How do you learn history?",
+    "What are the benefits of learning history?",
+    "Do you think learning history is important?"
+   ]
+  },
+  {
+   "topic": "Send messages",
+   "questions": [
+    "Do you like to send messages?",
+    "When do you send messages?",
+    "Do you reply messages in time?"
+   ]
+  },
+  {
+   "topic": "Gifts",
+   "questions": [
+    "Are you good at giving gifts?",
+    "When do you usually give gifts to others?",
+    "What do you consider when choosing a gift?",
+    "Have you ever given others a handmade gift?",
+    "Do expensive gifts better express your feelings?"
+   ]
+  },
+  {
+   "topic": "Home/Accommodation",
+   "questions": [
+    "What kind of house or flat do you want to live in in the future?",
+    "What’s your favorite room in your apartment or house?",
+    "What makes you feel pleasant in your home?",
+    "Do you think it is important to live in a comfortable environment?",
+    "What can you see outside the window?",
+    "Do you live in a house or a flat?",
+    "What part of your home do you like the most?",
+    "Are the transport facilities to your home very good?",
+    "What do you usually do in your house/flat/room?",
+    "Which room does your family spend most of the time in?",
+    "Can you describe the place where you live?",
+    "What’s the difference between where you are living now and where you have lived in the past?",
+    "Do you plan to live there for a long time?",
+    "How long have you lived there?",
+    "Who do you live with?",
+    "What kind of housing/accommodation do you live in?"
+   ]
+  },
+  {
+   "topic": "Hometown",
+   "questions": [
+    "What's (the name of) your hometown ?",
+    "Is that a big city or a small place?",
+    "How long have you lived there?",
+    "What’s your hometown famous for?",
+    "Did you learn about the history of your hometown at school?",
+    "Do you think you will continue living there for a long time?",
+    "Is there anything you dislike about it?",
+    "What do you like about your hometown?",
+    "Do you like living there?",
+    "Do you like your hometown?",
+    "How long have you been living there?",
+    "Is your hometown a big city or a small place?",
+    "Where would you like to live?",
+    "Do you plan to continue living there?",
+    "Where's your hometown?"
+   ]
+  },
+  {
+   "topic": "Work or study",
+   "questions": [
+    "What technology do you use when you study?",
+    "What subjects are you studying?",
+    "Do you like your subject?",
+    "Is it interesting?",
+    "Who helps you the most？And how?",
+    "How much time do you spend on your studies each week?",
+    "Do you want to change jobs?",
+    "What kinds of technology do you use at work?",
+    "Do you prefer to study in the mornings or in the afternoons?",
+    "Are you looking forward to working?",
+    "Is it very interesting?",
+    "Do you like your subject?",
+    "Why did you choose to study that subject?",
+    "What subject(s) are you studying?",
+    "Do you miss being a student?",
+    "Is your work interesting?",
+    "Do you like your job?",
+    "Why did you choose to do that type of work (or, that job)?",
+    "What work do you do?"
+   ]
+  },
+  {
+   "topic": "The area you live in",
+   "questions": [
+    "What are some changes in the area recently?",
+    "Do you know any of your neighbors?",
+    "Do you like the area that you live in?",
+    "What changes have been made to the area recently?",
+    "Do you know any famous people in your area?",
+    "Where do you like to go in that area?"
+   ]
+  },
+  {
+   "topic": "The city you live in",
+   "questions": [
+    "What city do you live in?",
+    "Do you like this city? Why?",
+    "How long have you lived in this city?",
+    "Are there big changes in this city?",
+    "Is this city your permanent residence?",
+    "Are there people of different ages living in this city?",
+    "What's the weather like where you live?",
+    "Is the city friendly to children and old people?"
+   ]
+  },
+  {
+   "topic": "Bike",
+   "questions": [
+    "Did you have a bike when you were young?",
+    "Do you have a bike now?",
+    "Do you often ride a bike now?",
+    "Are bikes popular in China?"
+   ]
+  },
+  {
+   "topic": "Coins",
+   "questions": [
+    "Do you often take coins with you?",
+    "Have you collected coins?",
+    "Is it convenient to use coins?",
+    "Do you use coins in your daily life?",
+    "Did you use coins as a child?"
+   ]
+  },
+  {
+   "topic": "Laughing",
+   "questions": [
+    "Do you enjoy watching interesting and funny movies?",
+    "Do you think you are a funny person?",
+    "Do you always laugh at funny things?",
+    "When was the last time you laughed?",
+    "Are you a person who often makes others laugh?"
+   ]
+  },
+  {
+   "topic": "Road and street",
+   "questions": [
+    "Are the roads in the area where you live busy?",
+    "How do people cross the road in the city where you live?",
+    "How is the condition of the roads in your city?",
+    "Do you think the roads in your city need improvement?"
+   ]
+  },
+  {
+   "topic": "Fishing",
+   "questions": [
+    "Is fishing popular in your country?",
+    "Do you like eating fish?",
+    "Do you like fishing?",
+    "Did you ever go fishing when you were a child?"
+   ]
+  },
+  {
+   "topic": "Teachers",
+   "questions": [
+    "Do you have a favourite teacher?",
+    "In what way has your favourite teacher helped you?",
+    "Do you have a teacher from your past that you still remember?",
+    "Are you still in touch with your primary school teachers?",
+    "Do you want to be a teacher in the future?"
+   ]
+  },
+  {
+   "topic": "Perfume",
+   "questions": [
+    "Do you like perfume?",
+    "Do you use perfume?",
+    "Where do you spray perfume?",
+    "Do you send perfume to others as a gift?",
+    "Do you spend a lot of money on buying perfume?"
+   ]
+  },
+  {
+   "topic": "Place of study/work",
+   "questions": [
+    "Do you prefer to study at home or in a library?",
+    "What is your favourite place to study?",
+    "What part of your school do you like the most?",
+    "What is your favourite subject?",
+    "Do you prefer to work at home or in the workplace?",
+    "Do you prefer to work alone or in a group?"
+   ]
+  },
+  {
+   "topic": "Good view",
+   "questions": [
+    "What is the view like around the place where you live?",
+    "Have you seen an unforgettable view?",
+    "Would you take photos when you see a good view?",
+    "What is your favourite place? Why?",
+    "Do you meet new people more often now in the past?",
+    "Do you like making friends?",
+    "Did you make a lot of friends when you were a child?",
+    "Have you made any new friends recently?",
+    "What do you often talk about with your friends?",
+    "Do you like meeting new people?",
+    "Where can you meet new people?",
+    "Do you enjoy talking to new people?"
+   ]
+  },
+  {
+   "topic": "Teamwork",
+   "questions": [
+    "Do you like teamwork?",
+    "Have you teamed up with someone else before?",
+    "What do you learn from working in a team?",
+    "What do you dislike about teamwork?"
+   ]
+  },
+  {
+   "topic": "Taking photos",
+   "questions": [
+    "Do you like taking photos?",
+    "Do you like taking selfies?",
+    "What is your favourite family photo?",
+    "Do you want to improve your photography skills?"
+   ]
+  },
+  {
+   "topic": "Art",
+   "questions": [
+    "Do you like drawing?",
+    "Do you like to go to the gallery?",
+    "Do you want to learn more about art?",
+    "Did you learn drawing when you were a kid?"
+   ]
+  },
+  {
+   "topic": "Mirrors",
+   "questions": [
+    "Do you like looking at yourself in the mirror? How often?",
+    "Have you ever bought mirrors?",
+    "Do you usually take a mirror with you?",
+    "Would you use mirrors to decorate your room?"
+   ]
+  },
+  {
+   "topic": "Dream",
+   "questions": [
+    "Do you often remember your dreams?",
+    "Are you interested in others dreams?",
+    "Do you think dreams have special meaning?",
+    "Do you want to make your dreams come true?"
+   ]
+  },
+  {
+   "topic": "Watch",
+   "questions": [
+    "Do you wear a watch?",
+    "Have you ever got a watch as a gift?",
+    "Why do some people wear expensive watches?",
+    "Do you think it is important to wear a watch? Why?"
+   ]
+  },
+  {
+   "topic": "Mobile phone",
+   "questions": [
+    "Do you remember your first phone?",
+    "Do you often use your mobile phone for texting or for calls?",
+    "Will you buy a new one in the future?",
+    "How has your mobile phone changed your life?"
+   ]
+  },
+  {
+   "topic": "Advertisement",
+   "questions": [
+    "Is there an advertisement that made an impression on you when you were a child?",
+    "Do you see a lot of advertising on trains or other transport?",
+    "Do you like advertisements?",
+    "What kind of advertising do you like?"
+   ]
+  },
+  {
+   "topic": "Emails",
+   "questions": [
+    "Do you often send emails?",
+    "When would you send emails to others?",
+    "Is sending emails popular in China?",
+    "Do you think sending emails will be more or less popular in the future?"
+   ]
+  },
+  {
+   "topic": "Lost and found",
+   "questions": [
+    "What will you do if you find something lost by others?",
+    "Do you report to the police when finding something lost by others? Why?",
+    "Have you ever lost things?",
+    "Will you post on social media if you lose your item?"
+   ]
+  },
+  {
+   "topic": "Old buildings",
+   "questions": [
+    "Have you ever seen old buildings in the city?",
+    "Do you think we should preserve old buildings in cities?",
+    "Do you prefer living in an old building or a modern house?",
+    "Are there any old buildings you want to see in the future? Why?"
+   ]
+  },
+  {
+   "topic": "Talents",
+   "questions": [
+    "Do you have a talent or something you are good at?",
+    "Was it mastered recently or when you were young?",
+    "Do you think your talent can be useful for your future work? Why?",
+    "Do you think anyone in your family has the same talent?"
+   ]
+  },
+  {
+   "topic": "Swimming",
+   "questions": [
+    "Do you like swimming?",
+    "Is it difficult to learn how to swim?",
+    "Where do people in your country like to go swimming?",
+    "What's the difference between swimming in the pool and swimming in the sea?"
+   ]
+  },
+  {
+   "topic": "Street market",
+   "questions": [
+    "Are there many street markets in China?",
+    "When was the last time you went to a street market?",
+    "Do you prefer to go shopping in the shopping mall or on the street market?",
+    "What do people usually buy on the street market?"
+   ]
+  },
+  {
+   "topic": "Cars",
+   "questions": [
+    "Did you enjoy traveling by car when you were a kid?",
+    "What types of cars do you like?",
+    "Do you prefer to be a driver or a passenger?",
+    "What do you usually do when there is a traffic jam?"
+   ]
+  },
+  {
+   "topic": "Computers",
+   "questions": [
+    "In what conditions would you use a computer?",
+    "When was the first time you used a computer?",
+    "What would your life be like without computers?",
+    "In what conditions would it be difficult for you to use a computer?"
+   ]
+  },
+  {
+   "topic": "Feeling bored",
+   "questions": [
+    "Do you often feel bored?",
+    "When would you feel bored?",
+    "What do you do when you feel bored?",
+    "Do you think childhood is boring or adulthood is boring?"
+   ]
+  },
+  {
+   "topic": "Evening time",
+   "questions": [
+    "What do you usually do in the evening?",
+    "What did you do in the evening when you were little? Why?",
+    "Are there any differences between what you do in the evening now and what you did in the past?",
+    "Do you spend your evenings doing the same things on both weekends and weekdays? Why?"
+   ]
+  },
+  {
+   "topic": "Websites",
+   "questions": [
+    "What kinds of websites do you often visit?",
+    "What is your favourite website?",
+    "Are there any changes to the websites you ofter visit?",
+    "What kinds of websites are popular in your country?"
+   ]
+  },
+  {
+   "topic": "Time management",
+   "questions": [
+    "How do you plan your time in a day?",
+    "Is it easy to manage time for you?",
+    "When do you find it hard to allocate time?",
+    "Do you like being busy?"
+   ]
+  },
+  {
+   "topic": "Books and reading habits",
+   "questions": [
+    "Do you often read books? When?",
+    "Are your reading habits now different than before?",
+    "Have you ever read a novel that has been adapted into a film?",
+    "Which do you prefer, reading books or watching movies?",
+    "Do you read more or less now than when you were younger?"
+   ]
+  },
+  {
+   "topic": "Collecting things",
+   "questions": [
+    "Do you collect things?",
+    "Are there any things you have kept from your childhood?",
+    "Would you keep old things for a long time? Why?",
+    "Where do you usually keep things you need?"
+   ]
+  },
+  {
+   "topic": "Friends",
+   "questions": [
+    "How important are friends to you?",
+    "Do you often go out with your friends?",
+    "Where do you often meet each other?",
+    "What do you usually do with your friends?",
+    "Do you have a friend you have known for a long time?",
+    "Do you prefer to spend time with one friend or with a group of friends?",
+    "Would you invite friends to your home?"
+   ]
+  },
+  {
+   "topic": "Sitting down",
+   "questions": [
+    "Where is your favorite place to sit?",
+    "Do you always sit down for a long time?",
+    "Do you feel sleepy when you are sitting down?",
+    "When you were a kid, did you usually sit on the floor?"
+   ]
+  },
+  {
+   "topic": "Sports programs",
+   "questions": [
+    "Do you like watching sports programs on TV?",
+    "Do you like to watch live sports games?",
+    "Who do you like to watch sports games with?",
+    "What kinds of games do you expect to watch in the future?"
+   ]
+  },
+  {
+   "topic": "Hobby",
+   "questions": [
+    "Do you have any hobbies?",
+    "Did you have any hobbies when you were a child?",
+    "Do you have a hobby that you've had since childhood?",
+    "Do you have the same hobbies as your family members?"
+   ]
+  },
+  {
+   "topic": "Weekends",
+   "questions": [
+    "Do you do the same thing every weekend?"
+   ]
+  },
+  {
+   "topic": "Staying at home",
+   "questions": [
+    "Are you a person who likes to stay at home?",
+    "What do you do when you stay at home?",
+    "What is your favourite place at home?",
+    "What did you often do at home as a child?",
+    "Would you like to stay at home a lot in the future?"
+   ]
+  },
+  {
+   "topic": "social media",
+   "questions": [
+    "Do you think you spend too much time on social media?"
+   ]
+  },
+  {
+   "topic": "Science",
+   "questions": [
+    "Do you like science?",
+    "Which science subject is interesting to you?",
+    "What kinds of interesting things you have done with science?",
+    "Do you like watching science TV programs?",
+    "Do Chinese people often visit science museums?"
+   ]
+  },
+  {
+   "topic": "Schools and workplaces",
+   "questions": [
+    "Where is your school?",
+    "Do you like your school?",
+    "Do you think your school is a good place to study?",
+    "What is the environment like at your school?",
+    "What do you think could be improved in your school?",
+    "How important is interest in study?",
+    "Which subject do you find challenging?",
+    "Do you like your job?",
+    "Do you currently have a good work environment?",
+    "What do you think could be improved at your workplace?",
+    "Have you ever thought about changing jobs?",
+    "Is there a place in your company that makes you feel relaxed?",
+    "What are the advantages of a company having a relaxation room?",
+    "What do you think would be challenging when you start working in the future?",
+    "How do you go to school?",
+    "Do a lot of people like music?",
+    "Do schools in your country have music lessons?",
+    "Have you ever learned to play a musical instrument?",
+    "What musical instruments do you enjoy listening to the most?",
+    "Do you think children should learn to play an instrument at school?",
+    "Do you think music education is important to children?"
+   ]
+  },
+  {
+   "topic": "Morning Routines",
+   "questions": [
+    "What do you do in the mornings?",
+    "Is breakfast important?",
+    "What is your morning routine?",
+    "Do you like to get up early in the morning?",
+    "Do you prefer to watch films at home or in the cinema?",
+    "What films do you like?",
+    "Did you often watch films when you were a child?",
+    "Did you ever go to the cinema alone as a child?",
+    "Do you often go to the cinema with your friends?",
+    "Do you think going to the cinema is a good way to spend time with friends?"
+   ]
+  },
+  {
+   "topic": "Doing sport",
+   "questions": [
+    "What sports do you like?",
+    "Where did you learn how to do it?",
+    "Did you do some sports when you were young?",
+    "Do you think students need more exercise?",
+    "Do you know any people who are good at sports?",
+    "Do you think it is important for people to exercise?",
+    "Should schools encourage young students to take more physical exercise?"
+   ]
+  },
+  {
+   "topic": "Daily routine",
+   "questions": [
+    "What is your daily study routine?",
+    "Have you ever changed your routine?",
+    "Do you think it is important to have a daily routine for your study?",
+    "What part of your day do you like best?"
+   ]
+  },
+  {
+   "topic": "Childhood memory",
+   "questions": [
+    "What did you enjoy doing as a child?",
+    "Did you enjoy your childhood?",
+    "What are your best childhood memories?",
+    "Do you think it is better for children to grow up in the city or in the countryside?"
+   ]
+  }
+ ],
+ "part2": [
+  {
+   "titleZh": "近期日常改变",
+   "cue": "Describe a positive change that you have made recently in your daily routine",
+   "hints": [
+    "What the change is",
+    "How you have changed the routine",
+    "Why you think it is a positive change",
+    "And explain how you feel about the change"
+   ]
+  },
+  {
+   "titleZh": "想去的外国",
+   "cue": "Describe a foreign country you would like to visit in the future",
+   "hints": [
+    "What it is",
+    "What you have known about it",
+    "Who you would like to go there with",
+    "And explain why you would like to visit it"
+   ]
+  },
+  {
+   "titleZh": "交通工具抛锚",
+   "cue": "Describe a time when the vehicle you took broke down on your trip",
+   "hints": [
+    "Where it happened",
+    "When it happened",
+    "Who you were with at that time And what impacts this breakdown had"
+   ]
+  },
+  {
+   "titleZh": "感兴趣的科学学科",
+   "cue": "Describe a science subject that you are interested in",
+   "hints": [
+    "What it is",
+    "Where you got to know it",
+    "How you have learned it",
+    "And explain why you are interested in it"
+   ]
+  },
+  {
+   "titleZh": "乡村一隅",
+   "cue": "Describe a place in a village that you visited",
+   "hints": [
+    "Where it is",
+    "When you visited this place",
+    "What you did there And how you feel about this place"
+   ]
+  },
+  {
+   "titleZh": "忘记重要事情",
+   "cue": "Describe an occasion when you forgot something important",
+   "hints": [
+    "When it was",
+    "What you forgot",
+    "Why you forgot it And how you felt about it"
+   ]
+  },
+  {
+   "titleZh": "重要决定",
+   "cue": "Describe an important decision that you made",
+   "hints": [
+    "What the decision was",
+    "How you made your decision",
+    "What the results of the decision were",
+    "And explain why it was important"
+   ]
+  },
+  {
+   "titleZh": "学校/工作中的重要规则",
+   "cue": "Describe a rule that is important in your school or at work",
+   "hints": [
+    "What the rule is about",
+    "What happens when people break the rule",
+    "Why you think it is an important rule",
+    "And explain how you feel about the rule"
+   ]
+  },
+  {
+   "titleZh": "学到新东西的网络视频",
+   "cue": "Describe an online video where you learned something new",
+   "hints": [
+    "When and where you watched it",
+    "What it was",
+    "Why you watched it",
+    "And explain what you have learned from it"
+   ]
+  },
+  {
+   "titleZh": "令你自信的事",
+   "cue": "Describe something in your study/work that has made you feel confident",
+   "hints": [
+    "When it happened",
+    "What it was",
+    "Why it made you feel confident",
+    "And explain how you felt about it"
+   ]
+  },
+  {
+   "titleZh": "固执己见的人",
+   "cue": "Describe a person who always has strong opinions",
+   "hints": [
+    "Who this person is",
+    "How you knew him/her",
+    "Why you think he/she is an opinionated person",
+    "And explain how you feel about him/her"
+   ]
+  },
+  {
+   "titleZh": "公共场所接陌生人电话",
+   "cue": "Describe a time when you answered a phone call from someone you didn't know in a public place",
+   "hints": [
+    "Where it happened",
+    "What he/she said",
+    "How you corresponded",
+    "And explain how you felt about the experience"
+   ]
+  },
+  {
+   "titleZh": "重遇旧友",
+   "cue": "Describe an old friend you had lost touch with and got in contact with again You should say :",
+   "hints": [
+    "Who he/she is",
+    "How you knew each other",
+    "Why you lost contact",
+    "How you got in contact again"
+   ]
+  },
+  {
+   "titleZh": "文化之地",
+   "cue": "Describe a cultural place (e.g. library, museum,theatre)",
+   "hints": [
+    "Where it is",
+    "How you knew this place",
+    "What it is like",
+    "And explain how the place is related to culture"
+   ]
+  },
+  {
+   "titleZh": "给建议的人",
+   "cue": "Describe a person from whom others like to ask for advice",
+   "hints": [
+    "Who this person is",
+    "Why people like to ask for his/her advice",
+    "What kind of advice he/she often gives",
+    "And explain how you felt about the person"
+   ]
+  },
+  {
+   "titleZh": "拥挤地方",
+   "cue": "Describe a crowded place you went to",
+   "hints": [
+    "When you went there",
+    "Who you went there with",
+    "Why you went there And how you felt about it"
+   ]
+  },
+  {
+   "titleZh": "理想房屋",
+   "cue": "Describe an ideal and perfect place where you would like to stay, e.g. a house or an apartment",
+   "hints": [
+    "Where it would be",
+    "What it would look like",
+    "What special features it would have",
+    "And explain why it would be an ideal place for you"
+   ]
+  },
+  {
+   "titleZh": "近期观影",
+   "cue": "Describe a movie you watched recently",
+   "hints": [
+    "When and where you watched it",
+    "Who you watched it with",
+    "What it was about",
+    "And explain why you chose to watch this movie"
+   ]
+  },
+  {
+   "titleZh": "帮助家人",
+   "cue": "Describe a time when you helped a family member",
+   "hints": [
+    "When it happened",
+    "Who you helped",
+    "How you helped",
+    "And explain how you felt about the experience"
+   ]
+  },
+  {
+   "titleZh": "医疗人士",
+   "cue": "Describe a person who has chosen a career in the medical field (e.g. a doctor, a nurse）",
+   "hints": [
+    "Who he/she is",
+    "What he/she does",
+    "Why he/she chose this career",
+    "And explain how you feel about him/her"
+   ]
+  },
+  {
+   "titleZh": "获奖",
+   "cue": "Describe a prize you have received (e.g. a medal)",
+   "hints": [
+    "What it was",
+    "When you received it",
+    "What you did to receive it",
+    "And explain how you felt about it"
+   ]
+  },
+  {
+   "titleZh": "困难挑战",
+   "cue": "Describe a challenge you faced that you thought was rather difficult",
+   "hints": [
+    "What it was",
+    "When and where you faced it",
+    "Why you thought it was a difficult challenge",
+    "And explain how you felt at the time"
+   ]
+  },
+  {
+   "titleZh": "阅读爱好者",
+   "cue": "Describe a person who likes to read a lot",
+   "hints": [
+    "Who this person is",
+    "How you knew him/her",
+    "What he/she likes to read",
+    "And explain why you think he/she likes to read a lot"
+   ]
+  },
+  {
+   "titleZh": "弄丢贵重物品",
+   "cue": "Describe a time when you lost a valuable item",
+   "hints": [
+    "When and where it happened",
+    "What it was",
+    "How valuable it was",
+    "How you lost it"
+   ]
+  },
+  {
+   "titleZh": "节日食物",
+   "cue": "Describe your favourite food at a traditional festival or a special event in your country",
+   "hints": [
+    "What it is At which festival/event you eat it",
+    "How it is made",
+    "And explain why you like it"
+   ]
+  },
+  {
+   "titleZh": "喜欢做手工的人",
+   "cue": "Describe a person who likes to make things by hand (e.g. toys, furniture)",
+   "hints": [
+    "Who this person is",
+    "What he/she makes",
+    "Why he/she likes to make things by hand",
+    "And explain how you feel about the person"
+   ]
+  },
+  {
+   "titleZh": "公园***&***花园",
+   "cue": "Describe a public park or garden",
+   "hints": [
+    "Where it is",
+    "What it is like",
+    "How often you go there",
+    "What you often do there"
+   ]
+  },
+  {
+   "titleZh": "和亲友去的地方",
+   "cue": "Describe a place in your hometown/city that is different from other places and that you enjoy visiting with your parents/friends",
+   "hints": [
+    "Where it is",
+    "What it is like",
+    "What you often do there",
+    "Who you often go there with"
+   ]
+  },
+  {
+   "titleZh": "别人家的房间",
+   "cue": "Describe a room you really like in another person's home",
+   "hints": [
+    "Where it is",
+    "What it is like",
+    "What you can do in it",
+    "And explain why you really like it"
+   ]
+  },
+  {
+   "titleZh": "看到野生动物的地方",
+   "cue": "Describe a place you have been to where you can see wild animals",
+   "hints": [
+    "Where it is",
+    "When you went there",
+    "What animals you saw there",
+    "How you feel about the place"
+   ]
+  },
+  {
+   "titleZh": "优质服务",
+   "cue": "Describe a shop where you received a good service from one of the staff",
+   "hints": [
+    "Where the shop is",
+    "When you received the good service",
+    "What service you received",
+    "And explain how you felt about the service"
+   ]
+  },
+  {
+   "titleZh": "向小辈展示新东西",
+   "cue": "Describe a time that you showed something which was new to a person who was younger than you",
+   "hints": [
+    "When it was",
+    "What it was",
+    "Who you showed it to",
+    "How you showed it"
+   ]
+  },
+  {
+   "titleZh": "生活有趣的老人",
+   "cue": "Describe an old person you know who has had an interesting life",
+   "hints": [
+    "Who this person is",
+    "Where he/she lives",
+    "What he/she has done in his/her life",
+    "And explain how you feel about him/her"
+   ]
+  },
+  {
+   "titleZh": "有趣的讨论",
+   "cue": "Describe an interesting discussion you had with your friend",
+   "hints": [
+    "What the discussion was about",
+    "What opinions you and your friend had",
+    "Why you think the discussion was interesting And how you felt about it"
+   ]
+  },
+  {
+   "titleZh": "童年玩具",
+   "cue": "Describe a toy you liked in your childhood You should say",
+   "hints": [
+    "What kind of toy it is",
+    "When you received it",
+    "How you played it And how you felt about it"
+   ]
+  },
+  {
+   "titleZh": "有趣的邻居",
+   "cue": "Describe a neighbor you are interested in",
+   "hints": [
+    "Who he/she is",
+    "How do you knew him/her",
+    "What you do together",
+    "And explain why you are interested in him/her"
+   ]
+  },
+  {
+   "titleZh": "提高注意力",
+   "cue": "Describe something you do that can help you concentrate on work/study",
+   "hints": [
+    "What it is",
+    "How it helps you concentrate",
+    "When you do it",
+    "And explain how you feel about it"
+   ]
+  },
+  {
+   "titleZh": "重要河流***/***湖泊",
+   "cue": "Describe am important river/lake in your country",
+   "hints": [
+    "Where it is located",
+    "How big/long it is",
+    "What it looks like",
+    "And explain why it is important"
+   ]
+  },
+  {
+   "titleZh": "传统产品",
+   "cue": "Describe a traditional product in your country",
+   "hints": [
+    "What it is",
+    "When you tried this product for the first time",
+    "What it is made of",
+    "And explain how you feel about it"
+   ]
+  },
+  {
+   "titleZh": "忙碌时期",
+   "cue": "Describe a time you were very busy",
+   "hints": [
+    "When it happened",
+    "Where you were",
+    "What you did",
+    "And explain why you were busy"
+   ]
+  },
+  {
+   "titleZh": "受欢迎的名人",
+   "cue": "Describe a popular well-known person in your country",
+   "hints": [
+    "Who this person is",
+    "What he/she has done",
+    "Why he/she is popular",
+    "And explain how you feel about this person"
+   ]
+  },
+  {
+   "titleZh": "花费甚少的外出日",
+   "cue": "Describe a special day out that cost you little money/didn’t cost you much",
+   "hints": [
+    "When was the day",
+    "Where you went",
+    "How much you spent",
+    "And explain how you feel about the day"
+   ]
+  },
+  {
+   "titleZh": "社交媒体上常刷到的人",
+   "cue": "Describe a person who you follow on social media You should say",
+   "hints": [
+    "Who he/she is",
+    "How you knew him/her",
+    "What he/she posts on social media",
+    "And explain why you follow him/her on social media"
+   ]
+  },
+  {
+   "titleZh": "困难决定终成功",
+   "cue": "Describe a difficult decision that you once made and had a good result",
+   "hints": [
+    "What the decision was",
+    "When you made your decision",
+    "How long it took to make the decision",
+    "And explain why it was difficult to make"
+   ]
+  },
+  {
+   "titleZh": "别人给你的衣服",
+   "cue": "Describe an item of clothing that someone gave you",
+   "hints": [
+    "What the clothing was",
+    "Who gave it to you",
+    "When you got it",
+    "And explain why this person gave you the clothing"
+   ]
+  },
+  {
+   "titleZh": "远距离步行",
+   "cue": "Describe a long walk you ever had",
+   "hints": [
+    "When this happened",
+    "Where you walked",
+    "Who you were with",
+    "And explain how you felt about this long walk"
+   ]
+  },
+  {
+   "titleZh": "惊喜之事",
+   "cue": "Describe something that surprised you and made you happy",
+   "hints": [
+    "What it was",
+    "Who did this",
+    "How you found out about it and what you did",
+    "And explain why it surprised you and made you happy"
+   ]
+  },
+  {
+   "titleZh": "语言学习",
+   "cue": "Describe a thing you did to learn another language",
+   "hints": [
+    "What language you learned",
+    "What you did",
+    "How it helped you learn the language And how you felt about it"
+   ]
+  },
+  {
+   "titleZh": "生活中离不开的东西",
+   "cue": "Describe something that you can't live without(not a computer/phone)",
+   "hints": [
+    "What it is",
+    "What you do with it",
+    "How it helps you in your life",
+    "And explain why you can't live without it"
+   ]
+  },
+  {
+   "titleZh": "喜欢一起聊天的朋友",
+   "cue": "Describe a friend you like to talk with",
+   "hints": [
+    "Who he/she is",
+    "What you like to talk about",
+    "Why you like to talk with him/her",
+    "And explain how you feel about him/her"
+   ]
+  },
+  {
+   "titleZh": "一个去过的新地方",
+   "cue": "Describe a time you visited a new place",
+   "hints": [
+    "Where the new place is",
+    "When you went there",
+    "Why you went there",
+    "And explain how you feel about the place"
+   ]
+  },
+  {
+   "titleZh": "想要共事的家人",
+   "cue": "Describe a family member who you want to work with in the future",
+   "hints": [
+    "Who he/she is Whether you worked together before",
+    "What kind of work you would like to do with him/her",
+    "And explain how you feel about this family member"
+   ]
+  },
+  {
+   "titleZh": "快乐活动",
+   "cue": "Describe a time when you organized a happy event successfully",
+   "hints": [
+    "What the event was",
+    "How you prepared for it",
+    "Who helped you to organize it",
+    "And explain why you think it was a successful event"
+   ]
+  },
+  {
+   "titleZh": "有趣的歌曲",
+   "cue": "Describe an interesting song",
+   "hints": [
+    "What the song is",
+    "What story the song tells Whether the song is popular",
+    "And explain why you think it is interesting"
+   ]
+  },
+  {
+   "titleZh": "庆祝过的活动",
+   "cue": "Describe an important event that you celebrated",
+   "hints": [
+    "What was this event",
+    "When did it happen",
+    "Why it was important",
+    "And explain how people felt about it"
+   ]
+  },
+  {
+   "titleZh": "想参加的比赛",
+   "cue": "Describe a contest/competition you would like to participate in",
+   "hints": [
+    "What the contest/competition is about",
+    "Where the contest/competition will take place",
+    "When it will be held",
+    "And explain why you would like to participate in it"
+   ]
+  },
+  {
+   "titleZh": "收到特殊蛋糕",
+   "cue": "Describe a special cake you received from others",
+   "hints": [
+    "When it happened",
+    "Where it happened",
+    "Who you got the cake from",
+    "And explain why it's a special cake"
+   ]
+  },
+  {
+   "titleZh": "安静的地方",
+   "cue": "Describe a quiet place",
+   "hints": [
+    "Where it is",
+    "How you knew it",
+    "How often you go there",
+    "What you do there"
+   ]
+  },
+  {
+   "titleZh": "节约时间的方法***/***改变",
+   "cue": "Describe a way/change that helps you save a lot of time You should say",
+   "hints": [
+    "What it is",
+    "How you implement it",
+    "How difficult it is",
+    "And explain how you feel about the way/change"
+   ]
+  },
+  {
+   "titleZh": "不喜欢并想要改变的规则",
+   "cue": "Describe a rule you dislike and would like to change in the future",
+   "hints": [
+    "What it is",
+    "What it is for",
+    "Why you don't like it",
+    "And explain why you would like to change it"
+   ]
+  },
+  {
+   "titleZh": "别人讲述的故事",
+   "cue": "Describe a story someone told you and you remember",
+   "hints": [
+    "What the story was about",
+    "Who told you this story",
+    "Why you remember it And how you feel about it"
+   ]
+  },
+  {
+   "titleZh": "有趣的城市",
+   "cue": "Describe a city that you think is very interesting",
+   "hints": [
+    "Where it is",
+    "What it is famous for",
+    "How you knew this city",
+    "And explain why you think it is very interesting"
+   ]
+  },
+  {
+   "titleZh": "丢东西的经历",
+   "cue": "Describe an occasion that you lost something",
+   "hints": [
+    "What you lost",
+    "When and where you lost it",
+    "What you did to find it",
+    "And explain how you felt about it"
+   ]
+  },
+  {
+   "titleZh": "交通拥堵",
+   "cue": "Describe a time when you were stuck in a traffic jam",
+   "hints": [
+    "When it happened",
+    "Where you were stuck",
+    "What you did while waiting",
+    "And explain how you felt in the traffic jam"
+   ]
+  },
+  {
+   "titleZh": "征求意见",
+   "cue": "Describe a time when someone asked for your opinion",
+   "hints": [
+    "Who asked for your opinion",
+    "Why he/she wanted to know your opinion",
+    "What opinion you gave",
+    "And explain how you felt when he/she asked for your opinion"
+   ]
+  },
+  {
+   "titleZh": "对社会有贡献的人",
+   "cue": "Describe a person who contributes to the society",
+   "hints": [
+    "Who this person is",
+    "How you knew him/her",
+    "What type of work he/she does",
+    "And explain why you think he/she contributes to the society"
+   ]
+  },
+  {
+   "titleZh": "有用的发明",
+   "cue": "Describe an invention that is useful in your daily life",
+   "hints": [
+    "What the invention is",
+    "What it can do",
+    "How popular it is Whether it is difficult or easy to use",
+    "And explain why it is useful"
+   ]
+  },
+  {
+   "titleZh": "壮志未酬",
+   "cue": "Describe an ambition that you haven't achieved",
+   "hints": [
+    "What it is",
+    "Why you haven't achieved it",
+    "What you did And how you felt about it"
+   ]
+  },
+  {
+   "titleZh": "想共度时光的人",
+   "cue": "Describe someone you really like to spend time with",
+   "hints": [
+    "Who this person is",
+    "How you knew him/her",
+    "What you usually do together",
+    "And explain why you like to spend time with him/her"
+   ]
+  },
+  {
+   "titleZh": "去过的乡村",
+   "cue": "Describe a countryside that you have been to",
+   "hints": [
+    "Where it is",
+    "When you went there",
+    "Who you went there with",
+    "And explain why you went there"
+   ]
+  },
+  {
+   "titleZh": "送朋友的礼物",
+   "cue": "Describe a gift you would like to buy for your friend",
+   "hints": [
+    "How you knew your friend",
+    "How long you have known him/her",
+    "How you would choose a gift for him/her",
+    "And explain why you would choose that gift for him/her"
+   ]
+  },
+  {
+   "titleZh": "一见且想再见的人",
+   "cue": "Describe a person you only met once recently and want to know more about",
+   "hints": [
+    "Who he/she is",
+    "When you met him/her",
+    "Why you want to know more about him/her",
+    "And explain how you feel about him/her"
+   ]
+  },
+  {
+   "titleZh": "印象深刻的课程",
+   "cue": "Describe a course that impressed you a lot",
+   "hints": [
+    "What the course was about",
+    "Where you took the course",
+    "What you did during the course",
+    "And explain why it impressed you a lot"
+   ]
+  },
+  {
+   "titleZh": "坏掉又修好的东西",
+   "cue": "Describe something that was broken in your home and then repaired",
+   "hints": [
+    "What it is",
+    "How it was broken",
+    "How you got it repaired And how you felt about it"
+   ]
+  },
+  {
+   "titleZh": "保健方式",
+   "cue": "Describe something you do to keep fit and healthy",
+   "hints": [
+    "What it is",
+    "When you do it",
+    "Who you do it with",
+    "Why it is important to keep fit and healthy"
+   ]
+  },
+  {
+   "titleZh": "好的人生变化",
+   "cue": "Describe a time that something changed your life in good ways",
+   "hints": [
+    "When and where it happened",
+    "What happened",
+    "How you felt about it",
+    "And explain how it changed your life in good ways"
+   ]
+  },
+  {
+   "titleZh": "工作***/***学习中的积极建议",
+   "cue": "Describe an occasion when someone gave you positive advice or suggestions about your work/study",
+   "hints": [
+    "Who the person is",
+    "What he/she said",
+    "How the advice/suggestion affected you",
+    "And explain how you felt about the advice/suggestions"
+   ]
+  },
+  {
+   "titleZh": "向长者学习技能",
+   "cue": "Describe a skill that you learned from older people",
+   "hints": [
+    "What the skill is",
+    "Who you learned it from",
+    "How you learned it And how you feel about it"
+   ]
+  },
+  {
+   "titleZh": "用手机做重要事情",
+   "cue": "Describe a time you used your cellphone/smartphone to do something important",
+   "hints": [
+    "What happened",
+    "When it happened",
+    "How important the cellphone/smartphone was",
+    "And explain how you felt about the experience"
+   ]
+  },
+  {
+   "titleZh": "帮助小孩",
+   "cue": "Describe a time when you helped a child",
+   "hints": [
+    "When it was",
+    "How you helped him/her",
+    "Why you helped him/her And how you felt about it"
+   ]
+  },
+  {
+   "titleZh": "免费物品",
+   "cue": "Describe something you received for free",
+   "hints": [
+    "What it was",
+    "Who you received it from",
+    "Where you received it And how you felt about it"
+   ]
+  },
+  {
+   "titleZh": "造福社会的工作",
+   "cue": "Describe a job that is useful to the society",
+   "hints": [
+    "What job it is",
+    "How you know about this job",
+    "What types of people do this job",
+    "And explain why you think this iob is useful to the society"
+   ]
+  },
+  {
+   "titleZh": "去过且推荐的宜居之地",
+   "cue": "Describe a place you have been to and would like to recommend others to live there (not your hometown)",
+   "hints": [
+    "Where it is",
+    "What the place is like",
+    "When you visited there",
+    "Who you went there with"
+   ]
+  },
+  {
+   "titleZh": "改变世界的发明",
+   "cue": "Describe an invention that has changed the worldin a positive way",
+   "hints": [
+    "What it is",
+    "What benefits it has brought",
+    "How it influences people of different ages",
+    "And explain how it changed people's lives"
+   ]
+  },
+  {
+   "titleZh": "少年的榜样",
+   "cue": "Describe someone (a famous person) that is a role model for young people",
+   "hints": [
+    "Who he/she is"
+   ]
+  }
+ ],
+ "part3": [
+  {
+   "titleZh": "近期日常改变",
+   "questions": [
+    "What do people normally plan in their daily lives?",
+    "ls time management very important in our daily lives?",
+    "What changes would people often make?",
+    "Do you think it is good to change jobs frequently?",
+    "Who do you think would make changes more often, young people or old people?",
+    "Who should get more promotion opportunities in the workplace, young people or older people?"
+   ]
+  },
+  {
+   "titleZh": "想去的外国",
+   "questions": [
+    "What do you think of national identity?",
+    "What are the advantages of working in an international company?",
+    "How does travelling abroad affect young people?",
+    "How do people get information about other countries?",
+    "Do you think reading is a good way to get to know other countries? Why?",
+    "What do you think makes countries different?"
+   ]
+  },
+  {
+   "titleZh": "交通工具抛锚",
+   "questions": [
+    "What do you think needs to be improved in public transport?",
+    "Who likes to travel more, older people or younger people?",
+    "Are there fewer people using private cars because of improved public transport?",
+    "What are the advantages and disadvantages of private transport?"
+   ]
+  },
+  {
+   "titleZh": "感兴趣的科学学科",
+   "questions": [
+    "Why do some children not like learning science at school?",
+    "ls it important to study science at school?",
+    "Which science subject is the most important for children to learn?",
+    "Should people continue to study science after graduating from school?",
+    "How do you get to know about scientific news?",
+    "Should scientists explain the research process to the public?"
+   ]
+  },
+  {
+   "titleZh": "乡村一隅",
+   "questions": [
+    "ls there anything special about the villages in China?",
+    "Why do people want to go to the countryside?",
+    "What do people usually do when they visit a village?",
+    "Do you think people will live in villages in the future?"
+   ]
+  },
+  {
+   "titleZh": "忘记重要事情",
+   "questions": [
+    "What kinds of things do people forget easily?",
+    "What kinds of people are more forgetful?",
+    "How can people improve their memory?",
+    "What do you think of people using calendars to remind themselves of things?"
+   ]
+  },
+  {
+   "titleZh": "重要决定",
+   "questions": [
+    "Do you think children sometimes have to make important decisions?",
+    "What important decisions do teenagers need to make after graduation?",
+    "Who can children turn to for help when making a decision?",
+    "Do you think advertisements can influence our decisions when shopping?",
+    "Do you think the influence of advertising is good?",
+    "How do people usually make important decision?"
+   ]
+  },
+  {
+   "titleZh": "学校/工作中的重要规则",
+   "questions": [
+    "What rules should children follow at home in your country?",
+    "On what occasions can children be forgiven if they don't follow some rules?",
+    "What rules should people follow when using public transport?",
+    "What kinds of rules do people need to follow in public places?",
+    "What are the reasons that cause people to break rules?",
+    "When people break rules, how would they be punished in your country?"
+   ]
+  },
+  {
+   "titleZh": "学到新东西的网络视频",
+   "questions": [
+    "What kinds of videos are most popular in your country?",
+    "Are there many people who watch online videos a lot?",
+    "Do you think people spend too much time on watching short videos? Why?",
+    "Why are so many young people obsessed with short videos?",
+    "What are the advantages of online learning?",
+    "Do you think online learning will replace face-to-face learning?"
+   ]
+  },
+  {
+   "titleZh": "令你自信的事",
+   "questions": [
+    "What can a teacher do to help his or her students become more confident?",
+    "How can teachers help their students become more confident by rewarding them for studying?",
+    "What can teachers do to make studying more interesting?",
+    "Do you think that children of confident parents are also confident ?",
+    "How can a person become more confident?",
+    "Why do so many people lack confidence these days?"
+   ]
+  },
+  {
+   "titleZh": "固执己见的人",
+   "questions": [
+    "What aspects do young people have strong opinions about?",
+    "What aspects do old people have strong opinions about?",
+    "Are there many young people who have strong opinions in our lives?",
+    "Which is more important, listening to others or persuading others?",
+    "Do you think we should only say something after thinking it through?",
+    "Do you think it is good to have strong opinions?"
+   ]
+  },
+  {
+   "titleZh": "公共场所接陌生人电话",
+   "questions": [
+    "Do most people mind people talking on the phone in public places?",
+    "What are the differences between sitting beside a person who keeps talking on the phone and a person who keeps talking to you?",
+    "Why do some people not care what they do in public places?",
+    "Do you think parents should teach their children not to behave badly in public places?",
+    "Do you think it is fine to talk on the phone in public places?",
+    "Should people be banned from talking aloud in public places?"
+   ]
+  },
+  {
+   "titleZh": "重遇旧友",
+   "questions": [
+    "Is it better to have a lot of friends than just a few friends?",
+    "Would having just a few friends limit your horizons?",
+    "Do you think you are good at maintaining good relationships with others?",
+    "Why do old friends lose touch with each other?",
+    "Why do people need to make new friends?",
+    "Why do we have to give up some old friends?"
+   ]
+  },
+  {
+   "titleZh": "文化之地",
+   "questions": [
+    "How does the internet affect culture?",
+    "How is a culture formed?",
+    "What kind of culture is popular among the young?",
+    "How do young people learn different cultures?",
+    "Which is more important in terms of culture, literature or music?",
+    "Does the culture of the past have an impact on today's culture?"
+   ]
+  },
+  {
+   "titleZh": "给建议的人",
+   "questions": [
+    "Who should people ask for advice on big issues, family members or friends?",
+    "Do people often ask for advice from professional people, like a lawyer?",
+    "Who do people tend to ask for advice, friends or family members?",
+    "Do you follow the advice of your family members?",
+    "Do you think the advice parents give their children is always good?",
+    "Are professional consultancy services expensive in your country?"
+   ]
+  },
+  {
+   "titleZh": "拥挤地方",
+   "questions": [
+    "Which cities are crowded in your country?",
+    "Will there be more or less green space in cities in the future?",
+    "Will people use bikes more or less in cities in the future?",
+    "Why do people go to crowded places?",
+    "Do you think there are some people who enjoy crowded places?",
+    "Do you think it is a good trend to have more big cities?"
+   ]
+  },
+  {
+   "titleZh": "理想房屋",
+   "questions": [
+    "What are apartments like in your country?",
+    "Why are apartments welcome in some places while not in other places?",
+    "What would people normally consider when they rent or buy a house or an apartment?",
+    "Do different people have different preferences for houses or apartments?",
+    "Why do some people choose to live in the city center?",
+    "What do you think buildings will be like in the future?"
+   ]
+  },
+  {
+   "titleZh": "近期观影",
+   "questions": [
+    "What kinds of movies do you think are successful in your country?",
+    "What are the factors that make a successful movie?",
+    "Do Chinese people prefer to watch domestic movies or foreign movies?",
+    "Do you think only well-known directors can create the best movies?",
+    "Do you think successful movies should have well-known actors or actresses in leading roles?",
+    "Why do people prefer to watch movies in the cinema?"
+   ]
+  },
+  {
+   "titleZh": "帮助家人",
+   "questions": [
+    "How can children help their parents at home?",
+    "Should parents always help their children with everything?",
+    "What can children learn by helping others?",
+    "Do neighbours often help each other in your country?",
+    "Should parents reward their children when they help others?",
+    "How do people know that their neighbours might need help?"
+   ]
+  },
+  {
+   "titleZh": "医疗人士",
+   "questions": [
+    "Do you think doctors and nurses are very important?",
+    "Who is more important, doctors or nurses?",
+    "Do you think that doctors and nurses are not paid enough?",
+    "Do you think it is necessary to learn first aid skills?",
+    "What are the differences between the work of a doctor and a nurse?",
+    "Can a hospital function effectively without nurses?"
+   ]
+  },
+  {
+   "titleZh": "获奖",
+   "questions": [
+    "Do you think competition is all about the prize?",
+    "What prizes should schools set for students?",
+    "What criteria should be set for students to win a particular prize?",
+    "Why should we set prizes for competitions?",
+    "Why do many companies offer prizes to their customers?",
+    "Why do some companies encourage employees to compete with each other?"
+   ]
+  },
+  {
+   "titleZh": "困难挑战",
+   "questions": [
+    "What do children often do when they face a challenge?",
+    "Is it easy for children to overcome a challenge?",
+    "Do most people choose to face a challenge alone or with others?",
+    "What activities do you think would make children feel challenged? Why?",
+    "What challenges would people face when learning new sports?",
+    "Why do some people enjoy doing extreme sports?"
+   ]
+  },
+  {
+   "titleZh": "阅读爱好者",
+   "questions": [
+    "Why are many people so keen on reading?",
+    "Do you think parents should help their children develop the reading habit from an early age?",
+    "Is reading for fun or for work?",
+    "What reading topics are popular in your country?",
+    "What are the differences between paper books and movies?",
+    "Do you think people of all ages need to read?"
+   ]
+  },
+  {
+   "titleZh": "弄丢贵重物品",
+   "questions": [
+    "What are some common items that people tend to lose easily?",
+    "What are the reasons why people often misplace or lose things?",
+    "What do people often do after losing things?",
+    "What should parents do to teach their children not to lose things?",
+    "Are there any good ways to remind us not to forget or lose things?",
+    "Is it important to be organised for a good student?"
+   ]
+  },
+  {
+   "titleZh": "节日食物",
+   "questions": [
+    "Do people in your country grow plants at home?",
+    "What plants can people grow in cities?",
+    "Are there any difficulties when people grow plants in cities?",
+    "Do most people prefer vegetables bought from the supermarket or grown at home?",
+    "Why do people like to have a big meal at special events?",
+    "Is it bad behavior for people to look at their phones during a meal?"
+   ]
+  },
+  {
+   "titleZh": "喜欢做手工的人",
+   "questions": [
+    "Are traditional handicrafts important to tourism?",
+    "What are the benefits for students to learn to make things by hand?",
+    "Why do many children like to make things by hand?",
+    "How important are traditional handicrafts to a country's industry?",
+    "Is it reasonable to charge a high price for handmade things?",
+    "How does modern technology change the handicraft industry?"
+   ]
+  },
+  {
+   "titleZh": "公园***&***花园",
+   "questions": [
+    "Is it necessary to have public parks in cities?",
+    "What facilities are needed in a park?",
+    "What are the differences between a garden and a natural area?",
+    "Why do people like to visit tourist attractions?",
+    "What tourist attractions are popular in China?",
+    "How can we encourage young people to go to parks more often?"
+   ]
+  },
+  {
+   "titleZh": "和亲友去的地方",
+   "questions": [
+    "What are the differences between big cities and small cities?",
+    "Where do people in your hometown like to go?",
+    "What are the differences between the places young people like to go and the places old people like to go?",
+    "What do young people like to do in their leisure time?",
+    "Do you think it is necessary to visit the same place many times?",
+    "What factors attract people to go to visit other places other than their hometown?"
+   ]
+  },
+  {
+   "titleZh": "别人家的房间",
+   "questions": [
+    "Do you like to invite your friends to your home?",
+    "Why do people often take gifts with them when they visit others' homes?",
+    "Who likes to stay at home more, young people or old people?",
+    "Do most people visit other people's houses during the Spring Festival?",
+    "What are the most enjoyable parts of having a meal together with your family?",
+    "Do you think old people will be able to keep up with the pace of technology in 50 years?"
+   ]
+  },
+  {
+   "titleZh": "看到野生动物的地方",
+   "questions": [
+    "Why are most children interested in wild animals?",
+    "Should parents take their children to see wild animals?",
+    "Are wild animals easy to spot （in your country）?",
+    "Are there many documentaries about wildlife in your country?",
+    "What impacts does only seeing wild animals in zoos have on children's understanding of these animals?",
+    "Which is the better way to see wildlife, watching documentaries or going into the wild?"
+   ]
+  },
+  {
+   "titleZh": "优质服务",
+   "questions": [
+    "Why should companies react quickly when customers have difficulties?",
+    "What are the advantages and disadvantages of shopping in small shops?",
+    "Why do some people dislike shopping in small shops?",
+    "What are the differences between online shopping and in-store shopping?",
+    "What are the advantages and disadvantages of shopping online?",
+    "Can consumption drive economic growth?"
+   ]
+  },
+  {
+   "titleZh": "向小辈展示新东西",
+   "questions": [
+    "What skills should children learn?",
+    "What are the differences between the things adults learn and the things that children learn?",
+    "Why are some people not willing to ask help from others while studying?",
+    "What skills do you think children should learn before going to school?",
+    "How can young people be motivated to learn new things?",
+    "Is it possible for a person to achieve something without motivation?"
+   ]
+  },
+  {
+   "titleZh": "生活有趣的老人",
+   "questions": [
+    "What do old people often do in their daily lives?",
+    "Why do some people live with old people?",
+    "Can old people and their grandchildren learn from each other when they live together?",
+    "What are the benefits of elderly people living alone?",
+    "Do old people prefer to stay at home or go outside? Why?",
+    "Do you think old people's life will improve with the development of technology?"
+   ]
+  },
+  {
+   "titleZh": "有趣的讨论",
+   "questions": [
+    "When do children normally form their own views?",
+    "Do children have strong opinions?",
+    "Should parents request their kids to obey them?",
+    "In what industries do you think communication is a necessary skill?"
+   ]
+  },
+  {
+   "titleZh": "童年玩具",
+   "questions": [
+    "How do advertisements influence children?",
+    "Should advertising aimed at kids be prohibited?",
+    "Do you think parents should buy more toys for their kids or spend more time with them?",
+    "What's the difference between the toys kids play now and those they played in the past?"
+   ]
+  },
+  {
+   "titleZh": "有趣的邻居",
+   "questions": [
+    "Do you think people are familiar with their neighbors?",
+    "How can people improve the relationship with neighbors in a community?",
+    "How do children build relationships with others in acommunity?",
+    "Is it beneficial to get along well with neighbors?"
+   ]
+  },
+  {
+   "titleZh": "提高注意力",
+   "questions": [
+    "Why is it more difficult for children to concentrate nowadays than in the past?",
+    "Do you think technology will harm children's ability to concentrate?",
+    "What kinds of jobs require high concentration at work?",
+    "Can exercise help people improve concentration?"
+   ]
+  },
+  {
+   "titleZh": "重要河流***/***湖泊",
+   "questions": [
+    "How can rivers and lakes benefit local people?",
+    "Do you think rivers and lakes attract tourists?",
+    "How do rivers and lakes affect local tourism?",
+    "Are rivers and lakes good for transport? Why?"
+   ]
+  },
+  {
+   "titleZh": "传统产品",
+   "questions": [
+    "Why are traditional products important?",
+    "Do you think traditions are important for a country? Why?",
+    "What are some traditional Chinese products?",
+    "Why is it important for children to learn about traditional products?"
+   ]
+  },
+  {
+   "titleZh": "忙碌时期",
+   "questions": [
+    "Are you often busy?",
+    "What are the advantages and disadvantages when people keep busy?",
+    "What kind of pressure people may experience at work?",
+    "How does technology help with time management?",
+    "Do you think children should learn through playing games or under pressure?",
+    "Does technology distract people?"
+   ]
+  },
+  {
+   "titleZh": "受欢迎的名人",
+   "questions": [
+    "What kinds of people are popular at work?",
+    "Are bosses more popular than employees at work?",
+    "Which one is more important, maintaining a good relationship with colleagues or doing well at work?",
+    "What benefits are there when a child is popular at school?"
+   ]
+  },
+  {
+   "titleZh": "花费甚少的外出日",
+   "questions": [
+    "Do people like to spend their leisure time out in your country?",
+    "How do people spend their leisure time in your country?",
+    "How does technology affect the way people spend their leisure time?",
+    "Do you think only old people have time for leisure?"
+   ]
+  },
+  {
+   "titleZh": "社交媒体上常刷到的人",
+   "questions": [
+    "Do older people and younger people use the same kinds of social media apps?",
+    "Do older people spend much time on social media?",
+    "What can people do on social media?",
+    "Are non-social media like television and newspapers still useful?"
+   ]
+  },
+  {
+   "titleZh": "困难决定终成功",
+   "questions": [
+    "What decisions do people usually make in their daily lives?",
+    "Which is easier, making a decision by yourself or making a decision after group discussion?",
+    "Why are many young people unwilling to follow their parents' advice?",
+    "Why would middle-aged people tend to second-guess their own decisions?"
+   ]
+  },
+  {
+   "titleZh": "别人给你的衣服",
+   "questions": [
+    "Why do people dress casually in everyday life but dress formally at work?",
+    "What are the advantages and disadvantages of wearing uniforms at work and school?",
+    "Why do people dress casually in everyday life but dress formally at work?"
+   ]
+  },
+  {
+   "titleZh": "远距离步行",
+   "questions": [
+    "What outdoor activities do people like?",
+    "What are the differences between the outdoor activities children did in the past and now?",
+    "Is leisure time important to everyone? Why?",
+    "Do women have more leisure time than men?"
+   ]
+  },
+  {
+   "titleZh": "惊喜之事",
+   "questions": [
+    "How do people express happiness in your culture?",
+    "Do you think happiness has any effect on people? How?",
+    "How can people be happy?",
+    "Is it good for people to be unhappy? Why?"
+   ]
+  },
+  {
+   "titleZh": "语言学习",
+   "questions": [
+    "What difficulties do people face when learning a language?",
+    "Do you think language learning is important? Why?",
+    "Which is better, to study a language alone or to study it in a group? Why?",
+    "What's the best way to learn a language?"
+   ]
+  },
+  {
+   "titleZh": "生活中离不开的东西",
+   "questions": [
+    "Why are children attracted to new things (such as electronics)?",
+    "Why do some grown-ups hate to throw out old things (such as clothes)?",
+    "Is the way people buy things affected? How?",
+    "What do you think influences people to buy new things?"
+   ]
+  },
+  {
+   "titleZh": "喜欢一起聊天的朋友",
+   "questions": [
+    "Where do young people like to meet?",
+    "What do young people talk about when they meet up?",
+    "Do you think people should be honest when talking with friends?",
+    "On what occasions do people talk with strangers?"
+   ]
+  },
+  {
+   "titleZh": "一个去过的新地方",
+   "questions": [
+    "Which do you prefer, living in a city or only visiting it as a tourist?",
+    "How do young children react when they go to school for the first time?",
+    "Why do some people want to go to college far away from home?",
+    "How do young and old people react differently to new things?"
+   ]
+  },
+  {
+   "titleZh": "想要共事的家人",
+   "questions": [
+    "What kinds of family businesses are common in China?",
+    "Is it good to work with family members? Why?",
+    "Why do people want to have a family business?",
+    "What benefits are there when working for big companies?"
+   ]
+  },
+  {
+   "titleZh": "快乐活动",
+   "questions": [
+    "How can parents help children to be organized?",
+    "On what occasions do people need to be organized?",
+    "Does everything need to be well prepared?",
+    "Do people need others' help when organizing things?"
+   ]
+  },
+  {
+   "titleZh": "有趣的歌曲",
+   "questions": [
+    "Why are many music competitions popular in China?",
+    "What kinds of music do young people like?",
+    "What kinds of people like traditional music?",
+    "What are the differences between live concert and online concert?",
+    "Do you like to watch music TV programs? Why?",
+    "Are foreign songs popular in your country?"
+   ]
+  },
+  {
+   "titleZh": "庆祝过的活动",
+   "questions": [
+    "Do people often celebrate festivals with families?",
+    "Do people often celebrate events with a large group of people or just a few people?",
+    "What kinds of events do people usually celebrate?",
+    "Do you like to celebrate important events?"
+   ]
+  },
+  {
+   "titleZh": "想参加的比赛",
+   "questions": [
+    "What are the contests commonly seen on TV programs?",
+    "What kinds of industries need competition? Why?",
+    "Why are competition shows popular?",
+    "Do you think it is necessary to encourage people to compete with one another in companies?"
+   ]
+  },
+  {
+   "titleZh": "收到特殊蛋糕",
+   "questions": [
+    "Is there any food in your country that is eaten at special times or on special occasions?",
+    "What are the differences between special food in China and other countries?",
+    "Do you think it's good to communicate when eating with your family?",
+    "Why are some people willing to spend a lot of money on meals on special days?"
+   ]
+  },
+  {
+   "titleZh": "安静的地方",
+   "questions": [
+    "Is it easy to find quiet places in your country? Why?",
+    "How does technology affect the way people spend their leisure time?",
+    "Do you think only old people have time for leisure?",
+    "How do people spend their leisure time in your country?",
+    "Why do old people prefer to live in quiet places?",
+    "Why are there more noises made at home now than in the past?"
+   ]
+  },
+  {
+   "titleZh": "节约时间的方法***/***改变",
+   "questions": [
+    "What can people do to save time?",
+    "Does technology help people save time? How and why?",
+    "Do you think parents should be responsible for teaching children to save time?",
+    "Do people who can manage time well become successful more easily?"
+   ]
+  },
+  {
+   "titleZh": "不喜欢并想要改变的规则",
+   "questions": [
+    "What are the rules students should follow at school?",
+    "Are the rules at school good or bad? Why?",
+    "What rules should children follow at home?",
+    "How are people punished when parking at a wrong spot?"
+   ]
+  },
+  {
+   "titleZh": "别人讲述的故事",
+   "questions": [
+    "Do young children like the same stories as older children?",
+    "How has technology changed storytelling?",
+    "How do people tell stories to children?",
+    "Why do children like stories?"
+   ]
+  },
+  {
+   "titleZh": "有趣的城市",
+   "questions": [
+    "What advantages can tourism bring to a city?",
+    "Why do some young people like to live in cities?",
+    "Do most elderly people live in the city or in the countryside?",
+    "Do you think well-developed tourism will have negative effects on local people?"
+   ]
+  },
+  {
+   "titleZh": "丢东西的经历",
+   "questions": [
+    "What kinds of things do people usually lose?",
+    "What will people do when losing things?",
+    "Is it effective to offer rewards to find lost things?",
+    "What kinds of people may lose things often?"
+   ]
+  },
+  {
+   "titleZh": "交通拥堵",
+   "questions": [
+    "How can we solve the traffic jam problem?",
+    "Do you think developing public transport can solve traffic jam problems?",
+    "Do you think the high ways will help reduce traffic jams?",
+    "What are good ways to manage traffic?"
+   ]
+  },
+  {
+   "titleZh": "征求意见",
+   "questions": [
+    "Why do some people dislike giving their opinions?",
+    "Are there any apps designed for collecting opinions about products or services?",
+    "Why do people like to express their opinions on the Internet nowadays?",
+    "What are the disadvantages of sharing opinions on the Internet?"
+   ]
+  },
+  {
+   "titleZh": "对社会有贡献的人",
+   "questions": [
+    "What jobs are well-paid?",
+    "What are the changes in working conditions?",
+    "What are the impacts of the epidemic on the work environment?",
+    "Do you think younger people should be lower paid than older people?"
+   ]
+  },
+  {
+   "titleZh": "有用的发明",
+   "questions": [
+    "What qualities do inventors have?",
+    "Do you think only scientists can invent new things?",
+    "What inventions do you think should be improved?",
+    "Are there any other inventions that make the world better?",
+    "Do all inventions bring benefits to our world?",
+    "Who should support and sponsor inventors, governments, or private companies?"
+   ]
+  },
+  {
+   "titleZh": "壮志未酬",
+   "questions": [
+    "What ambitions do children usually have?",
+    "Why are some people very ambitious in their work?",
+    "How do people balance work and life?",
+    "Why don't some people have dreams?"
+   ]
+  },
+  {
+   "titleZh": "想共度时光的人",
+   "questions": [
+    "What kinds of people are easy to get along with?",
+    "How do leaders get along with their subordinates?",
+    "Do people have time for themselves nowadays?",
+    "Do you like talking with older people? Why?"
+   ]
+  },
+  {
+   "titleZh": "去过的乡村",
+   "questions": [
+    "Do people in your country like to go hiking?",
+    "Do most people prefer to live in big cities or in the countryside?",
+    "Do people go to the countryside to travel or to live?",
+    "What kind of people would like to stay in the countryside?",
+    "What are the advantages and disadvantages of living in the countryside?",
+    "What are the differences between the city and the countryside?"
+   ]
+  },
+  {
+   "titleZh": "送朋友的礼物",
+   "questions": [
+    "When do people normally send gifts to others?",
+    "Will people feel happy when receiving an expensive gift?",
+    "Is it hard to choose a gift?",
+    "Which do people give on traditional festivals, red envelopes or other kinds of gifts?"
+   ]
+  },
+  {
+   "titleZh": "一见且想再见的人",
+   "questions": [
+    "How do people make friends in China?",
+    "On what occasions do people like to make friends?",
+    "Is it important to have the same hobbies and interests when making friends?",
+    "What qualities make true friends?"
+   ]
+  },
+  {
+   "titleZh": "印象深刻的课程",
+   "questions": [
+    "Why do some people have a better memory than others?",
+    "Do people like things of memorial significance?",
+    "Which can help people remember things better, words or photos?",
+    "Can technology help people remember things better? How?"
+   ]
+  },
+  {
+   "titleZh": "坏掉又修好的东西",
+   "questions": [
+    "Are IT-related jobs valued more by society?",
+    "Is the quality of products worse than before?",
+    "What kinds of things do people like to repair by themselves?",
+    "Why do people like to get their mobile phones repaired in specialized stores?"
+   ]
+  },
+  {
+   "titleZh": "保健方式",
+   "questions": [
+    "How do children and old people keep fit and healthy?",
+    "What do people normally do to keep fit and healthy in your country?",
+    "How can parents help and guide their kids to keep healthy?",
+    "Do you think it is good for governments to utilize popular celebrities to help build health awareness?"
+   ]
+  },
+  {
+   "titleZh": "好的人生变化",
+   "questions": [
+    "Do you like new things or changes in life?",
+    "Why do some people quit and change jobs?",
+    "How do you adapt to changes in life?",
+    "Who can adapt better to changes, children or adults?",
+    "When things like getting married or moving home happen, what kinds of things would you consider?",
+    "What are the disadvantages when people keep making changes?"
+   ]
+  },
+  {
+   "titleZh": "工作***/***学习中的积极建议",
+   "questions": [
+    "Should parents always encourage their children?",
+    "Do you think negative feedbacks are more important than positive feedbacks? Why?",
+    "When should parents encourage their children?",
+    "Why is negative feedback as important as positive feedback at work or in study?"
+   ]
+  },
+  {
+   "titleZh": "向长者学习技能",
+   "questions": [
+    "What can children learn from their parents?",
+    "From whom can children learn more, parents or grandparents?",
+    "What kind of help do you think older people need?",
+    "What skills can young people learn from older people?"
+   ]
+  },
+  {
+   "titleZh": "用手机做重要事情",
+   "questions": [
+    "What do you usually do with a cellphone?",
+    "What are the differences between young people and old people when using a cellphone?",
+    "Which one is more important, using a cellphone to make phone calls or to read messages?",
+    "Do you think there should be a law to stop people from making phone calls in public?"
+   ]
+  },
+  {
+   "titleZh": "帮助小孩",
+   "questions": [
+    "What can schools do to develop students’ awareness of volunteering?",
+    "Why is it necessary to do volunteer services?",
+    "What can you do to help your neighbors?",
+    "Do people in your country like to help neighbors?",
+    "Why is it important to help neighbors?",
+    "Should developed countries provide technological help to developing countries?"
+   ]
+  },
+  {
+   "titleZh": "免费物品",
+   "questions": [
+    "Why do customers like to receive free gifts from companies?",
+    "ls it good or bad for people to have free education in the future?",
+    "Why should everyone have access to basic healthcare?",
+    "ls it necessary to provide free public transportation?",
+    "Will people be happy when they receive free things?",
+    "What kinds of free service should be provided by the government?"
+   ]
+  },
+  {
+   "titleZh": "造福社会的工作",
+   "questions": [
+    "What kind of jobs are well-paid in your country?",
+    "What kind of jobs receive a low income?",
+    "What kind of jobs deserve a high salary?",
+    "Do you think doctors should be well-paid?",
+    "Who should receive a higher salary, young people or older people?",
+    "Do you think schools should provide career advice to students?"
+   ]
+  },
+  {
+   "titleZh": "去过且推荐的宜居之地",
+   "questions": [
+    "Why do people move from one place to another?",
+    "What should people prepare before they move to a different city?",
+    "What kinds of place do people in your country prefer to live in?",
+    "What are the benefits of living close to one's workplace?",
+    "What factors make a city liveable?",
+    "Why do many people choose to move to big cities?"
+   ]
+  },
+  {
+   "titleZh": "改变世界的发明",
+   "questions": [
+    "What is the most helpful innovation at home?",
+    "What household appliances make us lazy?",
+    "What kind of inventions are used in schools?",
+    "Do you think Al will ever replace human teachers?"
+   ]
+  },
+  {
+   "titleZh": "少年的榜样",
+   "questions": [
+    "What kinds of people are more likely to become famous?",
+    "What kinds of people are admired by young people in your country?",
+    "Do you think celebrities and social media influencers have a great impact on young people?",
+    "Is it important for children to have a role model?",
+    "What qualities do famous people have?",
+    "Are there any differences between today's famous people and those of the past?"
+   ]
+  }
+ ]
+}
