@@ -91,20 +91,33 @@ export function gradeRetrieval(target: GradeTarget, response: string): Retrieval
   let ordered = 0;
   let cursor = 0;
   for (const t of targets) {
-    let foundAt = -1;
-    for (let i = 0; i < userTokens.length; i++) {
+    // ordered match: continue searching AFTER the previous matched token —
+    // repeated-token expressions ("as soon as") must not re-consume the
+    // first occurrence and grade themselves as scrambled
+    let orderedAt = -1;
+    for (let i = cursor; i < userTokens.length; i++) {
       if (tokenMatches(userTokens[i], t)) {
-        foundAt = i;
+        orderedAt = i;
         break;
       }
     }
-    if (foundAt >= 0) {
+    if (orderedAt >= 0) {
       hit++;
-      if (foundAt >= cursor) {
-        ordered++;
-        cursor = foundAt + 1;
+      ordered++;
+      cursor = orderedAt + 1;
+      continue;
+    }
+    // unordered presence: the token only occurs before the cursor (already
+    // consumed by an earlier target) — counts as coverage, not as order
+    let foundBefore = false;
+    for (let i = 0; i < cursor; i++) {
+      if (tokenMatches(userTokens[i], t)) {
+        foundBefore = true;
+        break;
       }
-    } else missing.push(t);
+    }
+    if (foundBefore) hit++;
+    else missing.push(t);
   }
   const ratio = hit / targets.length;
   const orderRatio = ordered / targets.length;

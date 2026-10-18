@@ -5,7 +5,7 @@
 import { readFile, rm, readdir } from "node:fs/promises";
 import path from "node:path";
 import { and, eq } from "drizzle-orm";
-import { db } from "../src/db";
+import { db, sqlite } from "../src/db";
 import { contents as contentsT, importedResources, learningProfiles, sentences as sentencesT, users } from "../src/db/schema";
 import { importFile, readUpload, listImports, importSummary, deleteAllImports } from "../src/server/services/import-resource";
 import { sniffFormat } from "../src/lib/import/extract";
@@ -232,9 +232,38 @@ async function main() {
     check("P2: body + summary refreshed to the transcript",
       afterContent?.body === TRANSCRIPT && afterContent?.summaryEn === TRANSCRIPT.slice(0, 160));
 
+    // 22 · round-2 atomicity: a CONTENT-creation failure mid-flight must leave
+    // NEITHER the registry row NOR the content — otherwise the orphan registry
+    // row's hash blocks every future retry of the same file. (The old code
+    // inserted the registry first and left it behind on exactly this failure.)
+    sqlite.exec(
+      `CREATE TRIGGER fail_atomic_content BEFORE INSERT ON contents
+       WHEN NEW.body LIKE '%atomicfailmark%' BEGIN SELECT RAISE(ABORT, 'simulated mid-flight failure'); END`,
+    );
+    const failBody =
+      "atomicfailmark this sentence exists purely to pass the thirty word minimum of the import pipeline without any difficulty. ".repeat(2);
+    let failedImport: Awaited<ReturnType<typeof importFile>> | undefined;
+    try {
+      failedImport = await importFile(userId, { fileName: "atomicfail.txt", buf: Buffer.from(failBody, "utf-8") });
+    } catch {
+      /* an abort may also surface as a thrown error — both shapes are failures */
+    }
+    sqlite.exec("DROP TRIGGER IF EXISTS fail_atomic_content");
+    check("atomicity: simulated failure reports failed import", !failedImport || !failedImport.ok, JSON.stringify(failedImport?.status));
+    const orphanRegistry = await db
+      .select({ id: importedResources.id })
+      .from(importedResources)
+      .where(eq(importedResources.fileName, "atomicfail.txt"));
+    check("P2: failed import leaves NO registry row (hash retry unblocked)", orphanRegistry.length === 0, JSON.stringify(orphanRegistry));
+    const retryAtomic = await importFile(userId, { fileName: "atomicretry.txt", buf: Buffer.from(failBody, "utf-8") });
+    if (retryAtomic.resourceId) madeResourceIds.push(retryAtomic.resourceId);
+    if (retryAtomic.contentId) madeContentIds.push(retryAtomic.contentId);
+    check("P2: same bytes retry cleanly after the failure", retryAtomic.ok && retryAtomic.status === "ready", JSON.stringify(retryAtomic.status));
+
     console.log(`\n${pass} passed, ${fail} failed`);
   } finally {
     // ── cleanup: rows, contents, upload files, temp user ─────────────────
+    try { sqlite.exec("DROP TRIGGER IF EXISTS fail_atomic_content"); } catch { /* already gone */ }
     for (const id of madeContentIds) {
       await db.delete(sentencesT).where(eq(sentencesT.contentId, id));
       await db.delete(contentsT).where(eq(contentsT.id, id));

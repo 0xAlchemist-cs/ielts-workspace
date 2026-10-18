@@ -1,5 +1,5 @@
 import http from "node:http";
-import { checkPublicHttpUrl, fetchPublicPage } from "../src/lib/url-guard";
+import { checkPublicHttpUrl, fetchPublicPage, isPrivateAddress } from "../src/lib/url-guard";
 
 /* One-shot verification of the SSRF guard (run: npx tsx scripts/url-guard-test.ts). */
 
@@ -11,12 +11,37 @@ const cases: Array<[string, boolean]> = [
   ["http://172.16.0.1/v1", false], // private v4
   ["http://169.254.169.254/latest", false], // link-local metadata endpoint
   ["http://[::1]:8080/v1", false], // ipv6 loopback
+  ["http://[::ffff:7f00:1]:3000/v1", false], // IPv4-mapped loopback, HEX form (URL-normalized)
+  ["http://[::ffff:127.0.0.1]:3000/v1", false], // IPv4-mapped loopback, dotted form
+  ["http://[::ffff:a00:1]:3000/v1", false], // IPv4-mapped 10.0.0.1, hex form
+  ["http://[::ffff:ac10:1]:3000/v1", false], // IPv4-mapped 172.16.0.1, hex form
+  ["http://[0:0:0:0:0:0:0:1]:3000/v1", false], // loopback in FULL (uncompressed) form
   ["http://100.64.0.1/v1", false], // CGNAT
   ["http://240.0.0.1/v1", false], // reserved
   ["notaurl", false], // unparseable
   ["ftp://example.com/v1", false], // bad protocol
   ["https://open.bigmodel.cn/api/paas/v4", true], // real public endpoint (user's)
   ["https://api.openai.com/v1", true], // public
+  ["http://[2606:4700::6810:85e5]/v1", true], // public IPv6 literal
+];
+
+/* Address classification, independent of resolver behavior — the mapped-hex
+   rows are the round-2 audit regression: isPrivateV6 used to let them through
+   (the URL path only blocked them by accident of the DNS resolver rejecting
+   bracketed literals). */
+const addressCases: Array<[string, boolean]> = [
+  ["::ffff:7f00:1", true], // mapped 127.0.0.1, hex
+  ["::ffff:127.0.0.1", true], // mapped loopback, dotted
+  ["::ffff:a00:1", true], // mapped 10.0.0.1
+  ["::ffff:ac10:1", true], // mapped 172.16.0.1
+  ["::ffff:c0a8:101", true], // mapped 192.168.1.1
+  ["0:0:0:0:0:0:0:1", true], // full-form loopback
+  ["::", true], // unspecified
+  ["::1", true], // loopback
+  ["fe80::1", true], // link-local
+  ["fc00::1", true], // ULA
+  ["2606:4700::6810:85e5", false], // public
+  ["2001:4860:4860::8888", false], // public (Google DNS)
 ];
 
 let fails = 0;
@@ -77,6 +102,10 @@ async function fetchPageTests(): Promise<void> {
 }
 
 async function main() {
+  for (const [ip, expectPrivate] of addressCases) {
+    const got = isPrivateAddress(ip);
+    report(`address ${ip} ${expectPrivate ? "private" : "public"}`, got === expectPrivate);
+  }
   for (const [raw, expectOk] of cases) {
     const r = await checkPublicHttpUrl(raw);
     report(raw + " -> " + (r.ok ? r.url : r.error.slice(0, 60)), r.ok === expectOk);

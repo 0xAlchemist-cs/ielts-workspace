@@ -734,7 +734,9 @@ export const wrongPracticeLog = sqliteTable(
   },
   (t) => [
     index("idx_wrong_practice_user").on(t.userId),
-    index("idx_wrong_practice_session_stage").on(t.sessionId, t.practiceType),
+    // round-2: UNIQUE — the database itself backstops the duplicate-stage
+    // guard so two concurrent submissions can never both grade + log
+    uniqueIndex("uq_wrong_practice_session_stage").on(t.sessionId, t.practiceType),
   ],
 );
 

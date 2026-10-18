@@ -25,13 +25,41 @@ function isPrivateV4(ip: string): boolean {
   return false;
 }
 
+/** Expand an IPv6 address (with "::" compression) into its 8 groups.
+ * Returns null for anything that is not well-formed hex groups — callers
+ * fail CLOSED on null. */
+function expandV6(h: string): number[] | null {
+  const halves = h.split("::");
+  if (halves.length > 2) return null;
+  const parse = (s: string): number[] | null => {
+    if (!s) return [];
+    const parts = s.split(":");
+    for (const p of parts) if (!/^[0-9a-f]{1,4}$/.test(p)) return null;
+    return parts.map((p) => parseInt(p, 16));
+  };
+  const left = parse(halves[0]);
+  const right = halves.length === 2 ? parse(halves[1]) : [];
+  if (left === null || right === null) return null;
+  const fill = 8 - left.length - right.length;
+  if (fill < 0) return null;
+  if (halves.length === 1 && left.length !== 8) return null;
+  return [...left, ...Array<number>(halves.length === 2 ? fill : 0).fill(0), ...right];
+}
+
 function isPrivateV6(ip: string): boolean {
-  const h = ip.toLowerCase();
+  const h = ip.toLowerCase().replace(/^\[|\]$/g, "");
   if (h === "::1" || h === "::") return true; // loopback, unspecified
-  const mapped = h.match(/(\d+\.\d+\.\d+\.\d+)$/); // IPv4-mapped ::ffff:10.0.0.1
-  if (mapped) return isPrivateV4(mapped[1]);
-  const head = parseInt(h.split(":")[0] || "0", 16);
-  if (Number.isNaN(head)) return true;
+  const dotted = h.match(/(\d+\.\d+\.\d+\.\d+)$/); // ::ffff:10.0.0.1 written dotted
+  if (dotted) return isPrivateV4(dotted[1]);
+  const groups = expandV6(h);
+  if (!groups) return true; // unparseable → fail closed
+  // IPv4-mapped ::ffff:0:0/96 — the URL parser normalizes the dotted form to
+  // HEX groups (::ffff:7f00:1 == ::ffff:127.0.0.1), so decode both shapes
+  if (groups.slice(0, 5).every((g) => g === 0) && groups[5] === 0xffff) {
+    return isPrivateV4(`${groups[6] >> 8}.${groups[6] & 0xff}.${groups[7] >> 8}.${groups[7] & 0xff}`);
+  }
+  if (groups[0] === 0) return true; // ::/8 — unspecified, full-form loopback, v4-compatible
+  const head = groups[0];
   if (head >= 0xfc00 && head <= 0xfdff) return true; // ULA fc00::/7
   if (head >= 0xfe80 && head <= 0xfebf) return true; // link-local fe80::/10
   if (head >= 0xff00) return true; // multicast ff00::/8
@@ -49,6 +77,16 @@ function hostnameBlocked(hostname: string): boolean {
   return false; // plain domain — checked via DNS below
 }
 
+/** Address classification, exported for regression tests: any literal IPv4 or
+ * IPv6 (dotted- or hex-mapped, compressed or full form) resolves to its true
+ * public/private status without relying on resolver side effects. */
+export function isPrivateAddress(ip: string): boolean {
+  const kind = isIP(ip.replace(/^\[|\]$/g, ""));
+  if (kind === 4) return isPrivateV4(ip);
+  if (kind === 6) return isPrivateV6(ip);
+  return true; // not an IP literal → callers treat as domain; tests fail closed
+}
+
 export async function checkPublicHttpUrl(
   raw: string,
 ): Promise<{ ok: true; url: string } | { ok: false; error: string }> {
@@ -60,8 +98,12 @@ export async function checkPublicHttpUrl(
   }
   if (u.protocol !== "http:" && u.protocol !== "https:") return { ok: false, error: INVALID };
   if (u.username || u.password) return { ok: false, error: INVALID };
-  if (hostnameBlocked(u.hostname)) return { ok: false, error: INVALID };
-  if (isIP(u.hostname) === 0) {
+  // classify on the UNBRACKETED host: a literal IPv6 (mapped/full form) is
+  // an IP, not a domain — blocking must come from the address classes, never
+  // from a resolver quirk
+  const host = u.hostname.toLowerCase().replace(/^\[|\]$/g, "");
+  if (hostnameBlocked(host)) return { ok: false, error: INVALID };
+  if (isIP(host) === 0) {
     try {
       const addrs = await lookup(u.hostname, { all: true });
       if (addrs.length === 0 || addrs.some((a) => hostnameBlocked(a.address))) {

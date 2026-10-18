@@ -134,6 +134,23 @@ async function main() {
     }
     const r1l = await buildReadiness(u1l, "ielts");
     check("legacy ieltsScores.overallEstimate still read", r1l.skills.find((s) => s.skill === "writing")?.state === "strong");
+
+    // ── 2d · mock feedback is demo data, never exam evidence (round-2) ────
+    // Offline/mock writing attempts carry isMock:true on the saved feedback —
+    // their heuristic overallEstimate must not move Readiness.
+    const u1m = await mkUser("__rd_mock__");
+    uids.push(u1m);
+    for (let i = 0; i < 4; i++) {
+      await db.insert(writingAttempts).values({
+        userId: u1m, taskType: "task2", prompt: "p", text: "some essay",
+        ieltsScores: { taskResponse: 7, coherence: 7, lexical: 7, grammar: 7 },
+        feedback: { ielts: { taskResponse: 7, coherence: 7, lexical: 7, grammar: 7 }, overallEstimate: 7, isMock: true },
+      });
+    }
+    const r1m = await buildReadiness(u1m, "ielts");
+    check("P2: mock banded attempts never count as readiness evidence",
+      r1m.skills.find((s) => s.skill === "writing")?.evidenceCount === 0,
+      String(r1m.skills.find((s) => s.skill === "writing")?.evidenceCount));
     const reading = r1.skills.find((s) => s.skill === "reading");
     const listening = r1.skills.find((s) => s.skill === "listening");
     check("reading vs listening states differ by evidence", reading?.state === "strong" && listening?.state === "needs_work", `${reading?.state} vs ${listening?.state}`);

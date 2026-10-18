@@ -72,36 +72,6 @@ export async function readUpload(storageKey: string): Promise<{ buf: Buffer; mim
   }
 }
 
-async function toContent(input: {
-  type: "reading" | "listening";
-  title: string;
-  body: string;
-  topic: string;
-  cefr: string;
-  difficulty: number;
-  minutes: number;
-  audioUrl?: string;
-  fingerprint: string | null;
-  examProfile: "ielts" | "cet4" | "cet6";
-}): Promise<number> {
-  const [row] = await db
-    .insert(contentsT)
-    .values({
-      type: input.type,
-      title: input.title.slice(0, 160) || "Imported material",
-      topic: input.topic,
-      cefr: input.cefr as (typeof contentsT.$inferInsert)["cefr"],
-      difficulty: input.difficulty,
-      body: input.body,
-      minutes: input.minutes,
-      audioUrl: input.audioUrl ?? null,
-      fingerprint: input.fingerprint,
-      examProfile: input.examProfile,
-    })
-    .returning({ id: contentsT.id });
-  return row.id;
-}
-
 /** Sanitize a client-provided relative folder path ("Reading/…") into a safe
  * display-only meta value — no traversal segments, no drive letters. */
 function sanitizeRelPath(rel: string | undefined): string | undefined {
@@ -161,7 +131,6 @@ async function importFileInner(
     };
   }
 
-  // ── persist first, then extract — failed extractions keep an audit row ──
   const storageKey = await storeFile(format, buf);
   const fail = async (status: ImportStatus, error: string, meta: ImportResult["meta"] = {}): Promise<ImportResult> => {
     await db.insert(importedResources).values({
@@ -180,30 +149,44 @@ async function importFileInner(
         ? Math.round(input.durationMs)
         : undefined;
       const minutes = durationMs ? Math.max(1, Math.round(durationMs / 60_000)) : 5;
-      const [row] = await db
-        .insert(importedResources)
-        .values({
-          userId, fileName, resourceType: kind, format, mimeType: MIME_OF[format],
-          fileSize: buf.length, contentHash: hash, storageKey, status: "needs_transcription",
-          examProfile: exam, ownsContent: true,
-          meta: { ...baseMeta, ...(durationMs ? { durationMs } : {}) },
-        })
-        .returning({ id: importedResources.id });
-      const contentId = await toContent({
-        type: "listening",
-        title: fileName.replace(/\.[a-z0-9]+$/i, "").slice(0, 160) || "Imported audio",
-        body: "", // Listening Lab handles the no-transcript path natively
-        topic: "imported",
-        cefr: "B2",
-        difficulty: 3,
-        minutes,
-        audioUrl: `/api/uploads/${row.id}`,
-        fingerprint: null, // media dedupes by file hash, not text
-        examProfile: exam,
+      // registry + content are ONE atomic unit (round-2): a mid-flight DB
+      // failure must leave neither row, so the hash dedupe never blocks a
+      // clean retry (the uploaded file is unlinked by the outer catch).
+      let resourceId = 0;
+      let contentId = 0;
+      db.transaction((tx) => {
+        const r = tx
+          .insert(importedResources)
+          .values({
+            userId, fileName, resourceType: kind, format, mimeType: MIME_OF[format],
+            fileSize: buf.length, contentHash: hash, storageKey, status: "needs_transcription",
+            examProfile: exam, ownsContent: true,
+            meta: { ...baseMeta, ...(durationMs ? { durationMs } : {}) },
+          })
+          .returning({ id: importedResources.id })
+          .all()[0];
+        const c = tx
+          .insert(contentsT)
+          .values({
+            type: "listening",
+            title: fileName.replace(/\.[a-z0-9]+$/i, "").slice(0, 160) || "Imported audio",
+            body: "", // Listening Lab handles the no-transcript path natively
+            topic: "imported",
+            cefr: "B2",
+            difficulty: 3,
+            minutes,
+            audioUrl: `/api/uploads/${r.id}`,
+            fingerprint: null, // media dedupes by file hash, not text
+            examProfile: exam,
+          })
+          .returning({ id: contentsT.id })
+          .all()[0];
+        tx.update(importedResources).set({ contentId: c.id }).where(eq(importedResources.id, r.id)).run();
+        resourceId = r.id;
+        contentId = c.id;
       });
-      await db.update(importedResources).set({ contentId }).where(eq(importedResources.id, row.id));
       return {
-        ok: true, status: "needs_transcription", resourceId: row.id, contentId,
+        ok: true, status: "needs_transcription", resourceId, contentId,
         title: fileName, format, kind, meta: { ...baseMeta, ...(durationMs ? { durationMs } : {}) },
         error: "Audio imported. Transcription isn't available locally yet — the Listening Lab works with or without a transcript.",
       };
@@ -266,27 +249,41 @@ async function importFileInner(
     const minutes = Math.max(1, Math.round(words / 130));
     const type = kind === "subtitle" ? "listening" : "reading";
 
-    const [row] = await db
-      .insert(importedResources)
-      .values({
-        userId, fileName, resourceType: kind, format, mimeType: MIME_OF[format],
-        fileSize: buf.length, contentHash: hash, storageKey, status: "ready",
-        examProfile: exam, ownsContent: true,
-        meta: { ...baseMeta, ...normalized.meta },
-      })
-      .returning({ id: importedResources.id });
-    const contentId = await toContent({
-      type,
-      title: normalized.title || fileName,
-      body: normalized.body,
-      topic: analysis.topic || "imported",
-      cefr: analysis.cefr,
-      difficulty: analysis.difficulty,
-      minutes,
-      fingerprint,
-      examProfile: exam,
+    // content + registry in ONE atomic unit (round-2): the content is created
+    // first so the registry row carries its contentId from birth — no
+    // backfill window, and a mid-flight failure leaves neither row behind
+    let resourceId = 0;
+    let contentId = 0;
+    db.transaction((tx) => {
+      const c = tx
+        .insert(contentsT)
+        .values({
+          type,
+          title: (normalized.title || fileName).slice(0, 160) || "Imported material",
+          topic: analysis.topic || "imported",
+          cefr: analysis.cefr as (typeof contentsT.$inferInsert)["cefr"],
+          difficulty: analysis.difficulty,
+          body: normalized.body,
+          minutes,
+          audioUrl: null,
+          fingerprint,
+          examProfile: exam,
+        })
+        .returning({ id: contentsT.id })
+        .all()[0];
+      const r = tx
+        .insert(importedResources)
+        .values({
+          userId, fileName, resourceType: kind, format, mimeType: MIME_OF[format],
+          fileSize: buf.length, contentHash: hash, storageKey, status: "ready",
+          contentId: c.id, examProfile: exam, ownsContent: true,
+          meta: { ...baseMeta, ...normalized.meta },
+        })
+        .returning({ id: importedResources.id })
+        .all()[0];
+      resourceId = r.id;
+      contentId = c.id;
     });
-    await db.update(importedResources).set({ contentId }).where(eq(importedResources.id, row.id));
 
     // ── V9 (IELTS only): AI difficulty classification — one call per new
     // content; failure degrades to "not analyzed yet", never blocks import.
@@ -302,11 +299,16 @@ async function importFileInner(
             content: normalized.body,
             resourceType: type,
           });
-          await db
-            .update(contentsT)
-            .set({ cefr: cls.level, cefrMeta: { confidence: cls.confidence, summary: cls.summary } })
-            .where(eq(contentsT.id, contentId));
-          level = cls.level;
+          // isMock results come from the FallbackProvider after a live error —
+          // a heuristic "B1, confidence 0.5" is demo output, never verified
+          // difficulty data. Content stays at unknown-for-display instead.
+          if (!cls.isMock) {
+            await db
+              .update(contentsT)
+              .set({ cefr: cls.level, cefrMeta: { confidence: cls.confidence, summary: cls.summary } })
+              .where(eq(contentsT.id, contentId));
+            level = cls.level;
+          }
         }
       } catch {
         /* classification is best-effort — content stays at unknown-for-display */
@@ -314,7 +316,7 @@ async function importFileInner(
     }
 
     return {
-      ok: true, status: "ready", resourceId: row.id, contentId,
+      ok: true, status: "ready", resourceId, contentId,
       title: normalized.title || fileName, format, kind, level, meta: { ...baseMeta, ...normalized.meta },
     };
   } catch (e) {

@@ -89,8 +89,16 @@ export async function POST(req: Request) {
   // Advance learning states for used chunks (writing context)
   const context: ModuleContext = "writing";
   for (const chunkId of usedChunkIds) {
-    await logChunkEvent(userId, chunkId, "ielts_use", text.slice(0, 200));
-    await markChunkActivated(userId, chunkId);
+    // Grade the usage FIRST: only a verified-clean production (quality 5)
+    // becomes activation evidence. A chunk produced inside an AI-flagged
+    // erroneous span still advances usage stats below, but never logs
+    // ielts_use or activates the chunk (round-2 fix).
+    const chunkText = myChunks.find((mc) => mc.id === chunkId)?.text ?? "";
+    const usage = gradeChunkUsage(chunkText, text, errorQuotes);
+    if (usage === 5) {
+      await logChunkEvent(userId, chunkId, "ielts_use", text.slice(0, 200));
+      await markChunkActivated(userId, chunkId);
+    }
 
     // Advance the learning state
     const [item] = await db
@@ -110,10 +118,7 @@ export async function POST(req: Request) {
         productionHits: 0, productionMisses: 0, contextualHits: 0, contextualMisses: 0,
       };
       const format = decideFormat("chunk", ls);
-      // Usage inside an AI-flagged erroneous span earns 3, not 5 — producing
-      // the expression in broken grammar must not count as mastery.
-      const chunkText = myChunks.find((mc) => mc.id === chunkId)?.text ?? "";
-      const newLs = advanceState(ls, format, gradeChunkUsage(chunkText, text, errorQuotes), context);
+      const newLs = advanceState(ls, format, usage, context);
       const strength = holisticStrength(newLs);
       await db
         .update(retrievalItems)

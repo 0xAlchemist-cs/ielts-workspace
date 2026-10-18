@@ -97,6 +97,14 @@ async function main() {
   check("exact production → 5", gradeRetrieval(T, "play a crucial role").quality === 5);
   check("partial coverage (2/3 tokens) → 3", gradeRetrieval(T, "play role").quality === 3);
   check("nothing relevant → 0", gradeRetrieval(T, "an unrelated sentence entirely").quality === 0);
+  // repeated-token expressions (round-2 regression): the ordered scan must
+  // continue past consumed positions, not restart at token 0
+  const RT = (t: string) => ({ itemType: "chunk" as const, chunkText: t });
+  check("as soon as → 5 (was wrongly 3)", gradeRetrieval(RT("as soon as"), "as soon as").quality === 5);
+  check("as far as → 5 (was wrongly 3)", gradeRetrieval(RT("as far as"), "as far as").quality === 5);
+  check("on and on → 5 (was wrongly 3)", gradeRetrieval(RT("on and on"), "on and on").quality === 5);
+  check("more and more → 5 (was wrongly 3)", gradeRetrieval(RT("more and more"), "more and more").quality === 5);
+  check("repeated tokens still respect order: 'as as soon' → 3", gradeRetrieval(RT("as soon as"), "as as soon").quality === 3);
 
   console.log(`\n${pass} passed, ${fail} failed`);
   if (fail > 0) process.exit(1);

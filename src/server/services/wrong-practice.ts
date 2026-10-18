@@ -144,14 +144,55 @@ export async function submitWrongPractice(
     .limit(1);
   if (!issued) return { ok: false, code: "SESSION_NOT_ISSUED", message: "Unknown practice session — start a new one." };
   if (issued.errorId !== errorId) return { ok: false, code: "SESSION_MISMATCH", message: "This session belongs to a different mistake." };
+  // validity window enforced AT SUBMIT time too (round-2): the 24h sweep on
+  // start only cleans future rows — an old session must die here as well
+  if (Date.now() - issued.createdAt > 24 * 3_600_000) {
+    return { ok: false, code: "SESSION_NOT_ISSUED", message: "Practice session expired — start a new one." };
+  }
 
-  // duplicate-stage guard — one attempt per stage per session
-  const [dupe] = await db
-    .select({ id: wrongPracticeLog.id })
-    .from(wrongPracticeLog)
-    .where(and(eq(wrongPracticeLog.sessionId, sessionId), eq(wrongPracticeLog.practiceType, stage)))
-    .limit(1);
-  if (dupe) return { ok: false, code: "DUPLICATE_STAGE", message: "This stage was already submitted in this session." };
+  // stage order: transfer requires a prior successful recall in this session
+  if (stage === "transfer") {
+    const [recall] = await db
+      .select({ result: wrongPracticeLog.result })
+      .from(wrongPracticeLog)
+      .where(and(eq(wrongPracticeLog.sessionId, sessionId), eq(wrongPracticeLog.practiceType, "retrieval")))
+      .limit(1);
+    if (!recall || recall.result === "incorrect" || recall.result === "pending") {
+      return { ok: false, code: "STAGE_ORDER", message: "Recall must succeed in this session before transfer." };
+    }
+  }
+
+  // claim the stage atomically BEFORE grading (round-2): the unique index on
+  // (sessionId, practiceType) backstops this check-then-insert, so two
+  // concurrent submissions can never BOTH grade and log
+  const { source, sourceQuestion } = describeSource(err);
+  try {
+    db.transaction((tx) => {
+      const dupe = tx
+        .select({ id: wrongPracticeLog.id })
+        .from(wrongPracticeLog)
+        .where(and(eq(wrongPracticeLog.sessionId, sessionId), eq(wrongPracticeLog.practiceType, stage)))
+        .get();
+      if (dupe) throw new Error("DUPLICATE_STAGE");
+      tx.insert(wrongPracticeLog)
+        .values({
+          userId, sessionId, errorId, source, sourceQuestion,
+          practiceType: stage, result: "pending", quality: 0,
+        })
+        .run();
+    });
+  } catch (e) {
+    const msg = (e as Error).message ?? String(e);
+    if (msg === "DUPLICATE_STAGE" || /UNIQUE/i.test(msg)) {
+      return { ok: false, code: "DUPLICATE_STAGE", message: "This stage was already submitted in this session." };
+    }
+    throw e;
+  }
+
+  const releaseClaim = () =>
+    db.delete(wrongPracticeLog)
+      .where(and(eq(wrongPracticeLog.sessionId, sessionId), eq(wrongPracticeLog.practiceType, stage)))
+      .run();
 
   // stage order: transfer requires a prior successful recall in this session
   if (stage === "transfer") {
@@ -170,24 +211,23 @@ export async function submitWrongPractice(
     .from(retrievalItems)
     .where(and(eq(retrievalItems.userId, userId), eq(retrievalItems.itemType, "error"), eq(retrievalItems.itemId, errorId)))
     .limit(1);
-  if (!item) return { ok: false, code: "NOT_FOUND", message: "No retrieval item for this error." };
+  if (!item) {
+    releaseClaim(); // don't let the placeholder block a retry
+    return { ok: false, code: "NOT_FOUND", message: "No retrieval item for this error." };
+  }
 
   const mode = stage === "retrieval" ? "production" : "context_transfer";
   const graded = await submitRetentionReview(userId, item.id, mode, response, "review");
-  if (!graded) return { ok: false, code: "GRADING_FAILED", message: "Grading failed." };
+  if (!graded) {
+    releaseClaim(); // grading never happened — free the stage for a retry
+    return { ok: false, code: "GRADING_FAILED", message: "Grading failed." };
+  }
 
   const result = graded.quality === 5 ? "correct" : graded.quality >= 3 ? "partial" : "incorrect";
-  const { source, sourceQuestion } = describeSource(err);
-  await db.insert(wrongPracticeLog).values({
-    userId,
-    sessionId,
-    errorId,
-    source,
-    sourceQuestion,
-    practiceType: stage,
-    result,
-    quality: graded.quality,
-  });
+  db.update(wrongPracticeLog)
+    .set({ result, quality: graded.quality })
+    .where(and(eq(wrongPracticeLog.sessionId, sessionId), eq(wrongPracticeLog.practiceType, stage)))
+    .run();
 
   return {
     ok: true,

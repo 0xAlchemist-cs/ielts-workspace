@@ -37,9 +37,13 @@ function bandState(mean: number, target: number): ReadinessState {
 /** The AI's overall band lives at the TOP LEVEL of the saved feedback object;
  * the routes save feedback.ielts (sub-scores only) into ieltsScores. Read the
  * feedback column first — ieltsScores.overallEstimate stays as a fallback for
- * legacy rows written under the old shape. */
+ * legacy rows written under the old shape. Feedback stamped isMock:true is
+ * offline demo output (FallbackProvider after a live error): its heuristic
+ * estimate is never exam evidence. */
 function bandOf(row: { feedback: unknown; scores: unknown }): number | undefined {
-  const fromFeedback = (row.feedback as { overallEstimate?: unknown } | null)?.overallEstimate;
+  const fb = row.feedback as { overallEstimate?: unknown; isMock?: unknown } | null;
+  if (fb?.isMock === true) return undefined;
+  const fromFeedback = fb?.overallEstimate;
   if (typeof fromFeedback === "number" && fromFeedback > 0) return fromFeedback;
   const fromScores = (row.scores as { overallEstimate?: unknown } | null)?.overallEstimate;
   if (typeof fromScores === "number" && fromScores > 0) return fromScores;

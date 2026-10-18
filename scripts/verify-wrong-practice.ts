@@ -132,6 +132,40 @@ async function main() {
       : { ok: false as const };
     check("⑩b issued session submits normally for its own error", legit.ok, JSON.stringify(legit));
 
+    /* ── 10c · round-2: session TTL + unique (session,stage) constraint ──── */
+    const sTtl = await startWrongPractice(uid, banked.id);
+    if (sTtl.ok) {
+      await db.update(wrongPracticeSessions)
+        .set({ createdAt: Date.now() - 25 * 3_600_000 })
+        .where(eq(wrongPracticeSessions.sessionId, sTtl.sessionId));
+      const expired = await submitWrongPractice(uid, sTtl.sessionId, banked.id, "retrieval", "agriculture");
+      check("⑩c expired session rejected at submit time", !expired.ok && expired.code === "SESSION_NOT_ISSUED", JSON.stringify(expired));
+    } else {
+      check("⑩c expired session rejected at submit time", false, "start failed");
+    }
+    // the DB itself refuses a second row for the same (session, stage)
+    const sUni = await startWrongPractice(uid, banked.id);
+    let uniqueBackstop = false;
+    if (sUni.ok) {
+      await db.insert(wrongPracticeLog).values({
+        userId: uid, sessionId: sUni.sessionId, errorId: banked.id,
+        source: "Error Bank", sourceQuestion: null,
+        practiceType: "retrieval", result: "correct", quality: 5,
+      });
+      try {
+        await db.insert(wrongPracticeLog).values({
+          userId: uid, sessionId: sUni.sessionId, errorId: banked.id,
+          source: "Error Bank", sourceQuestion: null,
+          practiceType: "retrieval", result: "correct", quality: 5,
+        });
+      } catch {
+        uniqueBackstop = true; // UNIQUE violation — exactly what we want
+      }
+      check("⑩c unique index backstops duplicate stage rows", uniqueBackstop);
+    } else {
+      check("⑩c unique index backstops duplicate stage rows", false, "start failed");
+    }
+
     /* ── 11 · AI fallback: generation works with no provider at all ───── */
     const fb = mockDrills({ wrongForm: "discuss about", correctForm: "discuss", category: "grammar" });
     check("⑪ mock/fallback drills are usable (2+ contexts, blank present)", fb.items.length >= 2 && fb.items.every((d) => d.context.includes("____")));
