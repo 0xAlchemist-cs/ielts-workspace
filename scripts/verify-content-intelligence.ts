@@ -149,6 +149,59 @@ async function main() {
     const selI = await selectNextContent({ userId: u1, skill: "reading", restrictToIds: [cetContent.id, tech] });
     check("IELTS learner never gets CET content", selI?.content.examProfile === "ielts");
 
+    // ── 8 · round-3: manual difficulty analysis must not persist MOCK ──────
+    // A live config that cannot answer → FallbackProvider returns a mock
+    // result (isMock, confidence 0.5). The MANUAL classify route must refuse
+    // to persist it, exactly like the import path already does.
+    const { invalidateAIConfigCache } = await import("../src/lib/ai");
+    const { POST: classifyPost } = await import("../src/app/api/ai/classify-content-level/route");
+    const { appConfig } = await import("../src/db/schema");
+    const snap = new Map((await db.select().from(appConfig)).map((r) => [r.key, r.value]));
+    try {
+      for (const [k, v] of [
+        ["ai_base_url", "https://fallback-test.invalid/v1"],
+        ["ai_api_key", "k-fallback-probe"],
+      ] as const) {
+        await db
+          .insert(appConfig)
+          .values({ key: k, value: v })
+          .onConflictDoUpdate({ target: appConfig.key, set: { value: v, updatedAt: Date.now() } });
+      }
+      invalidateAIConfigCache();
+
+      const mockTarget = await mkContent("__classify_mock__", "science", PASSAGE("science"), "C1");
+      cids.push(mockTarget);
+      await db
+        .update(contentsT)
+        .set({ cefrMeta: { confidence: 0.9, summary: "original analysis" } })
+        .where(eq(contentsT.id, mockTarget));
+      const res = await classifyPost(new Request("http://localhost/api/ai/classify-content-level", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ contentId: mockTarget }),
+      }));
+      const json = (await res.json()) as { ok?: boolean; notPersisted?: boolean; level?: string };
+      check("R3: mock fallback answered ok + notPersisted + level unknown",
+        res.status === 200 && json.ok === true && json.notPersisted === true && json.level === "unknown",
+        `${res.status} ${JSON.stringify(json).slice(0, 90)}`);
+      const [afterMock] = await db.select().from(contentsT).where(eq(contentsT.id, mockTarget));
+      check("R3: original cefr + cefrMeta untouched by mock fallback",
+        afterMock.cefr === "C1" && (afterMock.cefrMeta as { summary?: string } | null)?.summary === "original analysis",
+        `${afterMock.cefr} ${JSON.stringify(afterMock.cefrMeta).slice(0, 60)}`);
+    } finally {
+      for (const [k, v] of snap) {
+        await db
+          .insert(appConfig)
+          .values({ key: k, value: v })
+          .onConflictDoUpdate({ target: appConfig.key, set: { value: v, updatedAt: Date.now() } });
+      }
+      const nowKeys = new Set((await db.select().from(appConfig)).map((r) => r.key));
+      for (const k of ["ai_base_url", "ai_api_key"]) {
+        if (!snap.has(k) && nowKeys.has(k)) await db.delete(appConfig).where(eq(appConfig.key, k));
+      }
+      invalidateAIConfigCache();
+    }
+
     console.log(`\n${pass} passed, ${fail} failed`);
   } finally {
     await setActiveExam(originalExam);

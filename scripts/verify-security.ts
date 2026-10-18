@@ -7,8 +7,10 @@ import { testAIProviderConfigAction } from "../src/app/actions";
  * reported, but not counted as a pass or a failure.) */
 
 let failures = 0;
+let indeterminate = 0;
 function report(label: string, pass: boolean | "indeterminate", detail: string) {
   if (pass === "indeterminate") {
+    indeterminate++;
     console.log(`  ? ${label} -> indeterminate (probe infrastructure): ${detail}`);
     return;
   }
@@ -58,6 +60,10 @@ async function main() {
     console.error(`SECURITY PROBE FAILURES: ${failures}`);
     process.exit(1);
   }
-  console.log("SECURITY PROBES OK");
+  console.log(
+    indeterminate > 0
+      ? `SECURITY PROBES OK — but ${indeterminate} probe(s) INDETERMINATE: unverified, NOT counted as passes`
+      : "SECURITY PROBES OK (all probes deterministically verified)",
+  );
 }
 void main();

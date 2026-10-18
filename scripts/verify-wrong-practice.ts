@@ -3,7 +3,7 @@
  *  log — with the original error row provably untouched. Run: npm run
  *  test:wrong-practice */
 import { and, eq } from "drizzle-orm";
-import { db } from "../src/db";
+import { db, sqlite } from "../src/db";
 import {
   errors as errorsT, learningProfiles, retrievalItems, reviewHistory,
   users, wrongPracticeLog, wrongPracticeSessions,
@@ -164,6 +164,38 @@ async function main() {
       check("⑩c unique index backstops duplicate stage rows", uniqueBackstop);
     } else {
       check("⑩c unique index backstops duplicate stage rows", false, "start failed");
+    }
+
+    /* ── 10d · round-3: a THROWN grading failure releases the placeholder ── */
+    // submitRetentionReview writes several rows before its final insert; a
+    // crash mid-grading must still free the claimed stage, or the learner is
+    // locked out with a permanent DUPLICATE_STAGE. Injected via a trigger
+    // that aborts the review_history insert for a marked response.
+    sqlite.exec("DROP TRIGGER IF EXISTS fail_wp_grading");
+    sqlite.exec(
+      `CREATE TRIGGER fail_wp_grading BEFORE INSERT ON review_history
+       WHEN NEW.user_response LIKE '%injfailmark%' BEGIN SELECT RAISE(ABORT, 'simulated grading crash'); END`,
+    );
+    try {
+      const sCrash = await startWrongPractice(uid, err2.id);
+      if (!sCrash.ok) {
+        check("⑩d grading crash -> placeholder released + retry works", false, "start failed");
+      } else {
+        const crashed = await submitWrongPractice(uid, sCrash.sessionId, err2.id, "retrieval", "discuss injfailmark")
+          .then((r) => r)
+          .catch((e: Error) => ({ ok: false as const, code: "THROWN" as string, message: e.message }));
+        check("⑩d grading crash surfaces as GRADING_FAILED (not a throw)",
+          !crashed.ok && crashed.code === "GRADING_FAILED", JSON.stringify(crashed).slice(0, 90));
+        const leftover = await db
+          .select({ id: wrongPracticeLog.id })
+          .from(wrongPracticeLog)
+          .where(and(eq(wrongPracticeLog.sessionId, sCrash.sessionId), eq(wrongPracticeLog.practiceType, "retrieval")));
+        check("⑩d placeholder released after the crash", leftover.length === 0, JSON.stringify(leftover));
+        const retryCrash = await submitWrongPractice(uid, sCrash.sessionId, err2.id, "retrieval", "we discuss this often");
+        check("⑩d same session retries the stage successfully", retryCrash.ok, JSON.stringify(retryCrash).slice(0, 90));
+      }
+    } finally {
+      sqlite.exec("DROP TRIGGER IF EXISTS fail_wp_grading");
     }
 
     /* ── 11 · AI fallback: generation works with no provider at all ───── */

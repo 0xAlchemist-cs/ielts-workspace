@@ -217,7 +217,16 @@ export async function submitWrongPractice(
   }
 
   const mode = stage === "retrieval" ? "production" : "context_transfer";
-  const graded = await submitRetentionReview(userId, item.id, mode, response, "review");
+  let graded: Awaited<ReturnType<typeof submitRetentionReview>>;
+  try {
+    graded = await submitRetentionReview(userId, item.id, mode, response, "review");
+  } catch (e) {
+    // a THROWN failure (e.g. a DB write error mid-grading) must release the
+    // placeholder too — otherwise the learner is locked out of this stage
+    // with a permanent DUPLICATE_STAGE (round-3)
+    releaseClaim();
+    return { ok: false, code: "GRADING_FAILED", message: `Grading failed: ${(e as Error).message.slice(0, 120)}` };
+  }
   if (!graded) {
     releaseClaim(); // grading never happened — free the stage for a retry
     return { ok: false, code: "GRADING_FAILED", message: "Grading failed." };

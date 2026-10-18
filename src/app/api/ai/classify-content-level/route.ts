@@ -42,10 +42,12 @@ export async function POST(req: Request) {
       content: content.body,
       resourceType: content.type,
     });
-    // Confidence floor: a low-confidence result (e.g. non-English text where the
-    // model admits it is returning a placeholder) must never be persisted as a
-    // real level — the honest answer is "unknown", previous cefr stays.
-    if (result.confidence < 0.4) {
+    // Confidence floor AND mock guard (round-3): a low-confidence result (e.g.
+    // non-English text where the model admits a placeholder) OR an offline
+    // fallback (FallbackProvider after a live error carries isMock) must never
+    // be persisted as a real level — the honest answer is "unknown", previous
+    // cefr stays. The manual path now matches the import path.
+    if (result.isMock || result.confidence < 0.4) {
       return NextResponse.json({
         ok: true,
         level: "unknown",
