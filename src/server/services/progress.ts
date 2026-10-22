@@ -13,6 +13,7 @@ import {
   chunks as chunksT,
 } from "@/db/schema";
 import { todayKey } from "@/lib/text";
+import { attemptBandEvidence } from "@/lib/evidence";
 import type { MissionCounters } from "@/lib/types";
 
 export type FunnelEvent = keyof MissionCounters;
@@ -149,7 +150,7 @@ export async function getDashboardStats(
     .where(and(eq(reviewHistory.userId, userId), gte(reviewHistory.createdAt, month)));
 
   const speaking = await db
-    .select({ ieltsScores: speakingAttempts.ieltsScores })
+    .select({ ieltsScores: speakingAttempts.ieltsScores, feedback: speakingAttempts.feedback })
     .from(speakingAttempts)
     .where(eq(speakingAttempts.userId, userId))
     .orderBy(desc(speakingAttempts.createdAt))
@@ -208,9 +209,12 @@ export async function getDashboardStats(
     .from(chunksT)
     .where(eq(chunksT.userId, userId));
 
+  // Evidence policy (step-06): the dashboard reads bands through the single
+  // gate — live rows resolve via feedback.overallEstimate (legacy shape
+  // fallback), mock pseudo-bands never surface. The old code read a
+  // non-existent `overall` key, so real bands never showed.
   const speakingBands = speaking
-    .map((s) => s.ieltsScores as { overall?: number } | null)
-    .map((s) => s?.overall ?? null)
+    .map((s) => attemptBandEvidence({ feedback: s.feedback, scores: s.ieltsScores }))
     .filter((n): n is number => n != null);
 
   return {

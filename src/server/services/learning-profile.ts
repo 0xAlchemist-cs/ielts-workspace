@@ -3,6 +3,7 @@ import { db } from "@/db";
 import { errors, reviewHistory, retrievalItems, chunkEvents, chunks, vocabularies, speakingAttempts, writingAttempts, listeningMisses, learningProfiles, contentHistory } from "@/db/schema";
 import type { ErrorCategory, ErrorStatus, ModuleContext } from "@/lib/types";
 import { plural } from "@/lib/plural";
+import { isMockFeedback } from "@/lib/evidence";
 
 /* ── Error Pattern Detection ────────────────────────────────────────────────
  * Groups isolated errors into recurring patterns. "interested on" ×3 isn't
@@ -170,11 +171,12 @@ export interface FullLearningProfile {
 /** Offline fallback output (FallbackProvider after a live AI error) stamps
  *  isMock:true at the TOP LEVEL of the feedback column; ieltsScores still
  *  carries heuristic pseudo-bands. Mock attempts stay in history as practice
- *  records but must never become ability evidence (same rule as readiness.ts
- *  bandOf). Rows without the flag (incl. legacy rows) count as real. */
+ *  records but must never become ability evidence. Single gate from the
+ *  evidence policy (src/lib/evidence.ts) — shared with readiness and the
+ *  dashboard (step-06). Rows without the flag (incl. legacy rows) are
+ *  trusted as real. */
 export function isMockAttempt(row: { feedback: unknown }): boolean {
-  const fb = row.feedback as { isMock?: unknown } | null;
-  return fb?.isMock === true;
+  return isMockFeedback(row.feedback);
 }
 
 export async function computeFullProfile(userId: number): Promise<FullLearningProfile> {

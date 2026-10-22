@@ -9,6 +9,7 @@ import {
   writingAttempts,
 } from "@/db/schema";
 import type { ExamProfile } from "@/lib/exam-profiles";
+import { attemptBandEvidence } from "@/lib/evidence";
 import type { ReadinessState, ReadinessSnapshot, SkillReadiness } from "@/lib/readiness-types";
 
 export type { ReadinessState, ReadinessSnapshot, SkillReadiness };
@@ -35,19 +36,14 @@ function bandState(mean: number, target: number): ReadinessState {
 }
 
 /** The AI's overall band lives at the TOP LEVEL of the saved feedback object;
- * the routes save feedback.ielts (sub-scores only) into ieltsScores. Read the
- * feedback column first — ieltsScores.overallEstimate stays as a fallback for
- * legacy rows written under the old shape. Feedback stamped isMock:true is
- * offline demo output (FallbackProvider after a live error): its heuristic
- * estimate is never exam evidence. */
+ * the routes save feedback.ielts (sub-scores only) into ieltsScores. The
+ * evidence policy (src/lib/evidence.ts) owns the resolution: live rows read
+ * feedback.overallEstimate first — ieltsScores.overallEstimate stays as a
+ * fallback for legacy rows — and feedback stamped isMock:true (offline
+ * fallback output) is never exam evidence. Single gate shared with the
+ * Full Profile and the dashboard (step-06). */
 function bandOf(row: { feedback: unknown; scores: unknown }): number | undefined {
-  const fb = row.feedback as { overallEstimate?: unknown; isMock?: unknown } | null;
-  if (fb?.isMock === true) return undefined;
-  const fromFeedback = fb?.overallEstimate;
-  if (typeof fromFeedback === "number" && fromFeedback > 0) return fromFeedback;
-  const fromScores = (row.scores as { overallEstimate?: unknown } | null)?.overallEstimate;
-  if (typeof fromScores === "number" && fromScores > 0) return fromScores;
-  return undefined;
+  return attemptBandEvidence(row);
 }
 
 function bandWhy(mean: number, target: number, count: number, state: ReadinessState) {
