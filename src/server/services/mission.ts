@@ -118,7 +118,20 @@ export async function generateTodayMission(userId: number, liteOverride?: boolea
   const { readMemoryPressure } = await import("@/server/services/planner");
   const { pressure, dailyMinutes } = await readMemoryPressure(userId);
   const budget = allocateBudget(dailyMinutes, pressure);
-  if (budget.mode === "rescue") lite = true; // missed days → small plan
+  // rescue is a DEFAULT for hands-off days (step-09): an explicit manual
+  // choice beats it — the user asked for a full plan, they get one (and the
+  // why-line says the recovery pacing was set aside on purpose).
+  let rescueSetAside: { en: string; zh: string } | null = null;
+  if (budget.mode === "rescue") {
+    if (liteOverride === undefined) {
+      lite = true; // missed days → small plan (default, unchanged)
+    } else {
+      rescueSetAside = {
+        en: "Full plan chosen manually — recovery pacing set aside for today.",
+        zh: "已手动选择完整计划——今日不启用回归节奏。",
+      };
+    }
+  }
 
   // Map engine's recommended length to our lite/full system
   const recommendedLength = decision.recommendedLength;
@@ -196,8 +209,8 @@ export async function generateTodayMission(userId: number, liteOverride?: boolea
       ...decision.rationale,
       planWhy: {
         mode: budget.mode,
-        en: [budget.whyEn, readinessNote?.en, focusNote?.en].filter(Boolean).join(" "),
-        zh: [budget.whyZh, readinessNote?.zh, focusNote?.zh].filter(Boolean).join(" "),
+        en: [budget.whyEn, readinessNote?.en, focusNote?.en, rescueSetAside?.en].filter(Boolean).join(" "),
+        zh: [budget.whyZh, readinessNote?.zh, focusNote?.zh, rescueSetAside?.zh].filter(Boolean).join(" "),
       },
     },
     reading: reading
