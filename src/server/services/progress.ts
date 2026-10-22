@@ -20,42 +20,57 @@ export type FunnelEvent = keyof MissionCounters;
 
 const ZERO: MissionCounters = { exposure: 0, understood: 0, retrieved: 0, used: 0, retained: 0 };
 
-/** Record real learning events into today's mission counters + progress row. */
+/** Record real learning events into today's mission counters + progress row.
+ *  userProgress.metrics is the CANONICAL daily count; dailyMissions.counters
+ *  is a rebuildable display cache of the same numbers. Both are updated with
+ *  single-statement atomic JSON increments (SQLite ≥3.38 json functions —
+ *  verified 3.53.4 in-tree; step-08) instead of the old read-modify-write,
+ *  which lost increments whenever two events raced (rapid taps, retries,
+ *  two tabs). Retry boundary: each CALL counts once — de-duplication belongs
+ *  to the calling business action (e.g. one recordEvent per graded
+ *  submission). */
 export async function recordEvent(
   userId: number,
   event: FunnelEvent,
   n = 1,
 ): Promise<void> {
   const date = todayKey();
+  // the JSON path is one bound parameter ('$.exposure' etc.) — SQLite json
+  // functions accept bound paths; splicing it inside a quoted literal would
+  // not produce a placeholder at all (step-08 gotcha)
+  const path = `$.${event}`;
 
-  // progress row — read-modify-write (single user, no concurrency to worry about)
-  const [existing] = await db
-    .select()
+  // canonical row: ensure it exists (idempotent), then bump atomically
+  await db
+    .insert(userProgress)
+    .values({ userId, date, metrics: { ...ZERO } })
+    .onConflictDoNothing();
+  await db.run(
+    sql`update user_progress set metrics = json_set(metrics, ${path}, coalesce(json_extract(metrics, ${path}), 0) + ${n}) where user_id = ${userId} and date = ${date}`,
+  );
+
+  // display cache on today's mission: same atomic bump (row may not exist —
+  // days without a mission simply have no cache to update)
+  await db.run(
+    sql`update daily_missions set counters = json_set(counters, ${path}, coalesce(json_extract(counters, ${path}), 0) + ${n}) where user_id = ${userId} and date = ${date}`,
+  );
+}
+
+/** Rebuild today's mission counters cache from the canonical metrics row —
+ *  the recovery/verification path when the two copies ever diverge. */
+export async function syncMissionCounters(userId: number): Promise<void> {
+  const date = todayKey();
+  const [row] = await db
+    .select({ metrics: userProgress.metrics })
     .from(userProgress)
     .where(and(eq(userProgress.userId, userId), eq(userProgress.date, date)))
     .limit(1);
-  if (existing) {
-    const metrics = { ...(existing.metrics as Record<string, number>) };
-    metrics[event] = (metrics[event] ?? 0) + n;
-    await db.update(userProgress).set({ metrics }).where(eq(userProgress.id, existing.id));
-  } else {
-    await db
-      .insert(userProgress)
-      .values({ userId, date, metrics: { [event]: n } })
-      .onConflictDoNothing();
-  }
-
-  // today's mission counters
-  const [mission] = await db
-    .select()
-    .from(dailyMissions)
-    .where(and(eq(dailyMissions.userId, userId), eq(dailyMissions.date, date)))
-    .limit(1);
-  if (mission) {
-    const counters = { ...ZERO, ...mission.counters };
-    counters[event] += n;
-    await db.update(dailyMissions).set({ counters }).where(eq(dailyMissions.id, mission.id));
-  }
+  if (!row) return;
+  const metrics = { ...ZERO, ...(row.metrics as Partial<MissionCounters>) };
+  await db
+    .update(dailyMissions)
+    .set({ counters: metrics })
+    .where(and(eq(dailyMissions.userId, userId), eq(dailyMissions.date, date)));
 }
 
 export async function getTodayFunnel(userId: number): Promise<MissionCounters> {
