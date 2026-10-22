@@ -245,14 +245,154 @@ export async function generateTodayMission(userId: number, liteOverride?: boolea
   return again!;
 }
 
-/** Toggle today's mission between lite and full by regenerating the plan. */
+/** In-place lite/full toggle of a mission plan (step-04). Pure — the caller
+ *  supplies recomputation inputs; this function only reshapes the plan.
+ *
+ *  Invariants:
+ *  - DONE steps are never reopened and never re-skipped;
+ *  - recorded progress (notice.savedCount, retrieval.doneCount,
+ *    speaking.rounds) is untouched;
+ *  - expand (→ full): skipped optional steps re-enable — listening
+ *    backfills a picked content only when one exists (no fabricated slot),
+ *    deep takes notice's first targets when it had none, transfer reopens,
+ *    retrieval batch extends (caller supplies canonical extras);
+ *  - contract (→ lite): unfinished optional steps skip; retrieval and
+ *    speaking keep their state (both exist in lite plans). */
+export function applyLiteToggle(
+  plan: MissionPlan,
+  toLite: boolean,
+  ctx: {
+    readingMinutes?: number | null;
+    listeningPick?: { id: number; title: string; minutes: number } | null;
+    /** fill for a lite-placeholder READING slot (contentId 0): the picked
+     *  content plus its notice suggestions, so the notice step works */
+    readingPick?: { id: number; title: string; minutes: number; noticeChunkIds: number[] } | null;
+    extraRetrievalIds?: number[];
+  } = {},
+): MissionPlan {
+  const next: MissionPlan = structuredClone(plan);
+  const fullReadingMin = ctx.readingMinutes != null ? Math.max(5, Math.round(ctx.readingMinutes * 0.7)) : null;
+  const liteReadingMin = ctx.readingMinutes != null ? Math.max(3, Math.round(ctx.readingMinutes * 0.5)) : null;
+
+  const reOpen = (step: { status: StepStatus }) => {
+    if (step.status === "skipped") step.status = "pending";
+  };
+  const skipIfPending = (step: { status: StepStatus }) => {
+    if (step.status === "pending") step.status = "skipped";
+  };
+
+  if (toLite) {
+    if (liteReadingMin != null && next.reading.status !== "skipped") next.reading.minutes = liteReadingMin;
+    skipIfPending(next.listening);
+    skipIfPending(next.deep);
+    skipIfPending(next.transfer);
+    next.lite = true;
+    return next;
+  }
+
+  // expand → full
+  // A contentId-0 slot is a lite PLACEHOLDER ("No reading available" /
+  // "Skipped — lite mode"), not user progress: expanding backfills it when
+  // the pool has a pick. Real slots (contentId > 0) only get budget/status
+  // adjustments — their done state is genuine progress and stays.
+  if (next.reading.contentId === 0 && ctx.readingPick) {
+    next.reading.contentId = ctx.readingPick.id;
+    next.reading.title = ctx.readingPick.title;
+    next.reading.minutes = Math.max(5, Math.round(ctx.readingPick.minutes * 0.7));
+    next.reading.status = "pending";
+    // the notice step points at the reading material — follow the new slot
+    next.notice.contentId = ctx.readingPick.id;
+    if (next.notice.chunkIds.length === 0) {
+      next.notice.chunkIds = ctx.readingPick.noticeChunkIds.slice(0, 8);
+    }
+  } else if (fullReadingMin != null && next.reading.status !== "skipped") {
+    next.reading.minutes = fullReadingMin;
+  }
+  reOpen(next.listening);
+  if (next.listening.contentId === 0 && ctx.listeningPick) {
+    next.listening.contentId = ctx.listeningPick.id;
+    next.listening.title = ctx.listeningPick.title;
+    next.listening.minutes = Math.max(3, Math.round(ctx.listeningPick.minutes * 0.7));
+    next.listening.status = "pending";
+  }
+  reOpen(next.deep);
+  if (next.deep.chunkIds.length === 0) {
+    next.deep.chunkIds = next.notice.chunkIds.slice(0, 2);
+  }
+  reOpen(next.transfer);
+  if (next.retrieval.status !== "done" && ctx.extraRetrievalIds?.length) {
+    const seen = new Set(next.retrieval.itemIds);
+    for (const id of ctx.extraRetrievalIds) {
+      if (next.retrieval.itemIds.length >= 12) break;
+      if (!seen.has(id)) {
+        next.retrieval.itemIds.push(id);
+        seen.add(id);
+      }
+    }
+  }
+  next.lite = false;
+  return next;
+}
+
+/** Toggle today's mission between lite and full IN PLACE: same row, same
+ *  date, all recorded evidence (done statuses, rounds, doneCount, counters)
+ *  preserved. The old delete-and-regenerate erased an afternoon's history
+ *  with the morning's work (step-04 fix). */
 export async function toggleTodayLite(userId: number): Promise<boolean> {
   const mission = await getTodayMission(userId);
   if (!mission) return false;
-  const lite = !mission.plan.lite;
-  await db.delete(dailyMissions).where(eq(dailyMissions.id, mission.id));
-  await generateTodayMission(userId, lite);
-  return lite;
+  const plan = mission.plan as MissionPlan;
+  const toLite = !plan.lite;
+
+  // Recomputation inputs — READ-ONLY lookups, nothing is written until the
+  // single atomic update below, so a failure mid-way leaves the mission as-is.
+  let readingMinutes: number | null = null;
+  if (plan.reading.contentId > 0) {
+    const [c] = await db.select({ minutes: contents.minutes }).from(contents)
+      .where(eq(contents.id, plan.reading.contentId)).limit(1);
+    readingMinutes = c?.minutes ?? null;
+  }
+  let listeningPick: { id: number; title: string; minutes: number } | null = null;
+  if (!toLite && plan.listening.contentId === 0 && plan.listening.status === "skipped") {
+    const sel = await pickContent("listening", userId, plan.reading.contentId || undefined);
+    listeningPick = sel ? { id: sel.content.id, title: sel.content.title, minutes: sel.content.minutes } : null;
+  }
+  // a lite-placeholder reading slot (contentId 0) gets a real pick on expand,
+  // plus notice suggestions from that material — the notice step is what
+  // makes the reading slot useful (verify-pm ③ depends on this path)
+  let readingPick: { id: number; title: string; minutes: number; noticeChunkIds: number[] } | null = null;
+  if (!toLite && plan.reading.contentId === 0) {
+    const sel = await pickContent("reading", userId, plan.listening.contentId || undefined);
+    if (sel) {
+      const noticeRows = await noticeChunksFor(sel.content.id, sel.content.body);
+      readingPick = {
+        id: sel.content.id, title: sel.content.title, minutes: sel.content.minutes,
+        noticeChunkIds: noticeRows.map((c) => c.id),
+      };
+    }
+  }
+  let extraRetrievalIds: number[] = [];
+  if (!toLite && plan.retrieval.status !== "done") {
+    const { generateReviewQueue: canonicalQueue } = await import("@/server/services/retention");
+    const existing = new Set(plan.retrieval.itemIds);
+    extraRetrievalIds = (await canonicalQueue(userId, 12))
+      .map((q) => q.retrievalItemId)
+      .filter((id) => !existing.has(id));
+  }
+
+  const nextPlan = applyLiteToggle(plan, toLite, { readingMinutes, listeningPick, readingPick, extraRetrievalIds });
+
+  const keys = ["reading", "listening", "notice", "deep", "retrieval", "speaking", "transfer"] as const;
+  const allSettled = keys.every((k) => {
+    const s = (nextPlan[k] as { status: StepStatus }).status;
+    return s === "done" || s === "skipped";
+  });
+
+  await db
+    .update(dailyMissions)
+    .set({ plan: nextPlan, status: allSettled ? "completed" : "pending" })
+    .where(eq(dailyMissions.id, mission.id));
+  return toLite;
 }
 
 export async function getOrCreateTodayMission(userId: number): Promise<DailyMission> {
