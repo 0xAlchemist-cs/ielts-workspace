@@ -63,8 +63,20 @@ export function isReadableContent(c: Content): boolean {
 }
 
 /** Stable body hash for import dedup — normalize before hashing so whitespace
- *  or case differences don't defeat the check. */
+ *  or case differences don't defeat the check. The FULL body is hashed:
+ *  the old implementation sliced to the first 2000 normalized chars, so two
+ *  articles sharing a long prefix but differing at the end collided and the
+ *  second was silently dropped as a "duplicate" (step-05 fix). */
 export function contentFingerprint(body: string): string {
+  const normalized = body.trim().toLowerCase().replace(/\s+/g, " ");
+  return createHash("sha256").update(normalized).digest("hex");
+}
+
+/** The pre-fix algorithm (first 2000 normalized chars only). Historical rows
+ *  carry these values; dedup lookups read BOTH fingerprints (dual-read) so a
+ *  re-import of pre-fix material still resolves to its original row — no
+ *  backfill, no migration, fully reverted by restoring the old call sites. */
+export function legacyContentFingerprint(body: string): string {
   const normalized = body.trim().toLowerCase().replace(/\s+/g, " ").slice(0, 2000);
   return createHash("sha256").update(normalized).digest("hex");
 }

@@ -7,7 +7,7 @@ import { chunks, contents as contentsT, contentHistory, importedResources, sente
 import { getActiveExam } from "@/server/current-user";
 import { getProvider, isLiveConfigured } from "@/lib/ai";
 import { examConfig } from "@/lib/exam-profiles";
-import { contentFingerprint } from "@/server/services/content-selection";
+import { contentFingerprint, legacyContentFingerprint } from "@/server/services/content-selection";
 import { analyzeContent } from "@/server/services/content-analysis";
 import {
   FORMAT_KIND,
@@ -224,14 +224,22 @@ async function importFileInner(
 
     // ── text-level dedupe: same text as an earlier import/paste in THIS
     // exam's corpus → open it (the same text in another exam is a different
-    // goal's material, not a duplicate — V8) ─────────────────────────────────
+    // goal's material, not a duplicate — V8). Dual-read (step-05): historical
+    // rows carry the legacy prefix fingerprint, new rows the full-text one.
+    // A legacy-fingerprint hit is VERIFIED against the full body — a same-
+    // prefix-different-ending article must not be swallowed by a pre-fix
+    // row any more than by a new one. ─────────────────────────────────────
     const fingerprint = contentFingerprint(normalized.body);
+    const legacyFingerprint = legacyContentFingerprint(normalized.body);
     const [dupContent] = await db
-      .select({ id: contentsT.id })
+      .select({ id: contentsT.id, fingerprint: contentsT.fingerprint, body: contentsT.body })
       .from(contentsT)
-      .where(and(eq(contentsT.fingerprint, fingerprint), eq(contentsT.examProfile, exam)))
+      .where(and(inArray(contentsT.fingerprint, [fingerprint, legacyFingerprint]), eq(contentsT.examProfile, exam)))
       .limit(1);
-    if (dupContent) {
+    const fullTextEquals = dupContent != null &&
+      dupContent.body.trim().toLowerCase().replace(/\s+/g, " ") ===
+      normalized.body.trim().toLowerCase().replace(/\s+/g, " ");
+    if (dupContent && (dupContent.fingerprint === fingerprint || fullTextEquals)) {
       await db.insert(importedResources).values({
         userId, fileName, resourceType: kind, format, mimeType: MIME_OF[format],
         fileSize: buf.length, contentHash: hash, storageKey, status: "duplicate",

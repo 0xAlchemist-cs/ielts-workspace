@@ -2,7 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
-import { and, desc, eq } from "drizzle-orm";
+import { and, desc, eq, inArray } from "drizzle-orm";
 import { db } from "@/db";
 import {
   learningProfiles,
@@ -19,7 +19,7 @@ import {
 import { getActiveExam, getCurrentUser, setActiveExam } from "@/server/current-user";
 import { isExamProfile } from "@/lib/exam-profiles";
 import { generateTodayMission, getTodayMission, markStepDone, toggleTodayLite } from "@/server/services/mission";
-import { contentFingerprint, markContentCompleted, markContentUsed } from "@/server/services/content-selection";
+import { contentFingerprint, legacyContentFingerprint, markContentCompleted, markContentUsed } from "@/server/services/content-selection";
 import { analyzeContent } from "@/server/services/content-analysis";
 import { recordEvent } from "@/server/services/progress";
 import {
@@ -504,15 +504,21 @@ export async function importContentAction(input: {
   const cefr = (["A2", "B1", "B2", "C1"].includes(input.cefr ?? "") ? input.cefr : "B2") as CEFR;
   // Dedup guard: the same body never enters the library twice.
   // exam-aware: pasted text joins the ACTIVE exam's corpus; identical text in
-  // another exam's corpus is that goal's material, not a duplicate (V8)
+  // another exam's corpus is that goal's material, not a duplicate (V8).
+  // Dual-read (step-05): historical rows carry the legacy prefix fingerprint,
+  // new rows the full-text one; a legacy hit is verified against the full
+  // body so same-prefix-different-ending articles are never swallowed.
   const exam = cu.user.examProfile;
   const fingerprint = contentFingerprint(body);
+  const legacyFingerprint = legacyContentFingerprint(body);
   const [dup] = await db
-    .select({ id: contents.id })
+    .select({ id: contents.id, fingerprint: contents.fingerprint, body: contents.body })
     .from(contents)
-    .where(and(eq(contents.fingerprint, fingerprint), eq(contents.examProfile, exam)))
+    .where(and(inArray(contents.fingerprint, [fingerprint, legacyFingerprint]), eq(contents.examProfile, exam)))
     .limit(1);
-  if (dup) return { ok: true, id: dup.id, duplicate: true };
+  const fullTextEquals = dup != null &&
+    dup.body.trim().toLowerCase().replace(/\s+/g, " ") === body.trim().toLowerCase().replace(/\s+/g, " ");
+  if (dup && (dup.fingerprint === fingerprint || fullTextEquals)) return { ok: true, id: dup.id, duplicate: true };
 
   const [row] = await db
     .insert(contents)

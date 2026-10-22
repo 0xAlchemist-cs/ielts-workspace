@@ -104,8 +104,11 @@ async function main() {
     transfer: { cueCard: "A skill you want to learn", part3: ["Why?", "How?"], status: "skipped" as const },
   };
   const counters = { exposure: 4, understood: 3, retrieved: 5, used: 2, retained: 1 };
+  // local date, same source as getTodayMission (toISOString is UTC and
+  // diverges from the local key between midnight and +08:00)
+  const { todayKey } = await import("../src/lib/text");
   const [m0] = await db.insert(dailyMissions).values({
-    userId: uid, date: new Date().toISOString().slice(0, 10),
+    userId: uid, date: todayKey(),
     plan, status: "pending", counters,
   }).returning({ id: dailyMissions.id });
   const missionId = m0.id;
