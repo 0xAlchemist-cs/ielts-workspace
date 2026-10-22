@@ -71,12 +71,16 @@ export async function takeDailySnapshot(userId: number): Promise<LearningSnapsho
 
   // IELTS readiness — sample counts feed confidence, so mock (offline
   // fallback) attempts must not inflate them; they stay as practice history.
-  const readiness = estimateIeltsReadiness(
-    snapshot,
-    speakRows.filter((r) => !isMockAttempt(r)).length,
-    writeRows.filter((r) => !isMockAttempt(r)).length,
-  );
-  snapshot.estimatedIelts = readiness.reduce((a, r) => a + (r.low + r.high) / 2, 0) / readiness.length || null;
+  // The proxy band is an ESTIMATE from practice data (step-07): it requires
+  // at least one real graded production sample — a mock-only day renders
+  // null ("insufficient evidence"), never a number that reads like a
+  // calibrated band. Old snapshots are never rewritten.
+  const realSpeakCount = speakRows.filter((r) => !isMockAttempt(r)).length;
+  const realWriteCount = writeRows.filter((r) => !isMockAttempt(r)).length;
+  const readiness = estimateIeltsReadiness(snapshot, realSpeakCount, realWriteCount);
+  snapshot.estimatedIelts = realSpeakCount + realWriteCount > 0
+    ? readiness.reduce((a, r) => a + (r.low + r.high) / 2, 0) / readiness.length
+    : null;
 
   // Store (upsert by date)
   await db

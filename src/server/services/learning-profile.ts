@@ -183,7 +183,7 @@ export async function computeFullProfile(userId: number): Promise<FullLearningPr
   const month = Date.now() - 30 * 86_400_000;
 
   // ── Fetch all real data ─────────────────────────────────────────────────
-  const [reviewRows, errorRows, chunkRows, vocabRows, speakRows, writeRows, listenMissRows, eventRows, listenSessionRows] =
+  const [reviewRows, errorRows, chunkRows, vocabRows, speakRows, writeRows, listenMissRows, eventRows, listenSessionRows, retentionCheckRows] =
     await Promise.all([
       db.select().from(reviewHistory).where(and(eq(reviewHistory.userId, userId), sql`${reviewHistory.createdAt} > ${month}`)),
       db.select().from(errors).where(eq(errors.userId, userId)),
@@ -198,6 +198,18 @@ export async function computeFullProfile(userId: number): Promise<FullLearningPr
       // engagement basis for listening: distinct listening contents actually opened
       db.select({ c: sql<number>`count(distinct ${contentHistory.contentId})` })
         .from(contentHistory).where(and(eq(contentHistory.userId, userId), eq(contentHistory.skill, "listening"))),
+      // verified-retention evidence (step-07): successful retention checks
+      // across real intervals, whole history — the 30-day window would hide
+      // the very long-interval proof the metric is about
+      db.select({ itemId: retrievalItems.itemId })
+        .from(reviewHistory)
+        .innerJoin(retrievalItems, eq(retrievalItems.id, reviewHistory.retrievalItemId))
+        .where(and(
+          eq(reviewHistory.userId, userId),
+          eq(reviewHistory.mode, "retention_check"),
+          eq(reviewHistory.correct, 1),
+          eq(retrievalItems.itemType, "chunk"),
+        )),
     ]);
   const listeningSessions = Number(listenSessionRows[0]?.c ?? 0);
 
@@ -212,19 +224,25 @@ export async function computeFullProfile(userId: number): Promise<FullLearningPr
   const activeVocab = vocabRows.filter((v) => v.status === "active").length;
   const activeChunks = chunkRows.filter((c) => c.activatedAt !== null).length;
 
-  // Transfer rate: items that have events in 2+ module contexts
-  const itemsWithContexts = new Map<number, Set<string>>();
-  for (const ev of eventRows) {
-    if (!itemsWithContexts.has(ev.chunkId)) itemsWithContexts.set(ev.chunkId, new Set());
-  }
-  // Simplified: use production success as proxy
-  const transferRate = chunkRows.length
-    ? Math.round((chunkRows.filter((c) => c.retrievalStrength >= 50).length / chunkRows.length) * 100)
+  // Transfer & retention are VERIFIED metrics (step-07), not strength
+  // proxies: transfer is proven only by a real cross-context production
+  // event (chunkEvents speaking_use/ielts_use — logged when a chunk is
+  // actually produced in speech/writing); retention only by a successful
+  // retention check across a real interval (the scheduler only serves
+  // retention_check to retention-state items at 7/30/90-day intervals).
+  // No verified evidence → null ("developing"), never 0-as-failure and
+  // never a proxy share dressed as fact. Old formulae (strength ≥50/≥60
+  // shares) are retired from the ability view.
+  const transferredChunkIds = new Set(
+    eventRows.filter((e) => e.type === "speaking_use" || e.type === "ielts_use").map((e) => e.chunkId),
+  );
+  const retainedChunkIds = new Set(retentionCheckRows.map((r) => r.itemId));
+  const verifiedTransferRate = chunkRows.length
+    ? Math.round((transferredChunkIds.size / chunkRows.length) * 100)
     : 0;
-
-  // Retention: items with intervalDays >= 7 and lastQuality >= 3
-  const retainedItems = chunkRows.filter((c) => c.retrievalStrength >= 60).length;
-  const retention = chunkRows.length ? Math.round((retainedItems / chunkRows.length) * 100) : 0;
+  const verifiedRetention = chunkRows.length
+    ? Math.round((retainedChunkIds.size / chunkRows.length) * 100)
+    : 0;
 
   const patterns = await detectErrorPatterns(userId);
 
@@ -243,12 +261,18 @@ export async function computeFullProfile(userId: number): Promise<FullLearningPr
       evidence: `${plural(activeChunks, "expression")} activated (produced in speech/writing)`,
     },
     {
-      key: "transfer_rate", label: "Transfer Rate", score: transferRate,
-      evidence: `${transferRate}% of chunks reached strength ≥50 (used across contexts)`,
+      key: "transfer_rate", label: "Transfer Rate",
+      score: transferredChunkIds.size > 0 ? verifiedTransferRate : null,
+      evidence: transferredChunkIds.size > 0
+        ? `${transferredChunkIds.size}/${plural(chunkRows.length, "chunk")} verified by real cross-context production (speaking/writing use events)`
+        : `No verified cross-context use yet — ${plural(chunkRows.length, "chunk")} in circulation, none produced in speech or writing so far`,
     },
     {
-      key: "retention", label: "Retention", score: retention,
-      evidence: `${retainedItems}/${plural(chunkRows.length, "chunk")} at strength ≥60 after spaced retrieval`,
+      key: "retention", label: "Retention",
+      score: retainedChunkIds.size > 0 ? verifiedRetention : null,
+      evidence: retainedChunkIds.size > 0
+        ? `${retainedChunkIds.size}/${plural(chunkRows.length, "chunk")} verified by successful retention checks across real intervals`
+        : "No successful retention check yet — first-pass mastery is not long-term retention",
     },
   ];
 

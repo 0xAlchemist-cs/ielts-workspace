@@ -67,9 +67,10 @@
     "test:lite-toggle": "tsx scripts/verify-lite-toggle.ts",
     "test:fingerprint": "tsx scripts/verify-fulltext-fingerprint.ts",
     "test:evidence-policy": "tsx scripts/verify-evidence-policy.ts",
+    "test:metric-semantics": "tsx scripts/verify-metric-semantics.ts",
     "inspect:item": "tsx scripts/inspect-item.ts",
     "verify:product": "npm run test:engine && npm run test:rotation && npm run test:loop && npm run test:writing-gate",
-    "verify:all": "npm run normalize:exam && npm run lint && tsc --noEmit && npm run test:smoke && npm run test:pm && npm run test:engine && npm run test:rotation && npm run test:loop && npm run test:writing-gate && npm run test:input-gates && npm run test:import && npm run test:exam && npm run test:planner && npm run test:need && npm run test:memory && npm run test:readiness && npm run test:cet && npm run test:cet-completion && npm run test:ai && npm run test:session && npm run test:content-intelligence && npm run test:ieltscb && npm run test:wrong-practice && npm run test:review-unified && npm run test:progress && npm run test:loop30 && npm run test:v9v10 && npm run test:security && npm run test:url-guard && npm run test:data && npm run test:mock-bypass && npm run test:review-mode && npm run test:canonical-queue && npm run test:lite-toggle && npm run test:fingerprint && npm run test:evidence-policy"
+    "verify:all": "npm run normalize:exam && npm run lint && tsc --noEmit && npm run test:smoke && npm run test:pm && npm run test:engine && npm run test:rotation && npm run test:loop && npm run test:writing-gate && npm run test:input-gates && npm run test:import && npm run test:exam && npm run test:planner && npm run test:need && npm run test:memory && npm run test:readiness && npm run test:cet && npm run test:cet-completion && npm run test:ai && npm run test:session && npm run test:content-intelligence && npm run test:ieltscb && npm run test:wrong-practice && npm run test:review-unified && npm run test:progress && npm run test:loop30 && npm run test:v9v10 && npm run test:security && npm run test:url-guard && npm run test:data && npm run test:mock-bypass && npm run test:review-mode && npm run test:canonical-queue && npm run test:lite-toggle && npm run test:fingerprint && npm run test:evidence-policy && npm run test:metric-semantics"
   },
   "dependencies": {
     "better-sqlite3": "^13.0.3",
