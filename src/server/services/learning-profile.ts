@@ -167,6 +167,16 @@ export interface FullLearningProfile {
   lastUpdated: number;
 }
 
+/** Offline fallback output (FallbackProvider after a live AI error) stamps
+ *  isMock:true at the TOP LEVEL of the feedback column; ieltsScores still
+ *  carries heuristic pseudo-bands. Mock attempts stay in history as practice
+ *  records but must never become ability evidence (same rule as readiness.ts
+ *  bandOf). Rows without the flag (incl. legacy rows) count as real. */
+export function isMockAttempt(row: { feedback: unknown }): boolean {
+  const fb = row.feedback as { isMock?: unknown } | null;
+  return fb?.isMock === true;
+}
+
 export async function computeFullProfile(userId: number): Promise<FullLearningProfile> {
   const month = Date.now() - 30 * 86_400_000;
 
@@ -177,9 +187,9 @@ export async function computeFullProfile(userId: number): Promise<FullLearningPr
       db.select().from(errors).where(eq(errors.userId, userId)),
       db.select().from(chunks).where(eq(chunks.userId, userId)),
       db.select().from(vocabularies).where(eq(vocabularies.userId, userId)),
-      db.select({ ieltsScores: speakingAttempts.ieltsScores, createdAt: speakingAttempts.createdAt })
+      db.select({ ieltsScores: speakingAttempts.ieltsScores, feedback: speakingAttempts.feedback, createdAt: speakingAttempts.createdAt })
         .from(speakingAttempts).where(eq(speakingAttempts.userId, userId)).orderBy(desc(speakingAttempts.createdAt)).limit(10),
-      db.select({ ieltsScores: writingAttempts.ieltsScores, createdAt: writingAttempts.createdAt })
+      db.select({ ieltsScores: writingAttempts.ieltsScores, feedback: writingAttempts.feedback, createdAt: writingAttempts.createdAt })
         .from(writingAttempts).where(eq(writingAttempts.userId, userId)).orderBy(desc(writingAttempts.createdAt)).limit(10),
       db.select().from(listeningMisses).where(eq(listeningMisses.userId, userId)),
       db.select().from(chunkEvents).where(eq(chunkEvents.userId, userId)),
@@ -188,6 +198,11 @@ export async function computeFullProfile(userId: number): Promise<FullLearningPr
         .from(contentHistory).where(and(eq(contentHistory.userId, userId), eq(contentHistory.skill, "listening"))),
     ]);
   const listeningSessions = Number(listenSessionRows[0]?.c ?? 0);
+
+  // Mock (offline fallback) attempts are practice history, not ability
+  // evidence — only real graded rows feed the dimensions below.
+  const realSpeakRows = speakRows.filter((r) => !isMockAttempt(r));
+  const realWriteRows = writeRows.filter((r) => !isMockAttempt(r));
 
   const totalReviews = reviewRows.length;
   const correctReviews = reviewRows.filter((r) => r.correct === 1).length;
@@ -245,7 +260,7 @@ export async function computeFullProfile(userId: number): Promise<FullLearningPr
     { key: "comprehension", label: "Comprehension", score: readingReviews.length ? readingAccuracy : null, evidence: readingReviews.length ? `${readingReviews.length} reading-linked review${readingReviews.length === 1 ? "" : "s"}, ${readingAccuracy}% accuracy` : "No reading-linked reviews yet" },
     { key: "vocabulary", label: "Vocabulary", score: Math.min(100, vocabRows.length * 2), evidence: `${vocabRows.length} word${vocabRows.length === 1 ? "" : "s"} in personal vocabulary` },
     { key: "inference", label: "Inference", score: totalReviews ? Math.round(retrievalAccuracy * 0.9) : null, evidence: totalReviews ? `Inferred from retrieval accuracy (${retrievalAccuracy}%) — inference requires vocabulary automation` : "No retrieval evidence yet" },
-    { key: "paraphrasing", label: "Paraphrasing", score: writeRows.length ? Math.round((writeRows[0].ieltsScores as Record<string, number> | null)?.lexical ?? 50) : null, evidence: writeRows.length ? `Derived from writing Lexical Resource score` : "No writing attempts yet" },
+    { key: "paraphrasing", label: "Paraphrasing", score: realWriteRows.length ? Math.round((((realWriteRows[0].ieltsScores as Record<string, number> | null)?.lexical ?? 4.5) / 9) * 100) : null, evidence: realWriteRows.length ? `Derived from writing Lexical Resource score` : "No writing attempts yet" },
   ];
 
   // Listening: honest evidence model.
@@ -278,36 +293,45 @@ export async function computeFullProfile(userId: number): Promise<FullLearningPr
     listenDim("speed", "Speed Tolerance", listenByCat.speed ?? 0, 10, "speed-related misses"),
   ];
 
-  // Speaking: from speaking attempt scores — no attempts → null, not 0
-  const recentSpeak = speakRows.slice(0, 5).map((s) => (s.ieltsScores as Record<string, number> | null) ?? {});
+  // Speaking: from real (non-mock) speaking attempt scores — no verified
+  // attempts → null, not 0. Offline fallback attempts exist as practice but
+  // are explicitly not ability evidence.
+  const recentSpeak = realSpeakRows.slice(0, 5).map((s) => (s.ieltsScores as Record<string, number> | null) ?? {});
   const avg = (key: string) => {
     const vals = recentSpeak.map((s) => s[key]).filter((v): v is number => v != null);
     return vals.length ? vals.reduce((a, b) => a + b, 0) / vals.length : 0;
   };
   const bandTo100 = (band: number) => Math.round((band / 9) * 100);
   const hasSpeakEvidence = recentSpeak.some((s) => Object.keys(s).length > 0);
+  const noSpeakWhy = speakRows.length > realSpeakRows.length
+    ? "Only offline mock attempts so far — they don't count as verified evidence"
+    : "No speaking attempts recorded yet";
   const speaking: DimensionScore[] = [
-    { key: "fluency", label: "Fluency", score: hasSpeakEvidence ? bandTo100(avg("fluency")) : null, evidence: hasSpeakEvidence ? `Average fluency ${avg("fluency").toFixed(1)} from ${plural(recentSpeak.length, "speaking attempt")}` : "No speaking attempts recorded yet" },
-    { key: "grammar", label: "Grammar", score: hasSpeakEvidence ? bandTo100(avg("grammar")) : null, evidence: hasSpeakEvidence ? `Average grammar ${avg("grammar").toFixed(1)}` : "No speaking attempts recorded yet" },
-    { key: "vocabulary", label: "Vocabulary", score: hasSpeakEvidence ? bandTo100(avg("lexical")) : null, evidence: hasSpeakEvidence ? `Average lexical ${avg("lexical").toFixed(1)}` : "No speaking attempts recorded yet" },
-    { key: "naturalness", label: "Naturalness", score: hasSpeakEvidence ? Math.round(bandTo100(avg("grammar")) * 0.9) : null, evidence: hasSpeakEvidence ? `Inferred from grammar accuracy and Chinese-style English error count` : "No speaking attempts recorded yet" },
+    { key: "fluency", label: "Fluency", score: hasSpeakEvidence ? bandTo100(avg("fluency")) : null, evidence: hasSpeakEvidence ? `Average fluency ${avg("fluency").toFixed(1)} from ${plural(recentSpeak.length, "speaking attempt")}` : noSpeakWhy },
+    { key: "grammar", label: "Grammar", score: hasSpeakEvidence ? bandTo100(avg("grammar")) : null, evidence: hasSpeakEvidence ? `Average grammar ${avg("grammar").toFixed(1)}` : noSpeakWhy },
+    { key: "vocabulary", label: "Vocabulary", score: hasSpeakEvidence ? bandTo100(avg("lexical")) : null, evidence: hasSpeakEvidence ? `Average lexical ${avg("lexical").toFixed(1)}` : noSpeakWhy },
+    { key: "naturalness", label: "Naturalness", score: hasSpeakEvidence ? Math.round(bandTo100(avg("grammar")) * 0.9) : null, evidence: hasSpeakEvidence ? `Inferred from grammar accuracy and Chinese-style English error count` : noSpeakWhy },
     { key: "production", label: "Active Production", score: Math.min(100, activeChunks * 10), evidence: `${plural(activeChunks, "chunk")} successfully produced in speaking` },
   ];
 
-  // Writing: from writing attempt scores — no essays → null, not 0
-  const recentWrite = writeRows.slice(0, 5).map((w) => (w.ieltsScores as Record<string, number> | null) ?? {});
+  // Writing: from real (non-mock) writing attempt scores — no verified
+  // essays → null, not 0. Same mock-exclusion rule as speaking.
+  const recentWrite = realWriteRows.slice(0, 5).map((w) => (w.ieltsScores as Record<string, number> | null) ?? {});
   const wAvg = (key: string) => {
     const vals = recentWrite.map((s) => s[key]).filter((v): v is number => v != null);
     return vals.length ? vals.reduce((a, b) => a + b, 0) / vals.length : 0;
   };
   const hasWriteEvidence = recentWrite.some((s) => Object.keys(s).length > 0);
+  const noWriteWhy = writeRows.length > realWriteRows.length
+    ? "Only offline mock attempts so far — they don't count as verified evidence"
+    : "No writing attempts yet";
   const writing: DimensionScore[] = [
-    { key: "task_response", label: "Task Response", score: hasWriteEvidence ? bandTo100(wAvg("taskResponse")) : null, evidence: hasWriteEvidence ? `Average TR ${wAvg("taskResponse").toFixed(1)} from ${plural(recentWrite.length, "essay")}` : "No writing attempts yet" },
-    { key: "coherence", label: "Coherence", score: hasWriteEvidence ? bandTo100(wAvg("coherence")) : null, evidence: hasWriteEvidence ? `Average CC ${wAvg("coherence").toFixed(1)}` : "No writing attempts yet" },
-    { key: "lexical", label: "Lexical Resource", score: hasWriteEvidence ? bandTo100(wAvg("lexical")) : null, evidence: hasWriteEvidence ? `Average LR ${wAvg("lexical").toFixed(1)}` : "No writing attempts yet" },
-    { key: "grammar", label: "Grammar", score: hasWriteEvidence ? bandTo100(wAvg("grammar")) : null, evidence: hasWriteEvidence ? `Average GRA ${wAvg("grammar").toFixed(1)}` : "No writing attempts yet" },
-    { key: "sentence_variety", label: "Sentence Variety", score: hasWriteEvidence ? bandTo100(wAvg("lexical")) : null, evidence: hasWriteEvidence ? `Correlated with Lexical Resource score` : "No writing attempts yet" },
-    { key: "paraphrasing", label: "Paraphrasing", score: hasWriteEvidence ? bandTo100(wAvg("taskResponse")) : null, evidence: hasWriteEvidence ? `Correlated with Task Response (ability to reformulate)` : "No writing attempts yet" },
+    { key: "task_response", label: "Task Response", score: hasWriteEvidence ? bandTo100(wAvg("taskResponse")) : null, evidence: hasWriteEvidence ? `Average TR ${wAvg("taskResponse").toFixed(1)} from ${plural(recentWrite.length, "essay")}` : noWriteWhy },
+    { key: "coherence", label: "Coherence", score: hasWriteEvidence ? bandTo100(wAvg("coherence")) : null, evidence: hasWriteEvidence ? `Average CC ${wAvg("coherence").toFixed(1)}` : noWriteWhy },
+    { key: "lexical", label: "Lexical Resource", score: hasWriteEvidence ? bandTo100(wAvg("lexical")) : null, evidence: hasWriteEvidence ? `Average LR ${wAvg("lexical").toFixed(1)}` : noWriteWhy },
+    { key: "grammar", label: "Grammar", score: hasWriteEvidence ? bandTo100(wAvg("grammar")) : null, evidence: hasWriteEvidence ? `Average GRA ${wAvg("grammar").toFixed(1)}` : noWriteWhy },
+    { key: "sentence_variety", label: "Sentence Variety", score: hasWriteEvidence ? bandTo100(wAvg("lexical")) : null, evidence: hasWriteEvidence ? `Correlated with Lexical Resource score` : noWriteWhy },
+    { key: "paraphrasing", label: "Paraphrasing", score: hasWriteEvidence ? bandTo100(wAvg("taskResponse")) : null, evidence: hasWriteEvidence ? `Correlated with Task Response (ability to reformulate)` : noWriteWhy },
   ];
 
   // ── Weakest Link: find lowest dimension across all skills ──────────────

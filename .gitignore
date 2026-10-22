@@ -47,6 +47,11 @@ data/*
 !data/speaking-bank/
 !data/writing-bank/
 !data/ieltscb-samples/
+# isolated gate databases (verify-mock-bypass and future step gates) are
+# throwaway artifacts — never commit them
+data/test-fixtures/*.db
+data/test-fixtures/*.db-wal
+data/test-fixtures/*.db-shm
 
 # but keep the example env documented
 !.env.local.example

@@ -5,7 +5,7 @@ import {
   errors, speakingAttempts, writingAttempts, listeningMisses, chunkEvents,
   learningProfiles,
 } from "@/db/schema";
-import { computeFullProfile } from "@/server/services/learning-profile";
+import { computeFullProfile, isMockAttempt } from "@/server/services/learning-profile";
 import { todayKey } from "@/lib/text";
 import type {
   LearningSnapshot, ProgressEvent, SkillTrend, Bottleneck, IeltsReadiness, WeeklyReview,
@@ -69,8 +69,13 @@ export async function takeDailySnapshot(userId: number): Promise<LearningSnapsho
     bottleneck: fullProfile.weakestLink.subSkill,
   };
 
-  // IELTS readiness
-  const readiness = estimateIeltsReadiness(snapshot, speakRows.length, writeRows.length);
+  // IELTS readiness — sample counts feed confidence, so mock (offline
+  // fallback) attempts must not inflate them; they stay as practice history.
+  const readiness = estimateIeltsReadiness(
+    snapshot,
+    speakRows.filter((r) => !isMockAttempt(r)).length,
+    writeRows.filter((r) => !isMockAttempt(r)).length,
+  );
   snapshot.estimatedIelts = readiness.reduce((a, r) => a + (r.low + r.high) / 2, 0) / readiness.length || null;
 
   // Store (upsert by date)

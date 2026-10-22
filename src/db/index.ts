@@ -5,9 +5,14 @@ import { drizzle } from "drizzle-orm/better-sqlite3";
 import * as schema from "./schema";
 
 const DATA_DIR = path.join(process.cwd(), "data");
-const DB_PATH = path.join(DATA_DIR, "app.db");
+// IELTS_DB_PATH reroutes the singleton to an isolated database so test/CI
+// gates can run on copies without ever touching the production app.db.
+// Default (unset) behavior is unchanged.
+const DB_PATH = process.env.IELTS_DB_PATH
+  ? path.resolve(process.env.IELTS_DB_PATH)
+  : path.join(DATA_DIR, "app.db");
 
-if (!fs.existsSync(DATA_DIR)) fs.mkdirSync(DATA_DIR, { recursive: true });
+if (!fs.existsSync(path.dirname(DB_PATH))) fs.mkdirSync(path.dirname(DB_PATH), { recursive: true });
 
 // Singleton across Next.js dev hot reloads.
 const globalForDb = globalThis as unknown as { __ieltsSqlite?: Database.Database };
