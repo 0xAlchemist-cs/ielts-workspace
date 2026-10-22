@@ -52,6 +52,8 @@ data/*
 data/test-fixtures/*.db
 data/test-fixtures/*.db-wal
 data/test-fixtures/*.db-shm
+# pre-migration rehearsal snapshots are equally throwaway
+data/test-fixtures/*.snapshot
 
 # but keep the example env documented
 !.env.local.example
