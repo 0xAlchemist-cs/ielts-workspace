@@ -171,13 +171,12 @@ export async function generateTodayMission(userId: number, liteOverride?: boolea
     : new Set<string>();
   const deepIds = pickDeepChunkIds(noticeRows, engineTargetTexts, actualLite);
 
-  // ── Retrieval: V15.2 — the mission batch comes from the SAME canonical
-  // review queue as /review (one scheduling path); the planner's budget caps
-  // the batch so a backlog never floods the day (V10 P6) ──────────────────
-  const retrievalItemIds = (decision.retrievalItemIds.length > 0
-    ? decision.retrievalItemIds
-    : (await generateReviewQueue(userId, actualLite ? 6 : Math.max(6, budget.reviewCount))).map((q) => q.retrievalItemId)
-  ).slice(0, budget.reviewCount);
+  // ── Retrieval: V15.2 + step-03 — the mission batch is a PREFIX of the
+  // SAME canonical review queue as /review (one scheduling path: which
+  // items, which order, which format); the planner's budget caps the batch
+  // so a backlog never floods the day (V10 P6) ─────────────────────────────
+  const canonicalBatch = await generateReviewQueue(userId, actualLite ? 6 : Math.max(6, budget.reviewCount));
+  const retrievalItemIds = canonicalBatch.slice(0, budget.reviewCount).map((q) => q.retrievalItemId);
 
   const firstChunk = noticeRows[0];
   const speakingPrompt = firstChunk

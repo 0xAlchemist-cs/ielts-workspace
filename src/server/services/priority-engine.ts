@@ -3,6 +3,7 @@ import { db } from "@/db";
 import { chunks, errors, retrievalItems, reviewHistory, contents, dailyMissions, learningProfiles } from "@/db/schema";
 import { computeFullProfile } from "@/server/services/learning-profile";
 import { detectErrorPatterns } from "@/server/services/learning-profile";
+import { generateReviewQueue } from "@/server/services/retention";
 import { plural } from "@/lib/plural";
 import type { MissionRationale, MissionOutcome } from "@/lib/types";
 import type { DailyMission } from "@/db/schema";
@@ -50,6 +51,7 @@ export async function computeMissionDecision(userId: number): Promise<MissionDec
       detectErrorPatterns(userId),
       db.select().from(retrievalItems)
         .where(and(eq(retrievalItems.userId, userId), lte(retrievalItems.dueAt, Date.now() + 86_400_000)))
+        .orderBy(retrievalItems.dueAt)
         .limit(20),
       db.select().from(errors)
         .where(and(eq(errors.userId, userId), eq(errors.status, "active")))
@@ -214,30 +216,22 @@ export async function computeMissionDecision(userId: number): Promise<MissionDec
   // ── Length recommendation ────────────────────────────────────────────────
   const recommendedLength = recommendLength(dailyMinutes, totalWeighted);
 
-  // ── Select retrieval items (priority-weighted) ───────────────────────────
-  const retrievalItemIds = dueItems
-    .sort((a, b) => {
-      // Overdue first, then by error association, then by state advancement potential
-      const aOver = a.dueAt <= Date.now() ? 1 : 0;
-      const bOver = b.dueAt <= Date.now() ? 1 : 0;
-      if (aOver !== bOver) return bOver - aOver;
-      const aErr = a.itemType === "error" ? 1 : 0;
-      const bErr = b.itemType === "error" ? 1 : 0;
-      return bErr - aErr;
-    })
-    .slice(0, recommendedLength === "quick" ? 5 : recommendedLength === "standard" ? 8 : 12)
-    .map((i) => i.id);
+  // ── Select retrieval items (step-03: canonical queue is the single
+  // source of WHICH items, in WHICH order). The engine keeps only the
+  // VOLUME decision: recommendedLength → 5/8/12. The old second path (an
+  // unordered due-items limit(20) re-sorted by a two-key rule) diverged
+  // from the canonical priorities, missed pure retention-check items, and
+  // could carry orphaned rows whose source entities were gone. ──────────
+  const canonicalCount = recommendedLength === "quick" ? 5 : recommendedLength === "standard" ? 8 : 12;
+  const canonicalQueue = await generateReviewQueue(userId, canonicalCount);
+  const retrievalItemIds = canonicalQueue.map((q) => q.retrievalItemId);
 
-  // ── Select target chunks (items needing production/transfer) ────────────
-  const targetChunkIds = dueItems
-    .filter((i) => i.itemType === "chunk")
-    .filter((i) => {
-      const ls = i.learningState;
-      if (!ls) return true; // new items
-      return ls.state === "retrieval" || ls.state === "usage" || ls.state === "recognition";
-    })
-    .slice(0, 4)
-    .map((i) => i.itemId);
+  // ── Select target chunks: the chunk entities behind the same canonical
+  // queue (deep-study anchors must be items the queue deems reviewable) ──
+  const targetChunkIds = canonicalQueue
+    .filter((q) => q.itemType === "chunk")
+    .map((q) => q.itemId)
+    .slice(0, 4);
 
   const targetErrorIds = activeErrors.slice(0, 3).map((e) => e.id);
 

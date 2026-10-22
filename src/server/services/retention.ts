@@ -102,6 +102,10 @@ export function detectForgetting(item: {
 export interface ReviewQueueEntry {
   retrievalItemId: number;
   itemType: string;
+  /** the source entity row id (chunks/vocabularies/errors .id) — lets
+   *  consumers (e.g. deep-study targets) map a queue entry to its entity
+   *  without a second lookup path (step-03) */
+  itemId: number;
   mode: ReviewMode;
   prompt: string;
   expected: string;
@@ -319,7 +323,7 @@ async function buildEntry(
       clozePrompt = model.replace(CHUNK_DETECT[c.text], "＿＿＿");
     }
     return {
-      retrievalItemId: item.id, itemType: "chunk", mode,
+      retrievalItemId: item.id, itemType: "chunk", itemId: c.id, mode,
       prompt: mode === "cloze" ? (clozePrompt ?? (c.meaningZh || c.meaningEn)) : (c.meaningZh || c.meaningEn),
       expected: c.text,
       display: { title: c.text, meaningEn: c.meaningEn },
@@ -352,7 +356,7 @@ async function buildEntry(
           [options[i], options[j]] = [options[j], options[i]];
         }
         return {
-          retrievalItemId: item.id, itemType: "vocab", mode: "recognition",
+          retrievalItemId: item.id, itemType: "vocab", itemId: v.id, mode: "recognition",
           prompt: `${v.meaningEn || ""}${v.meaningZh ? ` · ${v.meaningZh}` : ""}`,
           expected: v.headword,
           display: { title: v.headword, meaningEn: v.meaningEn },
@@ -361,7 +365,7 @@ async function buildEntry(
       }
     }
     return {
-      retrievalItemId: item.id, itemType: "vocab", mode: "cued_recall",
+      retrievalItemId: item.id, itemType: "vocab", itemId: v.id, mode: "cued_recall",
       prompt: `${v.meaningEn || ""}${v.meaningZh ? ` · ${v.meaningZh}` : ""} — starts with "${v.headword[0]}_"`,
       expected: v.headword,
       display: { title: v.headword, meaningEn: v.meaningEn },
@@ -379,7 +383,7 @@ async function buildEntry(
     // instead of quizzing nonsense; the row itself is left untouched.
     if (!errorPairCoherent(e.wrongForm, e.correctForm)) return null;
     return {
-      retrievalItemId: item.id, itemType: "error", mode: "production",
+      retrievalItemId: item.id, itemType: "error", itemId: e.id, mode: "production",
       prompt: `Fix it — write a sentence using the CORRECT form of: ${e.wrongForm}`,
       expected: e.correctForm,
       display: { title: `${e.wrongForm} ✗ → ?`, meaningEn: e.explanation },
