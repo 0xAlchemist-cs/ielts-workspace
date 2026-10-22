@@ -9,8 +9,9 @@ import { logChunkEvent, markChunkActivated } from "@/server/services/events";
 import { gradeRetrieval } from "@/lib/grading";
 import type { GradeTarget } from "@/lib/grading";
 import type { ReviewMode, ModuleContext, ItemLearningState } from "@/lib/types";
-import { advanceState, decideFormat } from "@/lib/retrieval-engine";
+import { advanceState, decideFormat, formatForServedMode } from "@/lib/retrieval-engine";
 import { addError } from "@/server/services/bank";
+import { recordServedReview, consumeServedReview, peekServedReview as peekServedMode } from "@/server/services/served-review";
 import type { ErrorCategory } from "@/lib/types";
 
 const DAY = 86_400_000;
@@ -290,7 +291,12 @@ export async function generateReviewQueue(
   for (const e of top) {
     if (queue.length >= limit) break;
     const qi = await buildEntry(e.item, e.mode, e.category, e.priority, e.reasonDetail, e.reasons);
-    if (qi) queue.push(qi);
+    if (qi) {
+      // the served format is a credential: /api/review/answer will only
+      // accept a submission matching it (step-02 integrity contract)
+      recordServedReview(userId, e.item.id, e.mode);
+      queue.push(qi);
+    }
   }
   return queue;
 }
@@ -462,12 +468,19 @@ export async function submitRetentionReview(
     failCount++;
   }
 
-  // Learning state advancement
+  // Learning state advancement — keyed to the mode this exercise was
+  // actually graded under, NOT a fresh decideFormat() guess. decideFormat
+  // describes the ladder position and can disagree with the served format
+  // (anti-pattern rotation serves plain production to a usage-state item);
+  // advancing with its stateAfterSuccess turned ordinary production into
+  // fake "transfer" progress and vice versa (step-02 fix). Internal callers
+  // (review queue, wrong→practice sessions, writing/speaking routes) vouch
+  // for the mode they pass; the HTTP boundary enforces the credential.
   const ls = item.learningState ?? {
     state: "exposure" as const, achievedAt: {}, contexts: [],
     productionHits: 0, productionMisses: 0, contextualHits: 0, contextualMisses: 0,
   };
-  const format = decideFormat(item.itemType as "chunk", ls, context);
+  const format = formatForServedMode(item.itemType as "chunk", mode);
   const newLs = advanceState(ls, format, grade.quality, context);
 
   // ── Retention processing ────────────────────────────────────────────────
@@ -529,6 +542,14 @@ export async function submitRetentionReview(
     prompt: item.itemType, expected: grade.targetAnswer,
     userResponse: response, correct: grade.correct ? 1 : 0, quality: grade.quality,
   });
+
+  // A submission matching the served credential consumes it — the same card
+  // cannot be replayed as a privileged mode a second time. (A plain
+  // production submission, e.g. from a lab embed, leaves a differing
+  // credential in place for the queued card itself.)
+  if (peekServedMode(userId, retrievalItemId) === mode) {
+    consumeServedReview(userId, retrievalItemId);
+  }
 
   if (grade.quality >= 3) await recordEvent(userId, "retrieved");
 

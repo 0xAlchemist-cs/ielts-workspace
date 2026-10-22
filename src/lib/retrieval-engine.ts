@@ -145,6 +145,37 @@ export function decideFormat(
   }
 }
 
+/** The format table for actually-served modes: what a SUCCESS in each mode
+ *  proves on the state ladder. State advancement must key off THIS table —
+ *  the format the learner actually completed — never off a fresh
+ *  decideFormat() guess, which describes the ladder position, not the
+ *  exercise (step-02 integrity rule: served mode == graded mode == the mode
+ *  that advances the state). */
+const MODE_SUCCESS: Record<ReviewMode, LearningState> = {
+  recognition: "recognition",
+  cued_recall: "retrieval",
+  production: "usage",
+  cloze: "usage",
+  context_transfer: "transfer",
+  audio_retrieval: "retention",
+  retention_check: "retention",
+};
+
+/** Build the advancement format for an exercise the server actually served
+ *  (or a trusted internal caller vouches for, e.g. wrong→practice sessions
+ *  and the writing route's chunk usage). Errors keep their own ladder:
+ *  producing the correct form lands on retrieval, not usage. */
+export function formatForServedMode(itemType: RetrievalItemType, mode: ReviewMode): RetrievalFormat {
+  const stateAfterSuccess: LearningState =
+    itemType === "error" && mode === "production" ? "retrieval" : MODE_SUCCESS[mode];
+  return {
+    mode,
+    rationale: `Graded from the format actually served: ${mode}.`,
+    stateAfterSuccess,
+    stateAfterFailure: "exposure", // unused by advanceState (quality 0 demotes uniformly)
+  };
+}
+
 /** Update learning state after a retrieval attempt. */
 export function advanceState(
   current: ItemLearningState,

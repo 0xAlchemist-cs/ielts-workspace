@@ -5,7 +5,7 @@ import { chunks as chunksT, retrievalItems } from "@/db/schema";
 import { getProvider } from "@/lib/ai";
 import { CHUNK_DETECT } from "@/lib/chunk-detect";
 import { gradeChunkUsage } from "@/lib/grading";
-import { advanceState, decideFormat, holisticStrength } from "@/lib/retrieval-engine";
+import { advanceState, formatForServedMode, holisticStrength } from "@/lib/retrieval-engine";
 import { getUserIdOrNull } from "@/server/current-user";
 import { saveWritingAction } from "@/app/actions";
 import { addError } from "@/server/services/bank";
@@ -117,7 +117,11 @@ export async function POST(req: Request) {
         state: "exposure", achievedAt: {}, contexts: [],
         productionHits: 0, productionMisses: 0, contextualHits: 0, contextualMisses: 0,
       };
-      const format = decideFormat("chunk", ls);
+      // Writing production is production evidence: advance with the format
+      // actually exercised (production → usage), never a decideFormat()
+      // guess — decideFormat(usage)=context_transfer used to leap a chunk
+      // straight to "transfer" just for being used in an essay (step-02).
+      const format = formatForServedMode("chunk", "production");
       const newLs = advanceState(ls, format, usage, context);
       const strength = holisticStrength(newLs);
       await db
