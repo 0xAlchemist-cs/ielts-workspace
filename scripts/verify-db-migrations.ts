@@ -72,8 +72,11 @@ const integrityOk = (f: string) => {
 };
 
 async function main() {
-  fs.rmSync(path.join(FIX, "mig-fresh.db"), { force: true });
-  for (const p of fs.readdirSync(FIX).filter((x) => x.startsWith("mig-fresh.db"))) fs.rmSync(path.join(FIX, p));
+  // full self-clean: leftover snapshots from earlier runs would make M4
+  // restore the OLDEST snapshot (a previous run's state), not this run's
+  for (const p of fs.readdirSync(FIX).filter((f) => f.startsWith("mig-"))) {
+    fs.rmSync(path.join(FIX, p), { force: true });
+  }
 
   /* ── M1 · fresh database initializes from zero ── */
   const fresh = path.join(FIX, "mig-fresh.db");
