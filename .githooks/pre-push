@@ -2,8 +2,12 @@
 # Local CI gate — run the full offline verification suite before any push.
 # Configure once per clone: git config core.hooksPath .githooks
 # Skip for a one-off: git push --no-verify
-echo "[pre-push] running npm run verify:all (lint + smoke + pm + engine + rotation + loop + writing-gate) ..."
-npm run verify:all || {
+#
+# The suite ALWAYS runs on an isolated WAL-consistent snapshot of the
+# default database (scripts/with-test-db.mjs) with test isolation enforced —
+# the production app.db is never written by a gate run.
+echo "[pre-push] running verify:all on the isolated gate database ..."
+node scripts/with-test-db.mjs npm run verify:all || {
   echo "[pre-push] VERIFY FAILED — push aborted. Fix the failures or use --no-verify consciously."
   exit 1
 }

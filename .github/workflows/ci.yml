@@ -35,4 +35,7 @@ jobs:
             npm run db:dict
 
       - name: Full gate (normalize + lint + tsc + all verify suites)
-        run: npm run verify:all
+        # same isolation contract as the pre-push hook: the suite runs on an
+        # isolated WAL-consistent snapshot with test isolation enforced —
+        # never on the default database path
+        run: node scripts/with-test-db.mjs npm run verify:all

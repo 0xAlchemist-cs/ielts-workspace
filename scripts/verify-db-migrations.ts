@@ -85,9 +85,19 @@ async function main() {
   check("M1: all tables created", tableCount(fresh) >= 30, `tables=${tableCount(fresh)}`);
   check("M1: integrity ok", integrityOk(fresh));
 
-  /* ── M2 · existing database upgrades forward, data intact ── */
+  /* ── M2 · existing database upgrades forward, data intact ──
+   * The working copy is taken with VACUUM INTO on a read-only connection:
+   * unlike a plain file copy it is WAL-consistent (frames not yet
+   * checkpointed into the main file are included). */
   const existing = path.join(FIX, "mig-existing.db");
-  fs.copyFileSync(PROD, existing);
+  {
+    const src = new Database(PROD, { readonly: true });
+    try {
+      src.prepare("vacuum into ?").run(existing);
+    } finally {
+      src.close();
+    }
+  }
   const before = rowCounts(existing);
   const out2 = runMigrate(existing);
   check("M2: existing db migrates forward (exit 0)", out2.includes("migrations applied"));
